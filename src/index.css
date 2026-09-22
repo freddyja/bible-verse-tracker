@@ -777,6 +777,12 @@ main {
   gap: 0.45rem;
 }
 
+.listen-speaker {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+}
+
 .listen-status {
   flex: 1 1 100%;
   margin: 0;
