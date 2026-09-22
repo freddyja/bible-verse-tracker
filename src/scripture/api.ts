@@ -1,5 +1,6 @@
 import { BOOKS } from './books'
 import { fold, type PassageRef } from './passages'
+import { versionById } from './versions'
 
 export type ScriptureHit = PassageRef & { text: string }
 
@@ -16,24 +17,45 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function loadBook(language: string, bookIndex: number): Promise<string[][]> {
+function versionFolder(versionId: string): string {
+  const folder = versionById(versionId)?.folder
+  if (!folder) throw new Error('version')
+  return folder
+}
+
+export function peekBook(versionId: string, bookIndex: number): string[][] | null {
+  const id = BOOKS[bookIndex]?.id
+  if (!id) return null
+  return books.get(`${versionId}:${id}`) ?? null
+}
+
+export function peekVerse(
+  versionId: string,
+  bookIndex: number,
+  chapter: number,
+  verse: number,
+): string | null {
+  return peekBook(versionId, bookIndex)?.[chapter - 1]?.[verse - 1] ?? null
+}
+
+export async function loadBook(versionId: string, bookIndex: number): Promise<string[][]> {
   const id = BOOKS[bookIndex]?.id
   if (!id) throw new Error('book')
-  const key = `${language}:${id}`
+  const key = `${versionId}:${id}`
   const cached = books.get(key)
   if (cached) return cached
-  const chapters = await fetchJson<string[][]>(scriptureUrl(`${language}/${id}.json`))
+  const chapters = await fetchJson<string[][]>(scriptureUrl(`${versionFolder(versionId)}/${id}.json`))
   books.set(key, chapters)
   return chapters
 }
 
 export async function loadVerse(
-  language: string,
+  versionId: string,
   bookIndex: number,
   chapter: number,
   verse: number,
 ): Promise<string | null> {
-  const chapters = await loadBook(language, bookIndex)
+  const chapters = await loadBook(versionId, bookIndex)
   return chapters[chapter - 1]?.[verse - 1] ?? null
 }
 
@@ -48,14 +70,14 @@ export async function loadCrossReferences(bookIndex: number): Promise<number[][]
 }
 
 export async function relatedPassages(
-  language: string,
+  versionId: string,
   passage: PassageRef,
 ): Promise<ScriptureHit[]> {
   const table = await loadCrossReferences(passage.bookIndex)
   const refs = table[passage.chapter - 1]?.[passage.verse - 1] ?? []
   const rows = await Promise.all(
     refs.map(async ([bookIndex, chapter, verse]) => {
-      const text = await loadVerse(language, bookIndex, chapter, verse)
+      const text = await loadVerse(versionId, bookIndex, chapter, verse)
       if (!text) return null
       return { bookIndex, chapter, verse, text }
     }),
@@ -64,7 +86,7 @@ export async function relatedPassages(
 }
 
 export async function searchScripture(
-  language: string,
+  versionId: string,
   query: string,
   limit = 24,
 ): Promise<ScriptureHit[]> {
@@ -72,7 +94,7 @@ export async function searchScripture(
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length > 1)
   if (tokens.length === 0) return []
-  const loaded = await Promise.all(BOOKS.map((_, index) => loadBook(language, index)))
+  const loaded = await Promise.all(BOOKS.map((_, index) => loadBook(versionId, index)))
   const hits: ScriptureHit[] = []
   for (let bookIndex = 0; bookIndex < loaded.length; bookIndex += 1) {
     const chapters = loaded[bookIndex]

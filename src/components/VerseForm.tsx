@@ -5,8 +5,11 @@ import { LibraryError } from '../data/errors'
 import { categoryDisplayName, findCategoryByTypedName } from '../data/categoryLabel'
 import { normalizeCategoryName } from '../data/names'
 import type { Category, Passage, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
+import { peekVerse } from '../scripture/api'
 import { parseReference } from '../scripture/passages'
+import type { ListenController } from '../speech/useListen'
 import { useLanguage } from '../i18n/useLanguage'
+import { ListenBar } from './ListenBar'
 import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
 import { RelatedVerses } from './RelatedVerses'
@@ -25,6 +28,7 @@ type VerseFormProps = {
   onOpenVerse: (verseId: string) => void
   onAddReference: (reference: string, text: string) => void
   onReadPassage: (passage: Passage) => void
+  listen: ListenController
 }
 
 function errorText(
@@ -49,8 +53,9 @@ export function VerseForm({
   onOpenVerse,
   onAddReference,
   onReadPassage,
+  listen,
 }: VerseFormProps) {
-  const { t } = useLanguage()
+  const { versionId, t } = useLanguage()
   const label = (category: Category) => categoryDisplayName(category, t)
   const [reference, setReference] = useState(verse?.reference ?? initialReference ?? '')
   const [text, setText] = useState(verse?.text ?? initialText ?? '')
@@ -199,6 +204,39 @@ export function VerseForm({
         />
       </label>
 
+      <ListenBar
+        supported={listen.supported}
+        status={listen.status}
+        statusText={null}
+        canVerse={text.trim().length > 0}
+        canChapter={parseReference(reference) !== null}
+        canContinue={parseReference(reference) !== null}
+        note={t('listenSeparate')}
+        notice={listen.refused ? t('listenRefused') : undefined}
+        onVerse={() => listen.speakText(text)}
+        onChapter={() => {
+          const parsed = parseReference(reference)
+          if (!parsed) return
+          listen.start(
+            'chapter',
+            parsed,
+            peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
+          )
+        }}
+        onContinue={() => {
+          const parsed = parseReference(reference)
+          if (!parsed) return
+          listen.start(
+            'continue',
+            parsed,
+            peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
+          )
+        }}
+        onPause={listen.pause}
+        onResume={listen.resume}
+        onStop={listen.stop}
+      />
+
       <button
         type="button"
         className="button button-related button-block"
@@ -241,7 +279,10 @@ export function VerseForm({
             setVoiceBlob(next)
             setVoiceTouched(true)
           }}
-          onRecordingChange={setRecording}
+          onRecordingChange={(recording) => {
+            setRecording(recording)
+            if (recording) listen.stop()
+          }}
         />
       ) : (
         <p className="field-note">{t('openingVoice')}</p>

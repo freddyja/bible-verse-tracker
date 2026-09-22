@@ -29,12 +29,12 @@ export function RelatedVerses({
 }: RelatedVersesProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
-  const { language, t } = useLanguage()
+  const { language, versionId, t } = useLanguage()
   const library = versesSharingCategory(verses, categoryIds, currentId)
   const hasReference = reference.trim().length > 0
   const [loaded, setLoaded] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
   const parsed = hasReference ? parseReference(reference) : null
-  const loadKey = parsed ? `${language}:${parsed.bookIndex}:${parsed.chapter}:${parsed.verse}` : ''
+  const loadKey = parsed ? `${versionId}:${parsed.bookIndex}:${parsed.chapter}:${parsed.verse}` : ''
   const passages = !parsed ? [] : loaded?.key === loadKey ? loaded.rows : null
 
   useEffect(() => {
@@ -50,9 +50,9 @@ export function RelatedVerses({
   useEffect(() => {
     const next = parseReference(reference)
     if (!next) return
-    const key = `${language}:${next.bookIndex}:${next.chapter}:${next.verse}`
+    const key = `${versionId}:${next.bookIndex}:${next.chapter}:${next.verse}`
     let cancelled = false
-    relatedPassages(language, next)
+    relatedPassages(versionId, next)
       .then((rows) => {
         if (!cancelled) setLoaded({ key, rows })
       })
@@ -62,7 +62,7 @@ export function RelatedVerses({
     return () => {
       cancelled = true
     }
-  }, [language, reference])
+  }, [versionId, reference])
 
   let libraryMessage: string | null = null
   if (categoryIds.length === 0) libraryMessage = t('relatedNeedCategory')

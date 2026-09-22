@@ -11,12 +11,24 @@ import type { Passage } from './data/types'
 import { useLibrary } from './hooks/useLibrary'
 import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
-import { formatPassage } from './scripture/passages'
+import { formatPassage, type PassageRef } from './scripture/passages'
+import { useListen } from './speech/useListen'
+import { VersionPicker } from './components/VersionPicker'
+
+type ChapterView = {
+  kind: 'chapter'
+  bookIndex: number
+  chapter: number
+  verse: number | null
+  startBook: number
+  startChapter: number
+  startVerse: number | null
+}
 
 type Shell =
   | { kind: 'read' }
   | { kind: 'book'; bookIndex: number }
-  | { kind: 'chapter'; bookIndex: number; chapter: number; verse: number | null }
+  | ChapterView
   | { kind: 'saved' }
   | { kind: 'categories'; returnTo: 'read' | 'saved' }
 
@@ -32,7 +44,7 @@ type View =
 
 export default function App() {
   const library = useLibrary()
-  const { language, t } = useLanguage()
+  const { language, versionId, t } = useLanguage()
   const [view, setView] = useState<View>({ kind: 'read' })
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
@@ -66,7 +78,32 @@ export default function App() {
     document.title = title
   }, [title])
 
+  function openAt(bookIndex: number, chapter: number, verse: number | null): ChapterView {
+    return {
+      kind: 'chapter',
+      bookIndex,
+      chapter,
+      verse,
+      startBook: bookIndex,
+      startChapter: chapter,
+      startVerse: verse,
+    }
+  }
+
+  function followSpoken(passage: PassageRef) {
+    setView((current) => {
+      if (current.kind === 'chapter') {
+        if (current.bookIndex === passage.bookIndex && current.chapter === passage.chapter) return current
+        return { ...current, bookIndex: passage.bookIndex, chapter: passage.chapter }
+      }
+      return openAt(passage.bookIndex, passage.chapter, passage.verse)
+    })
+  }
+
+  const listen = useListen(language, versionId, followSpoken)
+
   function goBack() {
+    listen.stop()
     if (view.kind === 'book' || view.kind === 'saved') setView({ kind: 'read' })
     if (view.kind === 'chapter') setView({ kind: 'book', bookIndex: view.bookIndex })
     if (view.kind === 'categories') setView(view.returnTo === 'saved' ? { kind: 'saved' } : { kind: 'read' })
@@ -74,6 +111,7 @@ export default function App() {
   }
 
   let backLabel = t('backHome')
+  if (view.kind === 'chapter') backLabel = `← ${BOOKS[view.bookIndex].names[language]}`
   if (view.kind === 'categories' && view.returnTo === 'saved') backLabel = t('backSaved')
   if (view.kind === 'edit' && view.returnTo.kind === 'saved') backLabel = t('backSaved')
   if (view.kind === 'edit' && view.returnTo.kind === 'chapter') {
@@ -81,12 +119,8 @@ export default function App() {
   }
 
   function openPassage(passage: Passage) {
-    setView({
-      kind: 'chapter',
-      bookIndex: passage.bookIndex,
-      chapter: passage.chapter,
-      verse: passage.verse,
-    })
+    listen.stop()
+    setView(openAt(passage.bookIndex, passage.chapter, passage.verse))
   }
 
   return (
@@ -99,6 +133,7 @@ export default function App() {
             </button>
           )}
           <h1 className="brand">{title}</h1>
+          <VersionPicker />
           {view.kind === 'read' ? (
             <>
               <p className="credit">Designed by Freddy Jara-Almonte.</p>
@@ -110,7 +145,14 @@ export default function App() {
           )}
         </div>
         {view.kind === 'read' ? (
-          <button type="button" className="button button-ghost" onClick={() => setView({ kind: 'saved' })}>
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={() => {
+              listen.stop()
+              setView({ kind: 'saved' })
+            }}
+          >
             {t('saved')}
           </button>
         ) : null}
@@ -118,7 +160,10 @@ export default function App() {
           <button
             type="button"
             className="button button-ghost"
-            onClick={() => setView({ kind: 'categories', returnTo: 'saved' })}
+            onClick={() => {
+              listen.stop()
+              setView({ kind: 'categories', returnTo: 'saved' })
+            }}
           >
             {t('categories')}
           </button>
@@ -145,11 +190,18 @@ export default function App() {
           <ReadHome
             verses={library.verses}
             onOpenBook={(next) => setView({ kind: 'book', bookIndex: next })}
-            onOpenPassage={(nextBook, chapter, verse) =>
-              setView({ kind: 'chapter', bookIndex: nextBook, chapter, verse })
-            }
-            onOpenSaved={(verseId) => setView({ kind: 'edit', verseId, returnTo: { kind: 'read' } })}
-            onOpenCategories={() => setView({ kind: 'categories', returnTo: 'read' })}
+            onOpenPassage={(nextBook, chapter, verse) => {
+              listen.stop()
+              setView(openAt(nextBook, chapter, verse))
+            }}
+            onOpenSaved={(verseId) => {
+              listen.stop()
+              setView({ kind: 'edit', verseId, returnTo: { kind: 'read' } })
+            }}
+            onOpenCategories={() => {
+              listen.stop()
+              setView({ kind: 'categories', returnTo: 'read' })
+            }}
           />
         </main>
       ) : null}
@@ -158,9 +210,10 @@ export default function App() {
         <main>
           <ChapterPicker
             bookIndex={view.bookIndex}
-            onOpenChapter={(chapter) =>
-              setView({ kind: 'chapter', bookIndex: view.bookIndex, chapter, verse: null })
-            }
+            onOpenChapter={(chapter) => {
+              listen.stop()
+              setView(openAt(view.bookIndex, chapter, null))
+            }}
           />
         </main>
       ) : null}
@@ -168,24 +221,42 @@ export default function App() {
       {view.kind === 'chapter' ? (
         <main>
           <ChapterReader
-            key={`${language}:${view.bookIndex}:${view.chapter}`}
-            bookIndex={view.bookIndex}
-            chapter={view.chapter}
-            selectedVerse={view.verse}
+            key={`${versionId}:${view.startBook}:${view.startChapter}:${view.startVerse ?? 0}`}
+            startBook={view.startBook}
+            startChapter={view.startChapter}
+            startVerse={view.startVerse}
             saved={library.verses}
-            onSelectVerse={(verse) => setView({ ...view, verse })}
             onOpenPassage={openPassage}
-            onChapter={(chapter) => setView({ kind: 'chapter', bookIndex: view.bookIndex, chapter, verse: null })}
-            onSave={(passage, text) =>
+            onShowChapters={() => {
+              listen.stop()
+              setView({ kind: 'book', bookIndex: view.bookIndex })
+            }}
+            onVisible={(bookIndex, chapter) =>
+              setView((current) => {
+                if (current.kind !== 'chapter') return current
+                if (current.bookIndex === bookIndex && current.chapter === chapter) return current
+                return { ...current, bookIndex, chapter }
+              })
+            }
+            onSave={(passage, text) => {
+              listen.stop()
               setView({
                 kind: 'edit',
                 verseId: null,
                 prefillReference: formatPassage(language, passage),
                 prefillText: text,
-                returnTo: view,
+                returnTo: openAt(passage.bookIndex, passage.chapter, passage.verse),
               })
-            }
-            onEditSaved={(verseId) => setView({ kind: 'edit', verseId, returnTo: view })}
+            }}
+            onEditSaved={(verseId) => {
+              listen.stop()
+              setView({
+                kind: 'edit',
+                verseId,
+                returnTo: openAt(view.bookIndex, view.chapter, null),
+              })
+            }}
+            listen={listen}
           />
         </main>
       ) : null}
@@ -202,14 +273,20 @@ export default function App() {
               categoryId={activeCategoryId}
               onQueryChange={setQuery}
               onCategoryChange={setCategoryId}
-              onOpenVerse={(verseId) => setView({ kind: 'edit', verseId, returnTo: { kind: 'saved' } })}
+              onOpenVerse={(verseId) => {
+                listen.stop()
+                setView({ kind: 'edit', verseId, returnTo: { kind: 'saved' } })
+              }}
             />
           </main>
           <div className="dock">
             <button
               type="button"
               className="button button-block"
-              onClick={() => setView({ kind: 'edit', verseId: null, returnTo: { kind: 'saved' } })}
+              onClick={() => {
+                listen.stop()
+                setView({ kind: 'edit', verseId: null, returnTo: { kind: 'saved' } })
+              }}
             >
               {t('saveDock')}
             </button>
@@ -249,7 +326,11 @@ export default function App() {
                   returnTo: view.returnTo,
                 })
               }
-              onReadPassage={openPassage}
+              onReadPassage={(passage) => {
+                listen.stop()
+                openPassage(passage)
+              }}
+              listen={listen}
             />
           )}
         </main>

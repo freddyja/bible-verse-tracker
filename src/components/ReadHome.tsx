@@ -21,14 +21,14 @@ export function ReadHome({
   onOpenSaved,
   onOpenCategories,
 }: ReadHomeProps) {
-  const { language, t } = useLanguage()
+  const { language, versionId, versionName, t } = useLanguage()
   const [query, setQuery] = useState('')
   const [loaded, setLoaded] = useState<{ key: string; hits: ScriptureHit[] } | null>(null)
   const trimmed = query.trim()
   const direct = trimmed ? parseReference(trimmed) : null
   const bookMatch = trimmed && !direct ? matchBook(trimmed) : null
   const saved = trimmed ? filterVerses(verses, trimmed, null).slice(0, 8) : []
-  const searchKey = trimmed && !direct && bookMatch === null ? `${language}:${trimmed}` : ''
+  const searchKey = trimmed && !direct && bookMatch === null ? `${versionId}:${trimmed}` : ''
   const hits = loaded?.key === searchKey ? loaded.hits : []
   const searching = searchKey !== '' && loaded?.key !== searchKey
 
@@ -36,7 +36,7 @@ export function ReadHome({
     if (!searchKey) return
     let cancelled = false
     const timer = window.setTimeout(() => {
-      searchScripture(language, trimmed)
+      searchScripture(versionId, trimmed)
         .then((next) => {
           if (!cancelled) setLoaded({ key: searchKey, hits: next })
         })
@@ -48,7 +48,7 @@ export function ReadHome({
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [searchKey, language, trimmed])
+  }, [searchKey, versionId, trimmed])
 
   const oldBooks = BOOKS.slice(0, NEW_TESTAMENT_INDEX)
   const newBooks = BOOKS.slice(NEW_TESTAMENT_INDEX)
@@ -133,7 +133,7 @@ export function ReadHome({
             language={language}
             onOpen={onOpenBook}
           />
-          <p className="scripture-note">{t('scriptureNote')}</p>
+          <p className="scripture-note">{t('scriptureNote', { version: versionName })}</p>
           <button type="button" className="text-button" onClick={onOpenCategories}>
             {t('categories')}
           </button>
