@@ -1,5 +1,20 @@
 import { useLanguage } from '../i18n/useLanguage'
 
+function SpeakerIcon() {
+  return (
+    <svg className="listen-speaker" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M3 9.5v5h3.8L12 19V5L6.8 9.5H3z" />
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        d="M15.5 9.2a3.6 3.6 0 0 1 0 5.6M18.2 6.6a7 7 0 0 1 0 10.8"
+      />
+    </svg>
+  )
+}
+
 type ListenBarProps = {
   supported: boolean
   status: 'idle' | 'playing' | 'paused'
@@ -75,6 +90,7 @@ export function ListenBar({
             {t('listenChapter')}
           </button>
           <button type="button" className="button button-small" disabled={!canContinue} onClick={onContinue}>
+            <SpeakerIcon />
             {t('listenContinue')}
           </button>
         </div>
