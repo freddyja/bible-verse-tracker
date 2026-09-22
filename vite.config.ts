@@ -51,7 +51,33 @@ export default defineConfig(({ command }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest,json}'],
+        globIgnores: [
+          '**/scripture/web/**',
+          '**/scripture/asv/**',
+          '**/scripture/ylt/**',
+          '**/scripture/darby/**',
+          '**/scripture/webster/**',
+          '**/scripture/nheb/**',
+          '**/scripture/bsb/**',
+          '**/scripture/geneva/**',
+          '**/scripture/rv1865/**',
+          '**/scripture/nva/**',
+          '**/scripture/blivre-tr/**',
+        ],
         navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            urlPattern: /\/scripture\/.+\.json$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'scripture',
+              expiration: {
+                maxEntries: 900,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: false,

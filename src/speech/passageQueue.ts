@@ -32,23 +32,23 @@ function afterLoaded(
  * Null means this mode should stop.
  */
 export function passageAfterSync(
-  language: string,
+  versionId: string,
   passage: PassageRef,
   mode: ListenMode,
 ): PassageRef | null | undefined {
   if (mode === 'verse') return null
-  const chapters = peekBook(language, passage.bookIndex)
+  const chapters = peekBook(versionId, passage.bookIndex)
   if (!chapters) return undefined
   return afterLoaded(chapters, passage, mode)
 }
 
 /** The next verse to read, or null when this mode should stop. */
 export async function passageAfter(
-  language: string,
+  versionId: string,
   passage: PassageRef,
   mode: ListenMode,
 ): Promise<PassageRef | null> {
   if (mode === 'verse') return null
-  const chapters = await loadBook(language, passage.bookIndex)
+  const chapters = await loadBook(versionId, passage.bookIndex)
   return afterLoaded(chapters, passage, mode)
 }

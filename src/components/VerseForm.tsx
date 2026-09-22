@@ -55,7 +55,7 @@ export function VerseForm({
   onReadPassage,
   listen,
 }: VerseFormProps) {
-  const { language, t } = useLanguage()
+  const { versionId, t } = useLanguage()
   const label = (category: Category) => categoryDisplayName(category, t)
   const [reference, setReference] = useState(verse?.reference ?? initialReference ?? '')
   const [text, setText] = useState(verse?.text ?? initialText ?? '')
@@ -220,7 +220,7 @@ export function VerseForm({
           listen.start(
             'chapter',
             parsed,
-            peekVerse(language, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
+            peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
           )
         }}
         onContinue={() => {
@@ -229,7 +229,7 @@ export function VerseForm({
           listen.start(
             'continue',
             parsed,
-            peekVerse(language, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
+            peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
           )
         }}
         onPause={listen.pause}

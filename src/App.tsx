@@ -13,6 +13,7 @@ import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
 import { formatPassage, type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
+import { VersionPicker } from './components/VersionPicker'
 
 type ChapterView = {
   kind: 'chapter'
@@ -43,7 +44,7 @@ type View =
 
 export default function App() {
   const library = useLibrary()
-  const { language, t } = useLanguage()
+  const { language, versionId, t } = useLanguage()
   const [view, setView] = useState<View>({ kind: 'read' })
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
@@ -99,7 +100,7 @@ export default function App() {
     })
   }
 
-  const listen = useListen(language, followSpoken)
+  const listen = useListen(language, versionId, followSpoken)
 
   function goBack() {
     listen.stop()
@@ -132,7 +133,7 @@ export default function App() {
             </button>
           )}
           <h1 className="brand">{title}</h1>
-          <p className="bible-version">{t('bibleVersion')}</p>
+          <VersionPicker />
           {view.kind === 'read' ? (
             <>
               <p className="credit">Designed by Freddy Jara-Almonte.</p>
@@ -220,7 +221,7 @@ export default function App() {
       {view.kind === 'chapter' ? (
         <main>
           <ChapterReader
-            key={`${language}:${view.startBook}:${view.startChapter}:${view.startVerse ?? 0}`}
+            key={`${versionId}:${view.startBook}:${view.startChapter}:${view.startVerse ?? 0}`}
             startBook={view.startBook}
             startChapter={view.startChapter}
             startVerse={view.startVerse}

@@ -69,7 +69,7 @@ export function ChapterReader({
   onVisible,
   listen,
 }: ChapterReaderProps) {
-  const { language, t } = useLanguage()
+  const { language, versionId, t } = useLanguage()
   const [slices, setSlices] = useState<Slice[]>([])
   const [failed, setFailed] = useState(false)
   const [armed, setArmed] = useState(false)
@@ -115,7 +115,7 @@ export function ChapterReader({
 
   useEffect(() => {
     let cancelled = false
-    loadBook(language, startBook)
+    loadBook(versionId, startBook)
       .then((chapters) => {
         if (cancelled) return
         const verses = chapters[startChapter - 1]
@@ -131,7 +131,7 @@ export function ChapterReader({
     return () => {
       cancelled = true
     }
-  }, [language, startBook, startChapter])
+  }, [versionId, startBook, startChapter])
 
   useEffect(() => {
     if (slices.length === 0 || armed) return
@@ -173,7 +173,7 @@ export function ChapterReader({
     loadingRef.current = true
     setMoreFailed(false)
     try {
-      const chapters = await loadBook(language, following.bookIndex)
+      const chapters = await loadBook(versionId, following.bookIndex)
       const verses = chapters[following.chapter - 1]
       const slice = verses ? { bookIndex: following.bookIndex, chapter: following.chapter, verses } : null
       if (!slice) {
@@ -201,7 +201,7 @@ export function ChapterReader({
     } finally {
       loadingRef.current = false
     }
-  }, [language])
+  }, [versionId])
 
   const prepend = useCallback(async () => {
     if (!allowPrepend.current || loadingRef.current || window.scrollY > 180) return
@@ -212,7 +212,7 @@ export function ChapterReader({
     loadingRef.current = true
     setMoreFailed(false)
     try {
-      const chapters = await loadBook(language, previous.bookIndex)
+      const chapters = await loadBook(versionId, previous.bookIndex)
       const verses = chapters[previous.chapter - 1]
       const slice = verses ? { bookIndex: previous.bookIndex, chapter: previous.chapter, verses } : null
       if (!slice) {
@@ -231,7 +231,7 @@ export function ChapterReader({
     } finally {
       loadingRef.current = false
     }
-  }, [language])
+  }, [versionId])
 
   useEffect(() => {
     if (!armed) return
@@ -289,7 +289,7 @@ export function ChapterReader({
     if (selected === null) return
     const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
     let cancelled = false
-    relatedPassages(language, selected)
+    relatedPassages(versionId, selected)
       .then((rows) => {
         if (!cancelled) setRelated({ key, rows })
       })
@@ -299,7 +299,7 @@ export function ChapterReader({
     return () => {
       cancelled = true
     }
-  }, [language, selected])
+  }, [versionId, selected])
 
   useEffect(() => {
     const target = listen.passage
@@ -391,6 +391,7 @@ export function ChapterReader({
             )}
             <div className="scripture">
               {slice.verses.map((text, index) => {
+                if (!text.trim()) return null
                 const number = index + 1
                 const current = { bookIndex: slice.bookIndex, chapter: slice.chapter, verse: number }
                 const isSelected =

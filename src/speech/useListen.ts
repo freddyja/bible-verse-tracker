@@ -33,12 +33,17 @@ function ignoredSpeechError(error: string): boolean {
   return error === 'canceled' || error === 'interrupted' || error === 'cancelled'
 }
 
-export function useListen(language: Language, onMove: (passage: PassageRef) => void): ListenController {
+export function useListen(
+  language: Language,
+  versionId: string,
+  onMove: (passage: PassageRef) => void,
+): ListenController {
   const [session, setSession] = useState<Session | null>(null)
   const [refused, setRefused] = useState(false)
   const sessionRef = useRef<Session | null>(null)
   const onMoveRef = useRef(onMove)
   const languageRef = useRef(language)
+  const versionRef = useRef(versionId)
   const generationRef = useRef(0)
 
   useEffect(() => {
@@ -47,7 +52,8 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
 
   useEffect(() => {
     languageRef.current = language
-  }, [language])
+    versionRef.current = versionId
+  }, [language, versionId])
 
   function commit(next: Session | null) {
     sessionRef.current = next
@@ -73,13 +79,13 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
     const book = BOOKS[current.passage.bookIndex]
     if (!book || current.passage.bookIndex >= BOOKS.length - 1) return
     if (current.passage.chapter < book.chapters) return
-    void loadBook(languageRef.current, current.passage.bookIndex + 1)
+    void loadBook(versionRef.current, current.passage.bookIndex + 1)
   }
 
   function knownText(current: Session): string | null {
     const cached = current.passage
       ? peekVerse(
-          languageRef.current,
+          versionRef.current,
           current.passage.bookIndex,
           current.passage.chapter,
           current.passage.verse,
@@ -152,7 +158,7 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
     let text: string | null = null
     try {
       text = await loadVerse(
-        languageRef.current,
+        versionRef.current,
         current.passage.bookIndex,
         current.passage.chapter,
         current.passage.verse,
@@ -174,7 +180,7 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
       if (sessionRef.current?.generation === current.generation) commit(null)
       return
     }
-    const following = passageAfterSync(languageRef.current, current.passage, current.mode)
+    const following = passageAfterSync(versionRef.current, current.passage, current.mode)
     if (following === undefined) {
       void goNextAsync(current)
       return
@@ -186,7 +192,7 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
     if (!current.passage) return
     let following: PassageRef | null = null
     try {
-      following = await passageAfter(languageRef.current, current.passage, current.mode)
+      following = await passageAfter(versionRef.current, current.passage, current.mode)
     } catch {
       fail(current, false)
       return
@@ -244,7 +250,7 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
     }
     const spoken =
       text?.trim() ||
-      peekVerse(languageRef.current, passage.bookIndex, passage.chapter, passage.verse)
+      peekVerse(versionRef.current, passage.bookIndex, passage.chapter, passage.verse)
     const next: Session = {
       generation: generationRef.current,
       mode,
@@ -330,7 +336,7 @@ export function useListen(language: Language, onMove: (passage: PassageRef) => v
     sessionRef.current = null
     setSession(null)
     window.speechSynthesis?.cancel()
-  }, [language])
+  }, [language, versionId])
 
   return {
     supported: canSpeak(),

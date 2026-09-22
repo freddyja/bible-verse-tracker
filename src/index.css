@@ -122,13 +122,69 @@ button {
   line-height: 1.15;
 }
 
-.bible-version {
+.version-picker {
+  position: relative;
   margin: 0.35rem 0 0;
+  max-width: 24rem;
+}
+
+.version-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.1rem 0.2rem 0.1rem 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--clay);
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.3;
+  text-align: left;
+}
+
+.version-chevron {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.version-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  width: min(22rem, 86vw);
+  max-height: min(18rem, 50vh);
+  margin: 0;
+  padding: 0.3rem;
+  overflow: auto;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.version-option {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.version-option.is-selected {
+  background: var(--clay-soft);
+  color: var(--clay);
+  font-weight: 600;
 }
 
 .tagline,
