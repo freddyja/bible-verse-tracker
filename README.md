@@ -48,10 +48,14 @@ Verses, written notes, categories, and voice recordings live only in this browse
 
 Clearing this site’s data — or deleting the installed app’s storage — wipes the verses, notes, categories, and recordings. There is no cloud copy. An export can be added later if you want a backup.
 
-## Deploy later
+## On a phone
 
-The app is a static Vite build in `dist/`. Any static host works. No environment variables and no API keys are required.
+The installable site is published with GitHub Actions to GitHub Pages:
 
-**Vercel:** import the repo, use the Vite preset, and leave the output directory as `dist`. `vercel.json` tells the CDN not to cache `sw.js` for long, so an updated shell can replace the old one, and it serves the manifest with the right content type. The app does not use client-side URL routes; it lives on `/`.
+https://freddyja.github.io/bible-verse-tracker/
+
+`npm run build` uses that path (`/bible-verse-tracker/`). `npm run dev` stays at the site root so local work is unchanged. No environment variables and no API keys are required.
+
+**Vercel:** import the repo, use the Vite preset, set the output directory to `dist`, and set `VITE_BASE_PATH=/` so asset paths match a root domain. `vercel.json` tells the CDN not to cache `sw.js` for long, so an updated shell can replace the old one, and it serves the manifest with the right content type. The app does not use client-side URL routes.
 
 Verse records use stable ids plus `createdAt` / `updatedAt`, behind the functions in `src/data/db.ts`. When a saved verse is a passage in the bundled text, it also keeps that passage so it can be opened again in the chapter. Voice audio is stored beside the verse, keyed by that same id. `schemaVersion` on the local meta record is the hook for a later migration. A sync or account layer can mirror that model later without replacing the screens. None of that is required to use the app.

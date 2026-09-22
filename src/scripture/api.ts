@@ -6,6 +6,10 @@ export type ScriptureHit = PassageRef & { text: string }
 const books = new Map<string, string[][]>()
 const xrefs = new Map<string, number[][][][]>()
 
+function scriptureUrl(path: string): string {
+  return `${import.meta.env.BASE_URL}scripture/${path}`
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(url)
@@ -18,7 +22,7 @@ export async function loadBook(language: string, bookIndex: number): Promise<str
   const key = `${language}:${id}`
   const cached = books.get(key)
   if (cached) return cached
-  const chapters = await fetchJson<string[][]>(`/scripture/${language}/${id}.json`)
+  const chapters = await fetchJson<string[][]>(scriptureUrl(`${language}/${id}.json`))
   books.set(key, chapters)
   return chapters
 }
@@ -38,7 +42,7 @@ export async function loadCrossReferences(bookIndex: number): Promise<number[][]
   if (!id) return []
   const cached = xrefs.get(id)
   if (cached) return cached
-  const table = await fetchJson<number[][][][]>(`/scripture/xrefs/${id}.json`)
+  const table = await fetchJson<number[][][][]>(scriptureUrl(`xrefs/${id}.json`))
   xrefs.set(id, table)
   return table
 }

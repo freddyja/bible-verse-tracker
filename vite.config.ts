@@ -2,7 +2,13 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+const pagesBase = '/bible-verse-tracker/'
+
+export default defineConfig(({ command }) => {
+  const base = process.env.VITE_BASE_PATH ?? (command === 'serve' ? '/' : pagesBase)
+
+  return {
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -19,10 +25,10 @@ export default defineConfig({
         description: 'A study Bible to read, with private notes that stay on this device.',
         theme_color: '#f4efe6',
         background_color: '#f4efe6',
-        id: '/',
+        id: base,
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: base,
+        start_url: base,
         lang: 'en',
         icons: [
           {
@@ -52,4 +58,5 @@ export default defineConfig({
       },
     }),
   ],
+  }
 })
