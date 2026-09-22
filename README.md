@@ -52,11 +52,11 @@ Clearing this site’s data — or deleting the installed app’s storage — wi
 
 Open the app here:
 
-https://quiet-firefly-4219.zerodeploy.app/
+https://boisterous-cendol-61969f.netlify.app/
 
-That address is public HTTPS and works on a phone. Add it to the home screen from the browser menu. Notes stay on that phone.
+That address is public HTTPS on Netlify. Add it to the home screen from the browser menu. Notes stay on that phone. Claim the site from the Netlify link in the project notes within 60 minutes so it stays up.
 
-GitHub Pages is prepared for the same path as the other apps, https://freddyja.github.io/bible-verse-tracker/. The workflow in `.github/workflows/pages.yml` builds this branch and deploys when Pages is set to GitHub Actions in the repository settings. `npm run build` uses `/bible-verse-tracker/` for that host. `npm run dev` stays at the site root so local work is unchanged. No API keys are required.
+GitHub Pages stays prepared at https://freddyja.github.io/bible-verse-tracker/ for when this private repo can publish there. `npm run build` uses `/bible-verse-tracker/` for that host. `npm run dev` stays at the site root. No API keys are required.
 
 **Vercel:** import the repo, use the Vite preset, set the output directory to `dist`, and set `VITE_BASE_PATH=/` so asset paths match a root domain. `vercel.json` tells the CDN not to cache `sw.js` for long, so an updated shell can replace the old one, and it serves the manifest with the right content type. The app does not use client-side URL routes.
 
