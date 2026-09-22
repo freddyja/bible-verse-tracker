@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { getVoiceNote } from '../data/db'
 import { LibraryError } from '../data/errors'
 import { categoryNamesMatch, normalizeCategoryName } from '../data/names'
-import type { Category, Verse, VerseDraft } from '../data/types'
+import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { ConfirmDialog } from './ConfirmDialog'
+import { VoiceNoteControl } from './VoiceNoteControl'
 
 type VerseFormProps = {
   verse: Verse | null
   categories: Category[]
-  onSave: (draft: VerseDraft, id?: string) => Promise<void>
+  onSave: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onDelete: (id: string) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onDone: () => void
@@ -27,9 +29,31 @@ export function VerseForm({
   const [note, setNote] = useState(verse?.note ?? '')
   const [categoryIds, setCategoryIds] = useState<string[]>(verse?.categoryIds ?? [])
   const [newCategory, setNewCategory] = useState('')
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
+  const [voiceTouched, setVoiceTouched] = useState(false)
+  const [voiceReady, setVoiceReady] = useState(verse === null)
+  const [recording, setRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const verseId = verse?.id
+  useEffect(() => {
+    if (!verseId) return
+    let cancelled = false
+    getVoiceNote(verseId)
+      .then((record) => {
+        if (cancelled) return
+        setVoiceBlob(record?.blob ?? null)
+        setVoiceReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setVoiceReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [verseId])
 
   function toggleCategory(id: string) {
     setCategoryIds((current) =>
@@ -74,13 +98,20 @@ export function VerseForm({
       setError('Add the verse text.')
       return
     }
+    if (recording) {
+      setError('Stop the voice note, then save.')
+      return
+    }
+
+    const voice: VoiceNoteUpdate = !voiceTouched
+      ? { kind: 'keep' }
+      : voiceBlob
+        ? { kind: 'replace', blob: voiceBlob }
+        : { kind: 'remove' }
 
     setBusy(true)
     try {
-      await onSave(
-        { reference, text, note, categoryIds },
-        verse?.id,
-      )
+      await onSave({ reference, text, note, categoryIds }, verse?.id, voice)
       onDone()
     } catch (caught) {
       setError(caught instanceof LibraryError ? caught.message : 'Could not save this verse.')
@@ -141,6 +172,20 @@ export function VerseForm({
         />
       </label>
 
+      {voiceReady ? (
+        <VoiceNoteControl
+          blob={voiceBlob}
+          disabled={busy}
+          onChange={(next) => {
+            setVoiceBlob(next)
+            setVoiceTouched(true)
+          }}
+          onRecordingChange={setRecording}
+        />
+      ) : (
+        <p className="field-note">Opening voice note…</p>
+      )}
+
       <fieldset className="field">
         <legend className="label">Categories</legend>
         {categories.length === 0 ? (
@@ -193,9 +238,10 @@ export function VerseForm({
         </p>
       ) : null}
 
-      <button type="submit" className="button button-block" disabled={busy}>
+      <button type="submit" className="button button-block" disabled={busy || !voiceReady || recording}>
         Save verse
       </button>
+      {recording ? <p className="field-note">Stop the voice note, then save.</p> : null}
 
       {verse ? (
         <button
@@ -211,7 +257,7 @@ export function VerseForm({
       {confirmingDelete ? (
         <ConfirmDialog
           title="Delete this verse?"
-          message="This removes it from this device only."
+          message="This removes the verse and its voice note from this device."
           confirmLabel="Delete verse"
           onCancel={() => setConfirmingDelete(false)}
           onConfirm={() => void handleDelete()}

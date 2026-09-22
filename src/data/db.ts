@@ -3,11 +3,11 @@ import type { DBSchema, IDBPDatabase } from 'idb'
 import { LibraryError } from './errors'
 import { categoryNamesMatch, normalizeCategoryName } from './names'
 import { SEED_CATEGORIES, SEED_VERSES } from './seed'
-import type { Category, LibraryMeta, LibrarySnapshot, Verse, VerseDraft } from './types'
+import type { Category, LibraryMeta, LibrarySnapshot, Verse, VerseDraft, VoiceNoteRecord } from './types'
 import { SCHEMA_VERSION } from './types'
 
 const DB_NAME = 'bible-verse-tracker'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 interface VerseTrackerDB extends DBSchema {
   verses: {
@@ -24,6 +24,10 @@ interface VerseTrackerDB extends DBSchema {
     key: string
     value: LibraryMeta
   }
+  voiceNotes: {
+    key: string
+    value: VoiceNoteRecord
+  }
 }
 
 let databasePromise: Promise<IDBPDatabase<VerseTrackerDB>> | null = null
@@ -31,12 +35,17 @@ let databasePromise: Promise<IDBPDatabase<VerseTrackerDB>> | null = null
 function getDatabase(): Promise<IDBPDatabase<VerseTrackerDB>> {
   if (!databasePromise) {
     databasePromise = openDB<VerseTrackerDB>(DB_NAME, DB_VERSION, {
-      upgrade(database) {
-        const verses = database.createObjectStore('verses', { keyPath: 'id' })
-        verses.createIndex('by-updated', 'updatedAt')
-        const categories = database.createObjectStore('categories', { keyPath: 'id' })
-        categories.createIndex('by-name', 'name')
-        database.createObjectStore('meta', { keyPath: 'id' })
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) {
+          const verses = database.createObjectStore('verses', { keyPath: 'id' })
+          verses.createIndex('by-updated', 'updatedAt')
+          const categories = database.createObjectStore('categories', { keyPath: 'id' })
+          categories.createIndex('by-name', 'name')
+          database.createObjectStore('meta', { keyPath: 'id' })
+        }
+        if (oldVersion < 2 && !database.objectStoreNames.contains('voiceNotes')) {
+          database.createObjectStore('voiceNotes', { keyPath: 'verseId' })
+        }
       },
     }).catch((error: unknown) => {
       databasePromise = null
@@ -65,6 +74,8 @@ async function ensureSeeded(database: IDBPDatabase<VerseTrackerDB>): Promise<voi
       schemaVersion: SCHEMA_VERSION,
       seeded: true,
     })
+  } else if (meta.schemaVersion !== SCHEMA_VERSION) {
+    await metaStore.put({ ...meta, schemaVersion: SCHEMA_VERSION })
   }
 
   await transaction.done
@@ -76,17 +87,44 @@ function sortSnapshot(snapshot: LibrarySnapshot): LibrarySnapshot {
       (left, right) => right.createdAt - left.createdAt || left.reference.localeCompare(right.reference),
     ),
     categories: snapshot.categories.toSorted((left, right) => left.name.localeCompare(right.name)),
+    voiceNoteIds: snapshot.voiceNoteIds,
   }
 }
 
 export async function loadLibrary(): Promise<LibrarySnapshot> {
   const database = await getDatabase()
   await ensureSeeded(database)
-  const [verses, categories] = await Promise.all([
+  const [verses, categories, voiceNoteKeys] = await Promise.all([
     database.getAll('verses'),
     database.getAll('categories'),
+    database.getAllKeys('voiceNotes'),
   ])
-  return sortSnapshot({ verses, categories })
+  return sortSnapshot({
+    verses,
+    categories,
+    voiceNoteIds: voiceNoteKeys.map((key) => String(key)),
+  })
+}
+
+export async function getVoiceNote(verseId: string): Promise<VoiceNoteRecord | undefined> {
+  const database = await getDatabase()
+  return database.get('voiceNotes', verseId)
+}
+
+export async function putVoiceNote(verseId: string, blob: Blob): Promise<void> {
+  if (blob.size === 0) throw new LibraryError('That recording was empty.')
+  const database = await getDatabase()
+  await database.put('voiceNotes', {
+    verseId,
+    blob,
+    mimeType: blob.type || 'audio/webm',
+    updatedAt: Date.now(),
+  })
+}
+
+export async function deleteVoiceNote(verseId: string): Promise<void> {
+  const database = await getDatabase()
+  await database.delete('voiceNotes', verseId)
 }
 
 export async function saveVerse(draft: VerseDraft, id?: string): Promise<Verse> {
@@ -118,7 +156,10 @@ export async function saveVerse(draft: VerseDraft, id?: string): Promise<Verse> 
 
 export async function deleteVerse(id: string): Promise<void> {
   const database = await getDatabase()
-  await database.delete('verses', id)
+  const transaction = database.transaction(['verses', 'voiceNotes'], 'readwrite')
+  await transaction.objectStore('verses').delete(id)
+  await transaction.objectStore('voiceNotes').delete(id)
+  await transaction.done
 }
 
 export async function createCategory(name: string): Promise<Category> {

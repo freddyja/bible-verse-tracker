@@ -4,8 +4,10 @@
  * Ids are stable and every record carries createdAt/updatedAt so a later
  * sync or account layer can mirror these objects without a new shape.
  * schemaVersion on the meta record is the migration hook.
+ * Voice audio is a separate IndexedDB record keyed by verse id, not part of
+ * the verse object, so the verse stays a plain record.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export type Category = {
   id: string
@@ -39,7 +41,19 @@ export type LibraryMeta = {
   seeded: boolean
 }
 
+/** Audio kept on this device for one verse. */
+export type VoiceNoteRecord = {
+  verseId: string
+  blob: Blob
+  mimeType: string
+  updatedAt: number
+}
+
+/** What to do with the voice note when a verse is saved. */
+export type VoiceNoteUpdate = { kind: 'keep' } | { kind: 'replace'; blob: Blob } | { kind: 'remove' }
+
 export type LibrarySnapshot = {
   verses: Verse[]
   categories: Category[]
+  voiceNoteIds: string[]
 }

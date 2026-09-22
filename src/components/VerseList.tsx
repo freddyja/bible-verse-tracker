@@ -3,6 +3,7 @@ import type { Category, Verse } from '../data/types'
 type VerseListProps = {
   verses: Verse[]
   categories: Category[]
+  voiceNoteIds: readonly string[]
   totalCount: number
   query: string
   categoryId: string | null
@@ -18,6 +19,7 @@ function countLabel(count: number): string {
 export function VerseList({
   verses,
   categories,
+  voiceNoteIds,
   totalCount,
   query,
   categoryId,
@@ -27,6 +29,7 @@ export function VerseList({
 }: VerseListProps) {
   const activeCategory = categories.find((category) => category.id === categoryId) ?? null
   const categoriesById = new Map(categories.map((category) => [category.id, category]))
+  const voices = new Set(voiceNoteIds)
 
   let emptyMessage = 'No verses yet. When one stays with you, save it here.'
   if (totalCount > 0 && activeCategory && query.trim()) {
@@ -85,6 +88,7 @@ export function VerseList({
               const category = categoriesById.get(id)
               return category ? [category] : []
             })
+            const hasVoice = voices.has(verse.id)
             return (
               <li key={verse.id}>
                 <article className="verse-card">
@@ -93,8 +97,9 @@ export function VerseList({
                     <span className="verse-text">{verse.text}</span>
                     {verse.note ? <span className="note">{verse.note}</span> : null}
                   </button>
-                  {verseCategories.length > 0 ? (
+                  {verseCategories.length > 0 || hasVoice ? (
                     <div className="card-pills">
+                      {hasVoice ? <span className="pill pill-static">Voice note</span> : null}
                       {verseCategories.map((category) => (
                         <button
                           key={category.id}

@@ -3,23 +3,27 @@ import {
   createCategory as createCategoryRecord,
   deleteCategory as deleteCategoryRecord,
   deleteVerse as deleteVerseRecord,
+  deleteVoiceNote,
   loadLibrary,
+  putVoiceNote,
   renameCategory as renameCategoryRecord,
   saveVerse as saveVerseRecord,
 } from '../data/db'
-import type { Category, Verse, VerseDraft } from '../data/types'
+import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 
 type LibraryStatus = 'loading' | 'ready' | 'error'
 
 export function useLibrary() {
   const [verses, setVerses] = useState<Verse[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [voiceNoteIds, setVoiceNoteIds] = useState<string[]>([])
   const [status, setStatus] = useState<LibraryStatus>('loading')
 
   const refresh = useCallback(async () => {
     const snapshot = await loadLibrary()
     setVerses(snapshot.verses)
     setCategories(snapshot.categories)
+    setVoiceNoteIds(snapshot.voiceNoteIds)
   }, [])
 
   useEffect(() => {
@@ -29,6 +33,7 @@ export function useLibrary() {
         if (cancelled) return
         setVerses(snapshot.verses)
         setCategories(snapshot.categories)
+        setVoiceNoteIds(snapshot.voiceNoteIds)
         setStatus('ready')
       })
       .catch(() => {
@@ -50,8 +55,10 @@ export function useLibrary() {
   }, [refresh])
 
   const saveVerse = useCallback(
-    async (draft: VerseDraft, id?: string) => {
-      await saveVerseRecord(draft, id)
+    async (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => {
+      const verse = await saveVerseRecord(draft, id)
+      if (voice.kind === 'replace') await putVoiceNote(verse.id, voice.blob)
+      if (voice.kind === 'remove') await deleteVoiceNote(verse.id)
       await refresh()
     },
     [refresh],
@@ -93,6 +100,7 @@ export function useLibrary() {
   return {
     verses,
     categories,
+    voiceNoteIds,
     status,
     reload,
     saveVerse,

@@ -81,6 +81,7 @@ export default function App() {
             <VerseList
               verses={visibleVerses}
               categories={library.categories}
+              voiceNoteIds={library.voiceNoteIds}
               totalCount={library.verses.length}
               query={query}
               categoryId={activeCategoryId}
@@ -97,7 +98,7 @@ export default function App() {
             >
               Save a verse
             </button>
-            <p className="privacy">Saved only on this device.</p>
+            <p className="privacy">On this device only. Clearing this site’s data removes them.</p>
           </div>
         </>
       ) : null}

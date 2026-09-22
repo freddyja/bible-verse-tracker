@@ -19,6 +19,7 @@ export default defineConfig({
         description: 'A private place to keep biblical verses that matter to you.',
         theme_color: '#f4efe6',
         background_color: '#f4efe6',
+        id: '/',
         display: 'standalone',
         scope: '/',
         start_url: '/',
