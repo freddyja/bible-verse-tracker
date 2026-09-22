@@ -46,7 +46,10 @@ export default function App() {
           )}
           <h1 className="brand">{title}</h1>
           {view.kind === 'list' ? (
-            <p className="tagline">A private place for verses that stay with you.</p>
+            <>
+              <p className="credit">Designed by Freddy Jara-Almonte.</p>
+              <p className="tagline">A private place for verses that stay with you.</p>
+            </>
           ) : null}
         </div>
         {view.kind === 'list' ? (
