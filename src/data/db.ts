@@ -1,0 +1,186 @@
+import { openDB } from 'idb'
+import type { DBSchema, IDBPDatabase } from 'idb'
+import { LibraryError } from './errors'
+import { categoryNamesMatch, normalizeCategoryName } from './names'
+import { SEED_CATEGORIES, SEED_VERSES } from './seed'
+import type { Category, LibraryMeta, LibrarySnapshot, Verse, VerseDraft } from './types'
+import { SCHEMA_VERSION } from './types'
+
+const DB_NAME = 'bible-verse-tracker'
+const DB_VERSION = 1
+
+interface VerseTrackerDB extends DBSchema {
+  verses: {
+    key: string
+    value: Verse
+    indexes: { 'by-updated': number }
+  }
+  categories: {
+    key: string
+    value: Category
+    indexes: { 'by-name': string }
+  }
+  meta: {
+    key: string
+    value: LibraryMeta
+  }
+}
+
+let databasePromise: Promise<IDBPDatabase<VerseTrackerDB>> | null = null
+
+function getDatabase(): Promise<IDBPDatabase<VerseTrackerDB>> {
+  if (!databasePromise) {
+    databasePromise = openDB<VerseTrackerDB>(DB_NAME, DB_VERSION, {
+      upgrade(database) {
+        const verses = database.createObjectStore('verses', { keyPath: 'id' })
+        verses.createIndex('by-updated', 'updatedAt')
+        const categories = database.createObjectStore('categories', { keyPath: 'id' })
+        categories.createIndex('by-name', 'name')
+        database.createObjectStore('meta', { keyPath: 'id' })
+      },
+    }).catch((error: unknown) => {
+      databasePromise = null
+      throw error
+    })
+  }
+  return databasePromise
+}
+
+async function ensureSeeded(database: IDBPDatabase<VerseTrackerDB>): Promise<void> {
+  const transaction = database.transaction(['meta', 'verses', 'categories'], 'readwrite')
+  const metaStore = transaction.objectStore('meta')
+  const verseStore = transaction.objectStore('verses')
+  const categoryStore = transaction.objectStore('categories')
+  const meta = await metaStore.get('app')
+
+  if (!meta?.seeded) {
+    const verseCount = await verseStore.count()
+    const categoryCount = await categoryStore.count()
+    if (verseCount === 0 && categoryCount === 0) {
+      for (const category of SEED_CATEGORIES) await categoryStore.put(category)
+      for (const verse of SEED_VERSES) await verseStore.put(verse)
+    }
+    await metaStore.put({
+      id: 'app',
+      schemaVersion: SCHEMA_VERSION,
+      seeded: true,
+    })
+  }
+
+  await transaction.done
+}
+
+function sortSnapshot(snapshot: LibrarySnapshot): LibrarySnapshot {
+  return {
+    verses: snapshot.verses.toSorted(
+      (left, right) => right.createdAt - left.createdAt || left.reference.localeCompare(right.reference),
+    ),
+    categories: snapshot.categories.toSorted((left, right) => left.name.localeCompare(right.name)),
+  }
+}
+
+export async function loadLibrary(): Promise<LibrarySnapshot> {
+  const database = await getDatabase()
+  await ensureSeeded(database)
+  const [verses, categories] = await Promise.all([
+    database.getAll('verses'),
+    database.getAll('categories'),
+  ])
+  return sortSnapshot({ verses, categories })
+}
+
+export async function saveVerse(draft: VerseDraft, id?: string): Promise<Verse> {
+  const reference = draft.reference.trim()
+  const text = draft.text.trim()
+  const note = draft.note.trim()
+  if (!reference) throw new LibraryError('Add a reference.')
+  if (!text) throw new LibraryError('Add the verse text.')
+
+  const database = await getDatabase()
+  const existing = id ? await database.get('verses', id) : undefined
+  if (id && !existing) throw new LibraryError('That verse is no longer on this device.')
+
+  const categories = await database.getAll('categories')
+  const validIds = new Set(categories.map((category) => category.id))
+  const now = Date.now()
+  const verse: Verse = {
+    id: existing?.id ?? crypto.randomUUID(),
+    reference,
+    text,
+    note,
+    categoryIds: [...new Set(draft.categoryIds.filter((categoryId) => validIds.has(categoryId)))],
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  }
+  await database.put('verses', verse)
+  return verse
+}
+
+export async function deleteVerse(id: string): Promise<void> {
+  const database = await getDatabase()
+  await database.delete('verses', id)
+}
+
+export async function createCategory(name: string): Promise<Category> {
+  const normalized = normalizeCategoryName(name)
+  if (!normalized) throw new LibraryError('Give the category a name.')
+
+  const database = await getDatabase()
+  const existing = await database.getAll('categories')
+  if (existing.some((category) => categoryNamesMatch(category.name, normalized))) {
+    throw new LibraryError('That category already exists.')
+  }
+
+  const now = Date.now()
+  const category: Category = {
+    id: crypto.randomUUID(),
+    name: normalized,
+    createdAt: now,
+    updatedAt: now,
+  }
+  await database.put('categories', category)
+  return category
+}
+
+export async function renameCategory(id: string, name: string): Promise<void> {
+  const normalized = normalizeCategoryName(name)
+  if (!normalized) throw new LibraryError('Give the category a name.')
+
+  const database = await getDatabase()
+  const categories = await database.getAll('categories')
+  const current = categories.find((category) => category.id === id)
+  if (!current) throw new LibraryError('That category is no longer on this device.')
+  if (
+    categories.some(
+      (category) => category.id !== id && categoryNamesMatch(category.name, normalized),
+    )
+  ) {
+    throw new LibraryError('That category already exists.')
+  }
+
+  await database.put('categories', {
+    ...current,
+    name: normalized,
+    updatedAt: Date.now(),
+  })
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const database = await getDatabase()
+  const transaction = database.transaction(['categories', 'verses'], 'readwrite')
+  const verseStore = transaction.objectStore('verses')
+  await transaction.objectStore('categories').delete(id)
+  const verses = await verseStore.getAll()
+  const now = Date.now()
+
+  for (const verse of verses) {
+    if (!verse.categoryIds.includes(id)) continue
+    await verseStore.put({
+      ...verse,
+      categoryIds: verse.categoryIds.filter((categoryId) => categoryId !== id),
+      updatedAt: now,
+    })
+  }
+
+  await transaction.done
+}
