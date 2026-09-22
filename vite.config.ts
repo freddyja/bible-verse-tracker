@@ -50,7 +50,7 @@ export default defineConfig(({ command }) => {
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2,webmanifest,json}'],
         globIgnores: [
           '**/scripture/web/**',
           '**/scripture/asv/**',

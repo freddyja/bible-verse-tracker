@@ -740,6 +740,70 @@ main {
   font-weight: 600;
 }
 
+.votd {
+  margin: 0.2rem 0 1.15rem;
+}
+
+.votd-greeting {
+  margin: 0 0 0.75rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.votd-card {
+  --votd-shade: linear-gradient(
+    180deg,
+    rgba(28, 22, 16, 0.46) 0%,
+    rgba(28, 22, 16, 0.08) 40%,
+    rgba(16, 12, 10, 0.68) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 26rem;
+  margin: 0;
+  padding: 1.35rem 1.3rem 1.55rem;
+  border: 0;
+  border-radius: 28px;
+  background-color: #1c1915;
+  background-image: var(--votd-shade), var(--votd-photo);
+  background-size: cover;
+  background-position: center;
+  color: #f7f4ef;
+  text-align: left;
+  box-shadow: 0 18px 40px rgba(28, 22, 16, 0.18);
+}
+
+.votd-kicker {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.votd-ref {
+  margin-top: 0.28rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
+}
+
+.votd-text {
+  margin-top: auto;
+  padding-top: 2.4rem;
+  max-width: 36rem;
+  font-family: var(--font-verse);
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.45);
+}
+
 .scripture-note,
 .tap-hint {
   margin: 0.85rem 0 0.4rem;

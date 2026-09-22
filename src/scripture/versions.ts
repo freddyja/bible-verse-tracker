@@ -5,6 +5,7 @@ export type BibleVersion = {
   language: Language
   folder: string
   name: string
+  abbr: string
   license: string
 }
 
@@ -15,6 +16,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'en',
     name: 'King James Version (1769)',
+    abbr: 'KJV',
     license: 'Public domain',
   },
   {
@@ -22,6 +24,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'web',
     name: 'World English Bible',
+    abbr: 'WEB',
     license: 'Public domain',
   },
   {
@@ -29,6 +32,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'asv',
     name: 'American Standard Version (1901)',
+    abbr: 'ASV',
     license: 'Public domain',
   },
   {
@@ -36,6 +40,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'ylt',
     name: 'Young’s Literal Translation',
+    abbr: 'YLT',
     license: 'Public domain',
   },
   {
@@ -43,6 +48,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'darby',
     name: 'Darby Translation',
+    abbr: 'DARBY',
     license: 'Public domain',
   },
   {
@@ -50,6 +56,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'webster',
     name: 'Webster Bible (1833)',
+    abbr: 'WEBSTER',
     license: 'Public domain',
   },
   {
@@ -57,6 +64,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'nheb',
     name: 'New Heart English Bible',
+    abbr: 'NHEB',
     license: 'Public domain',
   },
   {
@@ -64,6 +72,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'bsb',
     name: 'Berean Standard Bible',
+    abbr: 'BSB',
     license: 'CC0',
   },
   {
@@ -71,6 +80,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'en',
     folder: 'geneva',
     name: 'Geneva Bible (1599)',
+    abbr: 'GNV',
     license: 'Public domain',
   },
   {
@@ -78,6 +88,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'es',
     folder: 'es',
     name: 'Reina-Valera 1909',
+    abbr: 'RV1909',
     license: 'Public domain',
   },
   {
@@ -85,6 +96,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'es',
     folder: 'rv1865',
     name: 'Reina-Valera 1865',
+    abbr: 'RV1865',
     license: 'Public domain',
   },
   {
@@ -92,6 +104,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'pt',
     folder: 'pt',
     name: 'Bíblia Livre',
+    abbr: 'BL',
     license: 'CC BY 3.0 Brazil',
   },
   {
@@ -99,6 +112,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'pt',
     folder: 'blivre-tr',
     name: 'Bíblia Livre (Textus Receptus)',
+    abbr: 'BLTR',
     license: 'CC BY 3.0 Brazil',
   },
   {
@@ -106,6 +120,7 @@ export const VERSIONS: readonly BibleVersion[] = [
     language: 'pt',
     folder: 'nva',
     name: 'Nova Versão de Acesso Livre',
+    abbr: 'NVA',
     license: 'CC BY-SA 4.0',
   },
 ]
