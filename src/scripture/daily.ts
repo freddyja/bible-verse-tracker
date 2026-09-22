@@ -80,6 +80,11 @@ export function dailyPhoto(date = new Date()): string {
   return PHOTOS[localDayNumber(date) % PHOTOS.length]
 }
 
+/** A local calendar date that many days before `from`. */
+export function daysAgo(offset: number, from = new Date()): Date {
+  return new Date(from.getFullYear(), from.getMonth(), from.getDate() - offset)
+}
+
 export function greetingKey(date = new Date()): 'greetingMorning' | 'greetingAfternoon' | 'greetingEvening' {
   const hour = date.getHours()
   if (hour < 12) return 'greetingMorning'
