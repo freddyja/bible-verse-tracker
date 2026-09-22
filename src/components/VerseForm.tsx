@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { getVoiceNote } from '../data/db'
 import { LibraryError } from '../data/errors'
-import { categoryNamesMatch, normalizeCategoryName } from '../data/names'
+import { categoryDisplayName, findCategoryByTypedName } from '../data/categoryLabel'
+import { normalizeCategoryName } from '../data/names'
 import type { Category, Passage, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { parseReference } from '../scripture/passages'
 import { useLanguage } from '../i18n/useLanguage'
@@ -50,6 +51,7 @@ export function VerseForm({
   onReadPassage,
 }: VerseFormProps) {
   const { t } = useLanguage()
+  const label = (category: Category) => categoryDisplayName(category, t)
   const [reference, setReference] = useState(verse?.reference ?? initialReference ?? '')
   const [text, setText] = useState(verse?.text ?? initialText ?? '')
   const [note, setNote] = useState(verse?.note ?? '')
@@ -94,7 +96,7 @@ export function VerseForm({
       setError(t('categoryNameRequired'))
       return
     }
-    const existing = categories.find((category) => categoryNamesMatch(category.name, name))
+    const existing = findCategoryByTypedName(categories, name)
     if (existing) {
       setCategoryIds((current) => (current.includes(existing.id) ? current : [...current, existing.id]))
       setNewCategory('')
@@ -258,7 +260,7 @@ export function VerseForm({
                   checked={categoryIds.includes(category.id)}
                   onChange={() => toggleCategory(category.id)}
                 />
-                <span>{category.name}</span>
+                <span>{label(category)}</span>
               </label>
             ))}
           </div>

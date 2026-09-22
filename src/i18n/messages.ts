@@ -114,13 +114,17 @@ const en = {
   nextChapter: 'Next',
   relatedLoading: 'Gathering related verses…',
   tapHint: 'Tap a verse for related passages, or to keep it.',
+  catComfort: 'Comfort',
+  catCourage: 'Courage',
+  catMarriage: 'Marriage',
+  catLeadership: 'Leadership',
 } as const
 
 export type MessageKey = keyof typeof en
 
 const es: Record<MessageKey, string> = {
   appTitle: 'Escritura',
-  tagline: 'Lee las Escrituras, y guarda los versículos que se quedan contigo.',
+  tagline: 'Lee las Escrituras y guarda los versículos que se quedan contigo.',
   categoriesTitle: 'Categorías',
   editTitle: 'Editar versículo',
   newTitle: 'Guardar un versículo',
@@ -148,7 +152,7 @@ const es: Record<MessageKey, string> = {
   referencePlaceholder: 'Juan 3:16, o como tú lo escribas',
   verse: 'Versículo',
   versePlaceholder: 'Las palabras que quieres guardar',
-  why: 'Por qué te llegó',
+  why: 'Por qué te marcó',
   optional: 'Opcional',
   notePlaceholder: 'Unas palabras para después',
   voiceNote: 'Nota de voz',
@@ -233,6 +237,10 @@ const es: Record<MessageKey, string> = {
   nextChapter: 'Siguiente',
   relatedLoading: 'Reuniendo versículos relacionados…',
   tapHint: 'Toca un versículo para ver pasajes relacionados, o para guardarlo.',
+  catComfort: 'Consuelo',
+  catCourage: 'Valentía',
+  catMarriage: 'Matrimonio',
+  catLeadership: 'Liderazgo',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -352,6 +360,10 @@ const pt: Record<MessageKey, string> = {
   nextChapter: 'Seguinte',
   relatedLoading: 'Reunindo versículos relacionados…',
   tapHint: 'Toque um versículo para ver passagens relacionadas, ou para guardá-lo.',
+  catComfort: 'Consolo',
+  catCourage: 'Coragem',
+  catMarriage: 'Casamento',
+  catLeadership: 'Liderança',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }

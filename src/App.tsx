@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
@@ -61,6 +61,10 @@ export default function App() {
   if (view.kind === 'saved') title = t('saved')
   if (view.kind === 'categories') title = t('categoriesTitle')
   if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
+
+  useEffect(() => {
+    document.title = title
+  }, [title])
 
   function goBack() {
     if (view.kind === 'book' || view.kind === 'saved') setView({ kind: 'read' })

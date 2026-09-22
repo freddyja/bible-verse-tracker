@@ -1,3 +1,4 @@
+import { categoryDisplayName } from '../data/categoryLabel'
 import type { Category, Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 
@@ -25,6 +26,7 @@ export function VerseList({
   onOpenVerse,
 }: VerseListProps) {
   const { t } = useLanguage()
+  const label = (category: Category) => categoryDisplayName(category, t)
   const activeCategory = categories.find((category) => category.id === categoryId) ?? null
   const categoriesById = new Map(categories.map((category) => [category.id, category]))
   const voices = new Set(voiceNoteIds)
@@ -32,11 +34,11 @@ export function VerseList({
 
   let emptyMessage = t('emptyNone')
   if (totalCount > 0 && activeCategory && trimmedQuery) {
-    emptyMessage = t('emptySearchCategory', { name: activeCategory.name, query: trimmedQuery })
+    emptyMessage = t('emptySearchCategory', { name: label(activeCategory), query: trimmedQuery })
   } else if (totalCount > 0 && trimmedQuery) {
     emptyMessage = t('emptySearch', { query: trimmedQuery })
   } else if (totalCount > 0 && activeCategory) {
-    emptyMessage = t('emptyCategory', { name: activeCategory.name })
+    emptyMessage = t('emptyCategory', { name: label(activeCategory) })
   }
 
   return (
@@ -67,10 +69,10 @@ export function VerseList({
             type="button"
             className="chip"
             aria-pressed={category.id === categoryId}
-            onClick={() => onCategoryChange(category.id)}
-          >
-            {category.name}
-          </button>
+          onClick={() => onCategoryChange(category.id)}
+        >
+            {label(category)}
+        </button>
         ))}
       </div>
 
@@ -106,7 +108,7 @@ export function VerseList({
                           className="pill"
                           onClick={() => onCategoryChange(category.id)}
                         >
-                          {category.name}
+                          {label(category)}
                         </button>
                       ))}
                     </div>

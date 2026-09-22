@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import {
+  categoryDisplayName,
+  findCategoryByTypedName,
+  storedNameForRename,
+} from '../data/categoryLabel'
 import { LibraryError } from '../data/errors'
 import type { Category } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
@@ -24,6 +29,7 @@ function errorText(
 
 export function CategoryManager({ categories, onCreate, onRename, onDelete }: CategoryManagerProps) {
   const { t } = useLanguage()
+  const label = (category: Category) => categoryDisplayName(category, t)
   const [name, setName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -33,6 +39,10 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (findCategoryByTypedName(categories, name)) {
+      setError(t('categoryExists'))
+      return
+    }
     setBusy(true)
     try {
       await onCreate(name)
@@ -48,9 +58,16 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
   async function handleRename(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!editingId) return
+    const current = categories.find((category) => category.id === editingId)
+    if (!current) return
+    const clash = findCategoryByTypedName(categories, editingName)
+    if (clash && clash.id !== editingId) {
+      setError(t('categoryExists'))
+      return
+    }
     setBusy(true)
     try {
-      await onRename(editingId, editingName)
+      await onRename(editingId, storedNameForRename(current, editingName))
       setEditingId(null)
       setEditingName('')
       setError(null)
@@ -111,7 +128,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
               {editingId === category.id ? (
                 <form className="rename-row" onSubmit={(event) => void handleRename(event)}>
                   <label className="sr-only" htmlFor={`rename-${category.id}`}>
-                    {t('renameNamed', { name: category.name })}
+                    {t('renameNamed', { name: label(category) })}
                   </label>
                   <input
                     id={`rename-${category.id}`}
@@ -135,14 +152,14 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
                 </form>
               ) : (
                 <>
-                  <span className="category-name">{category.name}</span>
+                  <span className="category-name">{label(category)}</span>
                   <div className="row-actions">
                     <button
                       type="button"
                       className="text-button"
                       onClick={() => {
                         setEditingId(category.id)
-                        setEditingName(category.name)
+                        setEditingName(label(category))
                         setError(null)
                       }}
                     >
@@ -165,7 +182,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
 
       {pendingDelete ? (
         <ConfirmDialog
-          title={t('deleteCategoryTitle', { name: pendingDelete.name })}
+          title={t('deleteCategoryTitle', { name: label(pendingDelete) })}
           message={t('deleteCategoryMessage')}
           confirmLabel={t('deleteCategoryConfirm')}
           onCancel={() => setPendingDelete(null)}

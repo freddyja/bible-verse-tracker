@@ -6,7 +6,13 @@ A study Bible Freddy can read on his phone, with a private place for the verses 
 
 Open a book, then a chapter. Tap a verse. Related Verses lists a few passages often read beside it, with the words themselves, so he can follow them. It is a reading help, not a sermon or a commentary.
 
-The English text is the King James Version (1769), public domain. Spanish is the Reina-Valera 1909, public domain. Portuguese is the Bíblia Livre (Creative Commons Attribution 3.0 Brazil). The language control switches both the app’s labels and the Scripture he is reading. Cross-references are a short selection from [Open Bible](https://www.openbible.info/labs/cross-references/), used under Creative Commons Attribution. Book names follow the language he chose. Verse numbers are the traditional Protestant numbering.
+The English text is the King James Version (1769), public domain. Spanish is the Reina-Valera 1909, public domain. Portuguese is the Bíblia Livre (Creative Commons Attribution 3.0 Brazil). Cross-references are a short selection from [Open Bible](https://www.openbible.info/labs/cross-references/), used under Creative Commons Attribution. Book names follow the language he chose. Verse numbers are the traditional Protestant numbering.
+
+## Language
+
+The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. EN, ES, and PT in the header remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.
+
+Buttons, empty states, and the four starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. The line under the home title stays “Designed by Freddy Jara-Almonte.”
 
 ## Keep
 
@@ -25,7 +31,7 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173).
 
-The first visit includes three example verses and starter categories — Comfort, Courage, Marriage, and Leadership — so the saved shelf is not empty. Edit or delete them like anything else. They are not restored after you remove them.
+The first visit includes three example verses and those four starter categories, so the saved shelf is not empty. Edit or delete them like anything else. They are not restored after you remove them. The example verses stay in the wording they were saved with.
 
 ## Production build
 
