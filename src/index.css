@@ -804,6 +804,76 @@ main {
   text-shadow: 0 1px 14px rgba(0, 0, 0, 0.45);
 }
 
+.votd-past {
+  margin-top: 0.75rem;
+}
+
+.votd-past-toggle {
+  width: 100%;
+}
+
+.votd-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.votd-past-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--ink);
+  text-align: left;
+}
+
+.votd-thumb {
+  width: 4.4rem;
+  min-height: 4.4rem;
+  flex: none;
+  border-radius: 12px;
+  background-color: #1c1915;
+  background-size: cover;
+  background-position: center;
+}
+
+.votd-past-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  padding: 0.15rem 0.2rem 0.15rem 0;
+}
+
+.votd-past-date {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.votd-past-ref {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.votd-past-snippet {
+  color: var(--ink-soft);
+  font-family: var(--font-verse);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.votd-earlier {
+  margin-top: 0.35rem;
+}
+
 .scripture-note,
 .tap-hint {
   margin: 0.85rem 0 0.4rem;
