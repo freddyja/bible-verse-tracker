@@ -121,6 +121,7 @@ export default function App() {
             </button>
           )}
           <h1 className="brand">{title}</h1>
+          <p className="bible-version">{t('bibleVersion')}</p>
           {view.kind === 'read' ? (
             <>
               <p className="credit">Designed by Freddy Jara-Almonte.</p>

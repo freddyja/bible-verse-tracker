@@ -14,7 +14,7 @@ The English text is the King James Version (1769), public domain. Spanish is the
 
 The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. EN, ES, and PT in the header remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.
 
-Buttons, empty states, and the four starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. The line under the home title stays “Designed by Freddy Jara-Almonte.”
+Buttons, empty states, and the four starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. The line under the home title stays “Designed by Freddy Jara-Almonte.” The Bible version under the title follows the language: King James Version, Reina-Valera 1909, or Bíblia Livre.
 
 ## Keep
 
