@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { LibraryError } from '../data/errors'
 import type { Category } from '../data/types'
+import { useLanguage } from '../i18n/useLanguage'
+import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
 
 type CategoryManagerProps = {
@@ -11,7 +13,17 @@ type CategoryManagerProps = {
   onDelete: (id: string) => Promise<void>
 }
 
+function errorText(
+  caught: unknown,
+  t: (key: MessageKey) => string,
+  fallback: MessageKey,
+): string {
+  if (caught instanceof LibraryError) return t(caught.code)
+  return t(fallback)
+}
+
 export function CategoryManager({ categories, onCreate, onRename, onDelete }: CategoryManagerProps) {
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -27,7 +39,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
       setName('')
       setError(null)
     } catch (caught) {
-      setError(caught instanceof LibraryError ? caught.message : 'Could not add that category.')
+      setError(errorText(caught, t, 'couldNotAddCategory'))
     } finally {
       setBusy(false)
     }
@@ -43,7 +55,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
       setEditingName('')
       setError(null)
     } catch (caught) {
-      setError(caught instanceof LibraryError ? caught.message : 'Could not rename that category.')
+      setError(errorText(caught, t, 'couldNotRename'))
     } finally {
       setBusy(false)
     }
@@ -56,7 +68,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
       setPendingDelete(null)
       setError(null)
     } catch {
-      setError('Could not delete that category.')
+      setError(t('couldNotDeleteCategory'))
       setPendingDelete(null)
     } finally {
       setBusy(false)
@@ -65,24 +77,22 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
 
   return (
     <section className="categories">
-      <p className="lede">
-        Names you choose. A verse can belong to more than one, and deleting a category leaves the verse itself.
-      </p>
+      <p className="lede">{t('categoryLede')}</p>
 
       <form className="add-row" onSubmit={(event) => void handleCreate(event)}>
         <label className="sr-only" htmlFor="category-name">
-          New category
+          {t('newCategory')}
         </label>
         <input
           id="category-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="New category"
+          placeholder={t('newCategory')}
           autoComplete="off"
           autoCapitalize="sentences"
         />
         <button type="submit" className="button" disabled={busy}>
-          Add
+          {t('add')}
         </button>
       </form>
 
@@ -93,7 +103,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
       ) : null}
 
       {categories.length === 0 ? (
-        <p className="empty">No categories yet.</p>
+        <p className="empty">{t('noCategories')}</p>
       ) : (
         <ul className="category-list">
           {categories.map((category) => (
@@ -101,7 +111,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
               {editingId === category.id ? (
                 <form className="rename-row" onSubmit={(event) => void handleRename(event)}>
                   <label className="sr-only" htmlFor={`rename-${category.id}`}>
-                    Rename {category.name}
+                    {t('renameNamed', { name: category.name })}
                   </label>
                   <input
                     id={`rename-${category.id}`}
@@ -110,7 +120,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
                     autoFocus
                   />
                   <button type="submit" className="button button-small" disabled={busy}>
-                    Save
+                    {t('save')}
                   </button>
                   <button
                     type="button"
@@ -120,7 +130,7 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
                       setError(null)
                     }}
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                 </form>
               ) : (
@@ -136,14 +146,14 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
                         setError(null)
                       }}
                     >
-                      Rename
+                      {t('rename')}
                     </button>
                     <button
                       type="button"
                       className="text-button text-button-danger"
                       onClick={() => setPendingDelete(category)}
                     >
-                      Delete
+                      {t('delete')}
                     </button>
                   </div>
                 </>
@@ -155,9 +165,9 @@ export function CategoryManager({ categories, onCreate, onRename, onDelete }: Ca
 
       {pendingDelete ? (
         <ConfirmDialog
-          title={`Delete “${pendingDelete.name}”?`}
-          message="Verses stay. They just lose this category."
-          confirmLabel="Delete category"
+          title={t('deleteCategoryTitle', { name: pendingDelete.name })}
+          message={t('deleteCategoryMessage')}
+          confirmLabel={t('deleteCategoryConfirm')}
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => void handleDelete(pendingDelete)}
         />

@@ -17,6 +17,10 @@ The first visit includes three example verses (KJV) and starter categories — C
 
 Search looks through the reference, the verse, and the written note. Category chips filter the list. A verse can sit in more than one category. On the verse itself, Record / Stop / Play keeps an optional voice note. If the microphone isn’t available, the written note still saves.
 
+Related Verses, on the verse you are reading or saving, opens a short panel. It shows other verses you saved in the same categories, and a handful of cross-references when the reference is one the app knows. That list lives in the app — no account and no Bible service. Add starts a new verse with the reference filled in, so you can paste the words yourself. If nothing is related yet, the panel says so.
+
+EN, ES, and PT switch the app’s own labels. Verses, notes, and category names stay as you wrote them. The line under the home title always reads “Designed by Freddy Jara-Almonte.”
+
 ## Production build
 
 ```bash

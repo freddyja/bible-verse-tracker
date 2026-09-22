@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { canRecordVoice, preferredAudioMimeType } from '../data/audio'
+import { useLanguage } from '../i18n/useLanguage'
+import type { MessageKey } from '../i18n/messages'
 
 type VoiceNoteControlProps = {
   blob: Blob | null
@@ -21,11 +23,12 @@ export function VoiceNoteControl({
   onChange,
   onRecordingChange,
 }: VoiceNoteControlProps) {
+  const { t } = useLanguage()
   const canRecord = canRecordVoice()
   const [phase, setPhase] = useState<'idle' | 'recording' | 'playing'>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
   const [durationMs, setDurationMs] = useState<number | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<MessageKey | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -105,7 +108,7 @@ export function VoiceNoteControl({
         setPhase('idle')
         onRecordingChange(false)
         if (next.size === 0) {
-          setNotice('That recording was empty. Try again. Your written note still saves.')
+          setNotice('emptyRecordingRetry')
           return
         }
         onChange(next)
@@ -120,7 +123,7 @@ export function VoiceNoteControl({
       if (!mountedRef.current) return
       setPhase('idle')
       onRecordingChange(false)
-      setNotice('The microphone isn’t available. Your written note still saves.')
+      setNotice('micUnavailable')
     }
   }
 
@@ -139,7 +142,7 @@ export function VoiceNoteControl({
     }).catch(() => {
       if (!mountedRef.current) return
       setPhase('idle')
-      setNotice('This recording couldn’t be played. Your written note still saves.')
+      setNotice('playbackFailed')
     })
   }
 
@@ -150,12 +153,14 @@ export function VoiceNoteControl({
   }
 
   const primaryLabel = phase === 'recording'
-    ? `Stop ${formatDuration(elapsedMs)}`
+    ? t('stopTimed', { time: formatDuration(elapsedMs) })
     : phase === 'playing'
-      ? 'Stop'
+      ? t('stop')
       : blob
-        ? `Play${durationMs ? ` ${formatDuration(durationMs)}` : ''}`
-        : 'Record'
+        ? durationMs
+          ? t('playTimed', { time: formatDuration(durationMs) })
+          : t('play')
+        : t('record')
 
   function onPrimary() {
     if (phase === 'recording') {
@@ -176,7 +181,7 @@ export function VoiceNoteControl({
   return (
     <div className="voice">
       <span className="label">
-        Voice note <span className="hint">Optional</span>
+        {t('voiceNote')} <span className="hint">{t('optional')}</span>
       </span>
       <audio
         ref={audioRef}
@@ -205,11 +210,11 @@ export function VoiceNoteControl({
             <>
               {canRecord ? (
                 <button type="button" className="text-button" disabled={disabled} onClick={() => void startRecording()}>
-                  Record again
+                  {t('recordAgain')}
                 </button>
               ) : null}
               <button type="button" className="text-button text-button-danger" disabled={disabled} onClick={remove}>
-                Remove
+                {t('remove')}
               </button>
             </>
           ) : null}
@@ -217,12 +222,10 @@ export function VoiceNoteControl({
       ) : null}
       {!canRecord ? (
         <p className="field-note">
-          {blob
-            ? 'This browser can’t record a new voice note. You can still play the one saved here.'
-            : 'Voice recording isn’t available in this browser. Your written note still saves.'}
+          {blob ? t('cannotRecordSaved') : t('cannotRecord')}
         </p>
       ) : null}
-      {notice ? <p className="field-note">{notice}</p> : null}
+      {notice ? <p className="field-note">{t(notice)}</p> : null}
     </div>
   )
 }

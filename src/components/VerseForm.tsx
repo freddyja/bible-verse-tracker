@@ -4,27 +4,48 @@ import { getVoiceNote } from '../data/db'
 import { LibraryError } from '../data/errors'
 import { categoryNamesMatch, normalizeCategoryName } from '../data/names'
 import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
+import { useLanguage } from '../i18n/useLanguage'
+import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
+import { RelatedVerses } from './RelatedVerses'
 import { VoiceNoteControl } from './VoiceNoteControl'
 
 type VerseFormProps = {
   verse: Verse | null
+  initialReference?: string
+  verses: readonly Verse[]
   categories: Category[]
   onSave: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onDelete: (id: string) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onDone: () => void
+  onOpenVerse: (verseId: string) => void
+  onAddReference: (reference: string) => void
+}
+
+function errorText(
+  caught: unknown,
+  t: (key: MessageKey) => string,
+  fallback: MessageKey,
+): string {
+  if (caught instanceof LibraryError) return t(caught.code)
+  return t(fallback)
 }
 
 export function VerseForm({
   verse,
+  initialReference,
+  verses,
   categories,
   onSave,
   onDelete,
   onCreateCategory,
   onDone,
+  onOpenVerse,
+  onAddReference,
 }: VerseFormProps) {
-  const [reference, setReference] = useState(verse?.reference ?? '')
+  const { t } = useLanguage()
+  const [reference, setReference] = useState(verse?.reference ?? initialReference ?? '')
   const [text, setText] = useState(verse?.text ?? '')
   const [note, setNote] = useState(verse?.note ?? '')
   const [categoryIds, setCategoryIds] = useState<string[]>(verse?.categoryIds ?? [])
@@ -36,6 +57,7 @@ export function VerseForm({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [relatedOpen, setRelatedOpen] = useState(false)
 
   const verseId = verse?.id
   useEffect(() => {
@@ -64,7 +86,7 @@ export function VerseForm({
   async function handleCreateCategory() {
     const name = normalizeCategoryName(newCategory)
     if (!name) {
-      setError('Give the category a name.')
+      setError(t('categoryNameRequired'))
       return
     }
     const existing = categories.find((category) => categoryNamesMatch(category.name, name))
@@ -82,7 +104,7 @@ export function VerseForm({
       setNewCategory('')
       setError(null)
     } catch (caught) {
-      setError(caught instanceof LibraryError ? caught.message : 'Could not add that category.')
+      setError(errorText(caught, t, 'couldNotAddCategory'))
     } finally {
       setBusy(false)
     }
@@ -91,15 +113,15 @@ export function VerseForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!reference.trim()) {
-      setError('Add a reference.')
+      setError(t('referenceRequired'))
       return
     }
     if (!text.trim()) {
-      setError('Add the verse text.')
+      setError(t('textRequired'))
       return
     }
     if (recording) {
-      setError('Stop the voice note, then save.')
+      setError(t('stopThenSave'))
       return
     }
 
@@ -114,7 +136,7 @@ export function VerseForm({
       await onSave({ reference, text, note, categoryIds }, verse?.id, voice)
       onDone()
     } catch (caught) {
-      setError(caught instanceof LibraryError ? caught.message : 'Could not save this verse.')
+      setError(errorText(caught, t, 'couldNotSave'))
       setBusy(false)
     }
   }
@@ -126,7 +148,7 @@ export function VerseForm({
       await onDelete(verse.id)
       onDone()
     } catch {
-      setError('Could not delete this verse.')
+      setError(t('couldNotDeleteVerse'))
       setBusy(false)
       setConfirmingDelete(false)
     }
@@ -135,11 +157,11 @@ export function VerseForm({
   return (
     <form className="editor" onSubmit={(event) => void handleSubmit(event)}>
       <label className="field">
-        <span className="label">Reference</span>
+        <span className="label">{t('reference')}</span>
         <input
           value={reference}
           onChange={(event) => setReference(event.target.value)}
-          placeholder="John 3:16, or any wording you use"
+          placeholder={t('referencePlaceholder')}
           autoComplete="off"
           autoCapitalize="words"
           spellCheck={false}
@@ -149,25 +171,34 @@ export function VerseForm({
       </label>
 
       <label className="field">
-        <span className="label">Verse</span>
+        <span className="label">{t('verse')}</span>
         <textarea
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="The words you want to keep"
+          placeholder={t('versePlaceholder')}
           rows={6}
           required
         />
       </label>
 
+      <button
+        type="button"
+        className="button button-related button-block"
+        aria-haspopup="dialog"
+        onClick={() => setRelatedOpen(true)}
+      >
+        {t('relatedVerses')}
+      </button>
+
       <label className="field">
         <span className="label">
-          Why it hit you <span className="hint">Optional</span>
+          {t('why')} <span className="hint">{t('optional')}</span>
         </span>
         <textarea
           className="note-input"
           value={note}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="A few words for later"
+          placeholder={t('notePlaceholder')}
           rows={3}
         />
       </label>
@@ -183,13 +214,13 @@ export function VerseForm({
           onRecordingChange={setRecording}
         />
       ) : (
-        <p className="field-note">Opening voice note…</p>
+        <p className="field-note">{t('openingVoice')}</p>
       )}
 
       <fieldset className="field">
-        <legend className="label">Categories</legend>
+        <legend className="label">{t('categoriesLegend')}</legend>
         {categories.length === 0 ? (
-          <p className="field-note">No categories yet. Add one below if you want.</p>
+          <p className="field-note">{t('noCategoriesHint')}</p>
         ) : (
           <div className="check-list">
             {categories.map((category) => (
@@ -207,7 +238,7 @@ export function VerseForm({
 
         <div className="inline-add">
           <label className="sr-only" htmlFor="new-category">
-            New category
+            {t('newCategory')}
           </label>
           <input
             id="new-category"
@@ -218,7 +249,7 @@ export function VerseForm({
               event.preventDefault()
               void handleCreateCategory()
             }}
-            placeholder="New category"
+            placeholder={t('newCategory')}
             autoComplete="off"
           />
           <button
@@ -227,7 +258,7 @@ export function VerseForm({
             disabled={busy}
             onClick={() => void handleCreateCategory()}
           >
-            Add
+            {t('add')}
           </button>
         </div>
       </fieldset>
@@ -239,9 +270,9 @@ export function VerseForm({
       ) : null}
 
       <button type="submit" className="button button-block" disabled={busy || !voiceReady || recording}>
-        Save verse
+        {t('saveVerse')}
       </button>
-      {recording ? <p className="field-note">Stop the voice note, then save.</p> : null}
+      {recording ? <p className="field-note">{t('stopThenSave')}</p> : null}
 
       {verse ? (
         <button
@@ -250,17 +281,30 @@ export function VerseForm({
           disabled={busy}
           onClick={() => setConfirmingDelete(true)}
         >
-          Delete verse
+          {t('deleteVerse')}
         </button>
       ) : null}
 
       {confirmingDelete ? (
         <ConfirmDialog
-          title="Delete this verse?"
-          message="This removes the verse and its voice note from this device."
-          confirmLabel="Delete verse"
+          title={t('deleteTitle')}
+          message={t('deleteMessage')}
+          confirmLabel={t('deleteConfirm')}
           onCancel={() => setConfirmingDelete(false)}
           onConfirm={() => void handleDelete()}
+        />
+      ) : null}
+
+      {relatedOpen ? (
+        <RelatedVerses
+          reference={reference}
+          categoryIds={categoryIds}
+          verses={verses}
+          currentId={verse?.id ?? null}
+          locked={recording}
+          onClose={() => setRelatedOpen(false)}
+          onOpenVerse={onOpenVerse}
+          onAddReference={onAddReference}
         />
       ) : null}
     </form>

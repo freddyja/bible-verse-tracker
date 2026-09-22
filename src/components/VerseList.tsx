@@ -1,4 +1,5 @@
 import type { Category, Verse } from '../data/types'
+import { useLanguage } from '../i18n/useLanguage'
 
 type VerseListProps = {
   verses: Verse[]
@@ -12,10 +13,6 @@ type VerseListProps = {
   onOpenVerse: (verseId: string) => void
 }
 
-function countLabel(count: number): string {
-  return count === 1 ? '1 verse' : `${count} verses`
-}
-
 export function VerseList({
   verses,
   categories,
@@ -27,40 +24,42 @@ export function VerseList({
   onCategoryChange,
   onOpenVerse,
 }: VerseListProps) {
+  const { t } = useLanguage()
   const activeCategory = categories.find((category) => category.id === categoryId) ?? null
   const categoriesById = new Map(categories.map((category) => [category.id, category]))
   const voices = new Set(voiceNoteIds)
+  const trimmedQuery = query.trim()
 
-  let emptyMessage = 'No verses yet. When one stays with you, save it here.'
-  if (totalCount > 0 && activeCategory && query.trim()) {
-    emptyMessage = `Nothing in ${activeCategory.name} matches “${query.trim()}”.`
-  } else if (totalCount > 0 && query.trim()) {
-    emptyMessage = `Nothing matches “${query.trim()}”.`
+  let emptyMessage = t('emptyNone')
+  if (totalCount > 0 && activeCategory && trimmedQuery) {
+    emptyMessage = t('emptySearchCategory', { name: activeCategory.name, query: trimmedQuery })
+  } else if (totalCount > 0 && trimmedQuery) {
+    emptyMessage = t('emptySearch', { query: trimmedQuery })
   } else if (totalCount > 0 && activeCategory) {
-    emptyMessage = `No verses in ${activeCategory.name} yet.`
+    emptyMessage = t('emptyCategory', { name: activeCategory.name })
   }
 
   return (
     <div className="list-screen">
       <label className="search">
-        <span className="sr-only">Search verses</span>
+        <span className="sr-only">{t('searchLabel')}</span>
         <input
           type="search"
           value={query}
-          placeholder="Search reference, words, or note"
+          placeholder={t('searchPlaceholder')}
           onChange={(event) => onQueryChange(event.target.value)}
           enterKeyHint="search"
         />
       </label>
 
-      <div className="chips" role="group" aria-label="Filter by category">
+      <div className="chips" role="group" aria-label={t('filterLabel')}>
         <button
           type="button"
           className="chip"
           aria-pressed={categoryId === null}
           onClick={() => onCategoryChange(null)}
         >
-          All
+          {t('all')}
         </button>
         {categories.map((category) => (
           <button
@@ -76,7 +75,7 @@ export function VerseList({
       </div>
 
       <p className="count" aria-live="polite">
-        {countLabel(verses.length)}
+        {verses.length === 1 ? t('countOne') : t('countMany', { count: verses.length })}
       </p>
 
       {verses.length === 0 ? (
@@ -99,7 +98,7 @@ export function VerseList({
                   </button>
                   {verseCategories.length > 0 || hasVoice ? (
                     <div className="card-pills">
-                      {hasVoice ? <span className="pill pill-static">Voice note</span> : null}
+                      {hasVoice ? <span className="pill pill-static">{t('voicePill')}</span> : null}
                       {verseCategories.map((category) => (
                         <button
                           key={category.id}

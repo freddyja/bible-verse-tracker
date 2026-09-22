@@ -112,7 +112,7 @@ export async function getVoiceNote(verseId: string): Promise<VoiceNoteRecord | u
 }
 
 export async function putVoiceNote(verseId: string, blob: Blob): Promise<void> {
-  if (blob.size === 0) throw new LibraryError('That recording was empty.')
+  if (blob.size === 0) throw new LibraryError('emptyRecording')
   const database = await getDatabase()
   await database.put('voiceNotes', {
     verseId,
@@ -131,12 +131,12 @@ export async function saveVerse(draft: VerseDraft, id?: string): Promise<Verse> 
   const reference = draft.reference.trim()
   const text = draft.text.trim()
   const note = draft.note.trim()
-  if (!reference) throw new LibraryError('Add a reference.')
-  if (!text) throw new LibraryError('Add the verse text.')
+  if (!reference) throw new LibraryError('referenceRequired')
+  if (!text) throw new LibraryError('textRequired')
 
   const database = await getDatabase()
   const existing = id ? await database.get('verses', id) : undefined
-  if (id && !existing) throw new LibraryError('That verse is no longer on this device.')
+  if (id && !existing) throw new LibraryError('verseGone')
 
   const categories = await database.getAll('categories')
   const validIds = new Set(categories.map((category) => category.id))
@@ -164,12 +164,12 @@ export async function deleteVerse(id: string): Promise<void> {
 
 export async function createCategory(name: string): Promise<Category> {
   const normalized = normalizeCategoryName(name)
-  if (!normalized) throw new LibraryError('Give the category a name.')
+  if (!normalized) throw new LibraryError('categoryNameRequired')
 
   const database = await getDatabase()
   const existing = await database.getAll('categories')
   if (existing.some((category) => categoryNamesMatch(category.name, normalized))) {
-    throw new LibraryError('That category already exists.')
+    throw new LibraryError('categoryExists')
   }
 
   const now = Date.now()
@@ -185,18 +185,18 @@ export async function createCategory(name: string): Promise<Category> {
 
 export async function renameCategory(id: string, name: string): Promise<void> {
   const normalized = normalizeCategoryName(name)
-  if (!normalized) throw new LibraryError('Give the category a name.')
+  if (!normalized) throw new LibraryError('categoryNameRequired')
 
   const database = await getDatabase()
   const categories = await database.getAll('categories')
   const current = categories.find((category) => category.id === id)
-  if (!current) throw new LibraryError('That category is no longer on this device.')
+  if (!current) throw new LibraryError('categoryMissing')
   if (
     categories.some(
       (category) => category.id !== id && categoryNamesMatch(category.name, normalized),
     )
   ) {
-    throw new LibraryError('That category already exists.')
+    throw new LibraryError('categoryExists')
   }
 
   await database.put('categories', {

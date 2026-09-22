@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useLanguage } from '../i18n/useLanguage'
 
 type ConfirmDialogProps = {
   title: string
@@ -15,6 +16,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useLanguage()
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function ConfirmDialog({
       <p className="dialog-message">{message}</p>
       <div className="dialog-actions">
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Cancel
+          {t('cancel')}
         </button>
         <button type="button" className="button" onClick={onConfirm}>
           {confirmLabel}

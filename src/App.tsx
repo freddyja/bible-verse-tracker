@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react'
 import { CategoryManager } from './components/CategoryManager'
+import { LanguagePicker } from './components/LanguagePicker'
 import { VerseForm } from './components/VerseForm'
 import { VerseList } from './components/VerseList'
 import { filterVerses } from './data/filter'
 import { useLibrary } from './hooks/useLibrary'
+import { useLanguage } from './i18n/useLanguage'
 
 type View =
   | { kind: 'list' }
-  | { kind: 'edit'; verseId: string | null }
+  | { kind: 'edit'; verseId: string | null; prefillReference?: string }
   | { kind: 'categories' }
 
 export default function App() {
   const library = useLibrary()
+  const { t } = useLanguage()
   const [view, setView] = useState<View>({ kind: 'list' })
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
@@ -31,9 +34,9 @@ export default function App() {
       ? (library.verses.find((verse) => verse.id === view.verseId) ?? null)
       : null
 
-  let title = 'Verse Tracker'
-  if (view.kind === 'categories') title = 'Categories'
-  if (view.kind === 'edit') title = editingVerse ? 'Edit verse' : 'Save a verse'
+  let title = t('appTitle')
+  if (view.kind === 'categories') title = t('categoriesTitle')
+  if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
 
   return (
     <div className="app">
@@ -41,14 +44,15 @@ export default function App() {
         <div className="title-block">
           {view.kind === 'list' ? null : (
             <button type="button" className="back" onClick={() => setView({ kind: 'list' })}>
-              ← Verses
+              {t('back')}
             </button>
           )}
           <h1 className="brand">{title}</h1>
           {view.kind === 'list' ? (
             <>
               <p className="credit">Designed by Freddy Jara-Almonte.</p>
-              <p className="tagline">A private place for verses that stay with you.</p>
+              <p className="tagline">{t('tagline')}</p>
+              <LanguagePicker />
             </>
           ) : null}
         </div>
@@ -58,22 +62,24 @@ export default function App() {
             className="button button-ghost"
             onClick={() => setView({ kind: 'categories' })}
           >
-            Categories
+            {t('categories')}
           </button>
-        ) : null}
+        ) : (
+          <LanguagePicker />
+        )}
       </header>
 
       {library.status === 'loading' ? (
         <p className="status" role="status">
-          Opening your verses…
+          {t('opening')}
         </p>
       ) : null}
 
       {library.status === 'error' ? (
         <div className="status">
-          <p>Your verses could not be opened on this device.</p>
+          <p>{t('openFailed')}</p>
           <button type="button" className="button" onClick={() => void library.reload()}>
-            Try again
+            {t('tryAgain')}
           </button>
         </div>
       ) : null}
@@ -99,9 +105,9 @@ export default function App() {
               className="button button-block"
               onClick={() => setView({ kind: 'edit', verseId: null })}
             >
-              Save a verse
+              {t('saveDock')}
             </button>
-            <p className="privacy">On this device only. Clearing this site’s data removes them.</p>
+            <p className="privacy">{t('privacy')}</p>
           </div>
         </>
       ) : null}
@@ -110,20 +116,26 @@ export default function App() {
         <main>
           {view.verseId && !editingVerse ? (
             <div className="status">
-              <p>That verse is no longer on this device.</p>
+              <p>{t('verseGone')}</p>
               <button type="button" className="button" onClick={() => setView({ kind: 'list' })}>
-                Back to verses
+                {t('backToVerses')}
               </button>
             </div>
           ) : (
             <VerseForm
-              key={editingVerse?.id ?? 'new'}
+              key={`${editingVerse?.id ?? 'new'}:${view.prefillReference ?? ''}`}
               verse={editingVerse}
+              initialReference={editingVerse ? undefined : view.prefillReference}
+              verses={library.verses}
               categories={library.categories}
               onSave={library.saveVerse}
               onDelete={library.deleteVerse}
               onCreateCategory={library.createCategory}
               onDone={() => setView({ kind: 'list' })}
+              onOpenVerse={(verseId) => setView({ kind: 'edit', verseId })}
+              onAddReference={(reference) =>
+                setView({ kind: 'edit', verseId: null, prefillReference: reference })
+              }
             />
           )}
         </main>
