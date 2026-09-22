@@ -8,6 +8,8 @@ Open a book, then a chapter. From there the reading continues as he scrolls: the
 
 Each book opens with a small picture drawn for this app. The drawings are original, the same in English, Spanish, and Portuguese, and they are not copied from a study Bible.
 
+The home screen offers a verse for the calendar day. The same date always chooses the same passage. The words are the Bible version selected under the title, and the card shows that version’s abbreviation. Tapping the card opens the passage, where it can be saved. The photographs on the card were made for this app. They are original, and they rotate with the date.
+
 Listen reads the Scripture aloud with the phone’s own voice: this verse, this chapter, or Read Out Loud, which continues through the books until he taps Stop. The verse being spoken is marked. English, Spanish, and Portuguese follow the language he chose, when the phone has that voice. No account and no audio service. A voice note is still his own recording, kept apart from this reading.
 
 The version under the title is the one he is reading. He can change it there. English, Spanish, and Portuguese each keep their own choice on that phone. Commercial translations are not bundled.

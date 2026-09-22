@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { searchScripture, type ScriptureHit } from '../scripture/api'
 import { BOOKS, NEW_TESTAMENT_INDEX } from '../scripture/books'
 import { formatPassage, matchBook, parseReference } from '../scripture/passages'
+import { VerseOfTheDay } from './VerseOfTheDay'
 
 type ReadHomeProps = {
   verses: readonly Verse[]
@@ -55,6 +56,7 @@ export function ReadHome({
 
   return (
     <div className="read-home">
+      {trimmed ? null : <VerseOfTheDay onOpen={onOpenPassage} />}
       <label className="search">
         <span className="sr-only">{t('searchScripture')}</span>
         <input
