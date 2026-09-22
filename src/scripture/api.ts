@@ -16,6 +16,21 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
+export function peekBook(language: string, bookIndex: number): string[][] | null {
+  const id = BOOKS[bookIndex]?.id
+  if (!id) return null
+  return books.get(`${language}:${id}`) ?? null
+}
+
+export function peekVerse(
+  language: string,
+  bookIndex: number,
+  chapter: number,
+  verse: number,
+): string | null {
+  return peekBook(language, bookIndex)?.[chapter - 1]?.[verse - 1] ?? null
+}
+
 export async function loadBook(language: string, bookIndex: number): Promise<string[][]> {
   const id = BOOKS[bookIndex]?.id
   if (!id) throw new Error('book')

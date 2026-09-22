@@ -11,7 +11,8 @@ import type { Passage } from './data/types'
 import { useLibrary } from './hooks/useLibrary'
 import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
-import { formatPassage } from './scripture/passages'
+import { formatPassage, type PassageRef } from './scripture/passages'
+import { useListen } from './speech/useListen'
 
 type Shell =
   | { kind: 'read' }
@@ -66,7 +67,28 @@ export default function App() {
     document.title = title
   }, [title])
 
+  function followSpoken(passage: PassageRef) {
+    setView((current) => {
+      if (
+        current.kind === 'chapter' &&
+        current.bookIndex === passage.bookIndex &&
+        current.chapter === passage.chapter
+      ) {
+        return current
+      }
+      return {
+        kind: 'chapter',
+        bookIndex: passage.bookIndex,
+        chapter: passage.chapter,
+        verse: null,
+      }
+    })
+  }
+
+  const listen = useListen(language, followSpoken)
+
   function goBack() {
+    listen.stop()
     if (view.kind === 'book' || view.kind === 'saved') setView({ kind: 'read' })
     if (view.kind === 'chapter') setView({ kind: 'book', bookIndex: view.bookIndex })
     if (view.kind === 'categories') setView(view.returnTo === 'saved' ? { kind: 'saved' } : { kind: 'read' })
@@ -110,7 +132,14 @@ export default function App() {
           )}
         </div>
         {view.kind === 'read' ? (
-          <button type="button" className="button button-ghost" onClick={() => setView({ kind: 'saved' })}>
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={() => {
+              listen.stop()
+              setView({ kind: 'saved' })
+            }}
+          >
             {t('saved')}
           </button>
         ) : null}
@@ -118,7 +147,10 @@ export default function App() {
           <button
             type="button"
             className="button button-ghost"
-            onClick={() => setView({ kind: 'categories', returnTo: 'saved' })}
+            onClick={() => {
+              listen.stop()
+              setView({ kind: 'categories', returnTo: 'saved' })
+            }}
           >
             {t('categories')}
           </button>
@@ -148,8 +180,14 @@ export default function App() {
             onOpenPassage={(nextBook, chapter, verse) =>
               setView({ kind: 'chapter', bookIndex: nextBook, chapter, verse })
             }
-            onOpenSaved={(verseId) => setView({ kind: 'edit', verseId, returnTo: { kind: 'read' } })}
-            onOpenCategories={() => setView({ kind: 'categories', returnTo: 'read' })}
+            onOpenSaved={(verseId) => {
+              listen.stop()
+              setView({ kind: 'edit', verseId, returnTo: { kind: 'read' } })
+            }}
+            onOpenCategories={() => {
+              listen.stop()
+              setView({ kind: 'categories', returnTo: 'read' })
+            }}
           />
         </main>
       ) : null}
@@ -174,9 +212,16 @@ export default function App() {
             selectedVerse={view.verse}
             saved={library.verses}
             onSelectVerse={(verse) => setView({ ...view, verse })}
-            onOpenPassage={openPassage}
-            onChapter={(chapter) => setView({ kind: 'chapter', bookIndex: view.bookIndex, chapter, verse: null })}
-            onSave={(passage, text) =>
+            onOpenPassage={(passage) => {
+              listen.stop()
+              openPassage(passage)
+            }}
+            onChapter={(chapter) => {
+              listen.stop()
+              setView({ kind: 'chapter', bookIndex: view.bookIndex, chapter, verse: null })
+            }}
+            onSave={(passage, text) => {
+              listen.stop()
               setView({
                 kind: 'edit',
                 verseId: null,
@@ -184,8 +229,12 @@ export default function App() {
                 prefillText: text,
                 returnTo: view,
               })
-            }
-            onEditSaved={(verseId) => setView({ kind: 'edit', verseId, returnTo: view })}
+            }}
+            onEditSaved={(verseId) => {
+              listen.stop()
+              setView({ kind: 'edit', verseId, returnTo: view })
+            }}
+            listen={listen}
           />
         </main>
       ) : null}
@@ -202,14 +251,20 @@ export default function App() {
               categoryId={activeCategoryId}
               onQueryChange={setQuery}
               onCategoryChange={setCategoryId}
-              onOpenVerse={(verseId) => setView({ kind: 'edit', verseId, returnTo: { kind: 'saved' } })}
+              onOpenVerse={(verseId) => {
+                listen.stop()
+                setView({ kind: 'edit', verseId, returnTo: { kind: 'saved' } })
+              }}
             />
           </main>
           <div className="dock">
             <button
               type="button"
               className="button button-block"
-              onClick={() => setView({ kind: 'edit', verseId: null, returnTo: { kind: 'saved' } })}
+              onClick={() => {
+                listen.stop()
+                setView({ kind: 'edit', verseId: null, returnTo: { kind: 'saved' } })
+              }}
             >
               {t('saveDock')}
             </button>
@@ -249,7 +304,11 @@ export default function App() {
                   returnTo: view.returnTo,
                 })
               }
-              onReadPassage={openPassage}
+              onReadPassage={(passage) => {
+                listen.stop()
+                openPassage(passage)
+              }}
+              listen={listen}
             />
           )}
         </main>

@@ -6,6 +6,8 @@ A study Bible Freddy can read on his phone, with a private place for the verses 
 
 Open a book, then a chapter. Tap a verse. Related Verses lists a few passages often read beside it, with the words themselves, so he can follow them. It is a reading help, not a sermon or a commentary.
 
+Listen reads the Scripture aloud with the phone’s own voice: this verse, this chapter, or straight on through the books until he taps Stop. The verse being spoken is marked. English, Spanish, and Portuguese follow the language he chose, when the phone has that voice. No account and no audio service. A voice note is still his own recording, kept apart from this reading.
+
 The English text is the King James Version (1769), public domain. Spanish is the Reina-Valera 1909, public domain. Portuguese is the Bíblia Livre (Creative Commons Attribution 3.0 Brazil). Cross-references are a short selection from [Open Bible](https://www.openbible.info/labs/cross-references/), used under Creative Commons Attribution. Book names follow the language he chose. Verse numbers are the traditional Protestant numbering.
 
 ## Language

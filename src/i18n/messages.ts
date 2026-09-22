@@ -118,6 +118,17 @@ const en = {
   catCourage: 'Courage',
   catMarriage: 'Marriage',
   catLeadership: 'Leadership',
+  listen: 'Listen',
+  listenVerse: 'This verse',
+  listenChapter: 'This chapter',
+  listenContinue: 'Keep listening',
+  listenPause: 'Pause',
+  listenResume: 'Resume',
+  listening: 'Listening',
+  listenPaused: 'Paused',
+  listenUnavailable: 'This phone can’t read aloud. You can still read the text here.',
+  listenRefused: 'This phone did not start reading. You can still read the words here.',
+  listenSeparate: 'Listen reads the Scripture. A voice note is your own recording.',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -241,6 +252,17 @@ const es: Record<MessageKey, string> = {
   catCourage: 'Valentía',
   catMarriage: 'Matrimonio',
   catLeadership: 'Liderazgo',
+  listen: 'Escuchar',
+  listenVerse: 'Este versículo',
+  listenChapter: 'Este capítulo',
+  listenContinue: 'Seguir escuchando',
+  listenPause: 'Pausar',
+  listenResume: 'Continuar',
+  listening: 'Escuchando',
+  listenPaused: 'En pausa',
+  listenUnavailable: 'Este teléfono no puede leer en voz alta. El texto sigue aquí.',
+  listenRefused: 'Este teléfono no empezó a leer. Las palabras siguen aquí.',
+  listenSeparate: 'Escuchar lee la Escritura. Una nota de voz es tu propia grabación.',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -364,6 +386,17 @@ const pt: Record<MessageKey, string> = {
   catCourage: 'Coragem',
   catMarriage: 'Casamento',
   catLeadership: 'Liderança',
+  listen: 'Ouvir',
+  listenVerse: 'Este versículo',
+  listenChapter: 'Este capítulo',
+  listenContinue: 'Continuar ouvindo',
+  listenPause: 'Pausar',
+  listenResume: 'Retomar',
+  listening: 'Ouvindo',
+  listenPaused: 'Em pausa',
+  listenUnavailable: 'Este telefone não pode ler em voz alta. O texto continua aqui.',
+  listenRefused: 'Este telefone não começou a ler. As palavras continuam aqui.',
+  listenSeparate: 'Ouvir lê a Escritura. Uma nota de voz é a sua gravação.',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }

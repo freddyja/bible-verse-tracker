@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
+import { ListenBar } from './ListenBar'
+import type { ListenController } from '../speech/useListen'
 import { loadBook, relatedPassages, type ScriptureHit } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import { formatPassage, parseReference, samePassage, type PassageRef } from '../scripture/passages'
@@ -15,6 +17,7 @@ type ChapterReaderProps = {
   onSave: (passage: PassageRef, text: string) => void
   onEditSaved: (verseId: string) => void
   onChapter: (chapter: number) => void
+  listen: ListenController
 }
 
 function savedMatch(verses: readonly Verse[], passage: PassageRef): Verse | undefined {
@@ -42,6 +45,7 @@ export function ChapterReader({
   onSave,
   onEditSaved,
   onChapter,
+  listen,
 }: ChapterReaderProps) {
   const { language, t } = useLanguage()
   const [verses, setVerses] = useState<string[] | null>(null)
@@ -90,10 +94,53 @@ export function ChapterReader({
   const previous = chapter > 1 ? chapter - 1 : null
   const next = chapter < book.chapters ? chapter + 1 : null
   const kept = passage ? savedMatch(saved, passage) : undefined
+  const speakingHere =
+    listen.passage &&
+    listen.passage.bookIndex === bookIndex &&
+    listen.passage.chapter === chapter
+      ? listen.passage.verse
+      : null
+  const spokenLabel =
+    listen.passage && listen.status !== 'idle' ? formatPassage(language, listen.passage) : null
+
+  useEffect(() => {
+    if (!speakingHere || !verses) return
+    document.getElementById(`verse-${speakingHere}`)?.scrollIntoView({ block: 'center' })
+  }, [speakingHere, verses])
 
   return (
     <article className="reader">
       <p className="tap-hint">{t('tapHint')}</p>
+      {failed ? null : (
+        <ListenBar
+          supported={listen.supported}
+          status={listen.status}
+          statusText={spokenLabel}
+          canVerse={selectedVerse !== null}
+          canChapter={verses !== null}
+          canContinue={verses !== null}
+          notice={listen.refused ? t('listenRefused') : undefined}
+          onVerse={() => {
+            if (selectedVerse === null) return
+            listen.start(
+              'verse',
+              { bookIndex, chapter, verse: selectedVerse },
+              verses?.[selectedVerse - 1],
+            )
+          }}
+          onChapter={() => {
+            const verse = selectedVerse ?? 1
+            listen.start('chapter', { bookIndex, chapter, verse }, verses?.[verse - 1])
+          }}
+          onContinue={() => {
+            const verse = selectedVerse ?? 1
+            listen.start('continue', { bookIndex, chapter, verse }, verses?.[verse - 1])
+          }}
+          onPause={listen.pause}
+          onResume={listen.resume}
+          onStop={listen.stop}
+        />
+      )}
       {failed ? <p className="empty">{t('chapterFailed')}</p> : null}
       {verses === null && !failed ? <p className="status">{t('openingChapter')}</p> : null}
       {verses ? (
@@ -104,11 +151,18 @@ export function ChapterReader({
             const selected = selectedVerse === number
             const already = savedMatch(saved, current)
             return (
-              <div key={number} id={`verse-${number}`} className={selected ? 'verse-block selected' : 'verse-block'}>
+              <div
+                key={number}
+                id={`verse-${number}`}
+                className={['verse-block', selected ? 'selected' : '', speakingHere === number ? 'speaking' : '']
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <button
                   type="button"
                   className="verse-line"
                   aria-expanded={selected}
+                  aria-current={speakingHere === number ? 'true' : undefined}
                   onClick={() => onSelectVerse(selected ? null : number)}
                 >
                   <sup>{number}</sup>
