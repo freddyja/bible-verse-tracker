@@ -1,23 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
+import { BookArt } from './BookArt'
 import type { ListenController } from '../speech/useListen'
 import { loadBook, relatedPassages, type ScriptureHit } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
+import { chapterStep } from '../scripture/canon'
 import { formatPassage, parseReference, samePassage, type PassageRef } from '../scripture/passages'
 
-type ChapterReaderProps = {
+type Slice = {
   bookIndex: number
   chapter: number
-  selectedVerse: number | null
+  verses: string[]
+}
+
+const WINDOW = 18
+
+type ChapterReaderProps = {
+  startBook: number
+  startChapter: number
+  startVerse: number | null
   saved: readonly Verse[]
-  onSelectVerse: (verse: number | null) => void
   onOpenPassage: (passage: PassageRef) => void
   onSave: (passage: PassageRef, text: string) => void
   onEditSaved: (verseId: string) => void
-  onChapter: (chapter: number) => void
+  onShowChapters: () => void
+  onVisible: (bookIndex: number, chapter: number) => void
   listen: ListenController
+}
+
+function verseDomId(bookIndex: number, chapter: number, verse: number): string {
+  return `v-${bookIndex}-${chapter}-${verse}`
+}
+
+function chapterDomId(bookIndex: number, chapter: number): string {
+  return `c-${bookIndex}-${chapter}`
 }
 
 function savedMatch(verses: readonly Verse[], passage: PassageRef): Verse | undefined {
@@ -35,31 +53,77 @@ function savedMatch(verses: readonly Verse[], passage: PassageRef): Verse | unde
   })
 }
 
+function hasSlice(list: readonly Slice[], bookIndex: number, chapter: number): boolean {
+  return list.some((slice) => slice.bookIndex === bookIndex && slice.chapter === chapter)
+}
+
 export function ChapterReader({
-  bookIndex,
-  chapter,
-  selectedVerse,
+  startBook,
+  startChapter,
+  startVerse,
   saved,
-  onSelectVerse,
   onOpenPassage,
   onSave,
   onEditSaved,
-  onChapter,
+  onShowChapters,
+  onVisible,
   listen,
 }: ChapterReaderProps) {
   const { language, t } = useLanguage()
-  const [verses, setVerses] = useState<string[] | null>(null)
+  const [slices, setSlices] = useState<Slice[]>([])
   const [failed, setFailed] = useState(false)
-  const [related, setRelated] = useState<{ verse: number; rows: ScriptureHit[] } | null>(null)
-  const book = BOOKS[bookIndex]
-  const passage =
-    selectedVerse === null ? null : { bookIndex, chapter, verse: selectedVerse }
+  const [armed, setArmed] = useState(false)
+  const [moreFailed, setMoreFailed] = useState(false)
+  const [selected, setSelected] = useState<PassageRef | null>(
+    startVerse === null ? null : { bookIndex: startBook, chapter: startChapter, verse: startVerse },
+  )
+  const [related, setRelated] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
+  const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
+  const slicesRef = useRef(slices)
+  const focusedRef = useRef(focused)
+  const loadingRef = useRef(false)
+  const shiftRef = useRef(0)
+  const prependedRef = useRef(false)
+  const allowPrepend = useRef(false)
+  const onVisibleRef = useRef(onVisible)
+  const topRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const endReached = slices.length > 0 && chapterStep(slices[slices.length - 1].bookIndex, slices[slices.length - 1].chapter, 1) === null
+
+  useEffect(() => {
+    slicesRef.current = slices
+  }, [slices])
+
+  useEffect(() => {
+    focusedRef.current = focused
+  }, [focused])
+
+  useEffect(() => {
+    onVisibleRef.current = onVisible
+  }, [onVisible])
+
+  useLayoutEffect(() => {
+    let shift = shiftRef.current
+    shiftRef.current = 0
+    if (prependedRef.current) {
+      prependedRef.current = false
+      const first = slices[0]
+      shift += first ? (document.getElementById(chapterDomId(first.bookIndex, first.chapter))?.offsetHeight ?? 0) : 0
+    }
+    if (shift !== 0) window.scrollBy(0, shift)
+  }, [slices])
 
   useEffect(() => {
     let cancelled = false
-    loadBook(language, bookIndex)
+    loadBook(language, startBook)
       .then((chapters) => {
-        if (!cancelled) setVerses(chapters[chapter - 1] ?? [])
+        if (cancelled) return
+        const verses = chapters[startChapter - 1]
+        if (!verses) {
+          setFailed(true)
+          return
+        }
+        setSlices([{ bookIndex: startBook, chapter: startChapter, verses }])
       })
       .catch(() => {
         if (!cancelled) setFailed(true)
@@ -67,74 +131,234 @@ export function ChapterReader({
     return () => {
       cancelled = true
     }
-  }, [language, bookIndex, chapter])
+  }, [language, startBook, startChapter])
 
   useEffect(() => {
-    if (selectedVerse === null) return
-    const verse = selectedVerse
+    if (slices.length === 0 || armed) return
+    const target = startVerse
+      ? document.getElementById(verseDomId(startBook, startChapter, startVerse))
+      : document.getElementById(chapterDomId(startBook, startChapter))
+    target?.scrollIntoView({ block: startVerse ? 'center' : 'start' })
+    const frame = window.requestAnimationFrame(() => {
+      setArmed(true)
+      if (window.scrollY > 80) allowPrepend.current = true
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [slices, armed, startBook, startChapter, startVerse])
+
+  useEffect(() => {
+    if (!armed) return
+    const onScroll = () => {
+      if (window.scrollY > 80) allowPrepend.current = true
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [armed])
+
+  function frontHeight(list: readonly Slice[], count: number): number {
+    let height = 0
+    for (let index = 0; index < count; index += 1) {
+      const slice = list[index]
+      height += document.getElementById(chapterDomId(slice.bookIndex, slice.chapter))?.offsetHeight ?? 0
+    }
+    return height
+  }
+
+  const append = useCallback(async () => {
+    if (loadingRef.current) return
+    const last = slicesRef.current[slicesRef.current.length - 1]
+    if (!last) return
+    const following = chapterStep(last.bookIndex, last.chapter, 1)
+    if (!following || hasSlice(slicesRef.current, following.bookIndex, following.chapter)) return
+    loadingRef.current = true
+    setMoreFailed(false)
+    try {
+      const chapters = await loadBook(language, following.bookIndex)
+      const verses = chapters[following.chapter - 1]
+      const slice = verses ? { bookIndex: following.bookIndex, chapter: following.chapter, verses } : null
+      if (!slice) {
+        setMoreFailed(true)
+        return
+      }
+      const current = slicesRef.current
+      if (hasSlice(current, slice.bookIndex, slice.chapter)) return
+      let queued = [...current, slice]
+      if (queued.length > WINDOW) {
+        const extra = queued.length - WINDOW
+        const focus = focusedRef.current
+        const focusAt = queued.findIndex(
+          (item) => item.bookIndex === focus.bookIndex && item.chapter === focus.chapter,
+        )
+        if (focusAt < 0 || focusAt >= extra) {
+          shiftRef.current -= frontHeight(current, extra)
+          queued = queued.slice(extra)
+        }
+      }
+      slicesRef.current = queued
+      setSlices(queued)
+    } catch {
+      setMoreFailed(true)
+    } finally {
+      loadingRef.current = false
+    }
+  }, [language])
+
+  const prepend = useCallback(async () => {
+    if (!allowPrepend.current || loadingRef.current || window.scrollY > 180) return
+    const first = slicesRef.current[0]
+    if (!first) return
+    const previous = chapterStep(first.bookIndex, first.chapter, -1)
+    if (!previous || hasSlice(slicesRef.current, previous.bookIndex, previous.chapter)) return
+    loadingRef.current = true
+    setMoreFailed(false)
+    try {
+      const chapters = await loadBook(language, previous.bookIndex)
+      const verses = chapters[previous.chapter - 1]
+      const slice = verses ? { bookIndex: previous.bookIndex, chapter: previous.chapter, verses } : null
+      if (!slice) {
+        setMoreFailed(true)
+        return
+      }
+      const current = slicesRef.current
+      if (hasSlice(current, slice.bookIndex, slice.chapter)) return
+      const next = [slice, ...current]
+      prependedRef.current = true
+      const kept = next.length > WINDOW ? next.slice(0, WINDOW) : next
+      slicesRef.current = kept
+      setSlices(kept)
+    } catch {
+      setMoreFailed(true)
+    } finally {
+      loadingRef.current = false
+    }
+  }, [language])
+
+  useEffect(() => {
+    if (!armed) return
+    const node = bottomRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void append()
+      },
+      { rootMargin: '900px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [armed, slices, append])
+
+  useEffect(() => {
+    if (!armed) return
+    const node = topRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void prepend()
+      },
+      { rootMargin: '240px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [armed, slices, prepend])
+
+  useEffect(() => {
+    if (slices.length === 0) return
+    const nodes = document.querySelectorAll<HTMLElement>('.scroll-chapter')
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRect.height - a.intersectionRect.height)[0]
+        if (!visible) return
+        const element = visible.target as HTMLElement
+        const bookIndex = Number(element.dataset.book)
+        const chapter = Number(element.dataset.chapter)
+        if (!Number.isFinite(bookIndex) || !Number.isFinite(chapter)) return
+        setFocused((current) =>
+          current.bookIndex === bookIndex && current.chapter === chapter ? current : { bookIndex, chapter },
+        )
+        onVisibleRef.current(bookIndex, chapter)
+      },
+      { rootMargin: '-18% 0px -40% 0px', threshold: 0 },
+    )
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [slices])
+
+  useEffect(() => {
+    if (selected === null) return
+    const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
     let cancelled = false
-    relatedPassages(language, { bookIndex, chapter, verse })
+    relatedPassages(language, selected)
       .then((rows) => {
-        if (!cancelled) setRelated({ verse, rows })
+        if (!cancelled) setRelated({ key, rows })
       })
       .catch(() => {
-        if (!cancelled) setRelated({ verse, rows: [] })
+        if (!cancelled) setRelated({ key, rows: [] })
       })
     return () => {
       cancelled = true
     }
-  }, [language, bookIndex, chapter, selectedVerse])
+  }, [language, selected])
 
   useEffect(() => {
-    if (!selectedVerse || !verses) return
-    document.getElementById(`verse-${selectedVerse}`)?.scrollIntoView({ block: 'center' })
-  }, [selectedVerse, bookIndex, chapter, language, verses])
+    const target = listen.passage
+    if (!target || listen.status === 'idle' || slices.length === 0) return
+    if (hasSlice(slices, target.bookIndex, target.chapter)) {
+      document.getElementById(verseDomId(target.bookIndex, target.chapter, target.verse))?.scrollIntoView({
+        block: 'center',
+      })
+      return
+    }
+    const last = slices[slices.length - 1]
+    const first = slices[0]
+    const place = target.bookIndex * 1000 + target.chapter
+    if (place > last.bookIndex * 1000 + last.chapter) void append()
+    else if (place < first.bookIndex * 1000 + first.chapter) void prepend()
+  }, [listen.passage, listen.status, slices, append, prepend])
 
-  const relatedRows = related && related.verse === selectedVerse ? related.rows : null
-  const previous = chapter > 1 ? chapter - 1 : null
-  const next = chapter < book.chapters ? chapter + 1 : null
-  const kept = passage ? savedMatch(saved, passage) : undefined
-  const speakingHere =
-    listen.passage &&
-    listen.passage.bookIndex === bookIndex &&
-    listen.passage.chapter === chapter
-      ? listen.passage.verse
-      : null
+  const focusedSlice = slices.find((slice) => slice.bookIndex === focused.bookIndex && slice.chapter === focused.chapter)
+  const listenPassage =
+    selected ??
+    (focusedSlice ? { bookIndex: focused.bookIndex, chapter: focused.chapter, verse: 1 } : null)
+  const listenText = listenPassage
+    ? slices.find((slice) => slice.bookIndex === listenPassage.bookIndex && slice.chapter === listenPassage.chapter)
+        ?.verses[listenPassage.verse - 1]
+    : undefined
   const spokenLabel =
     listen.passage && listen.status !== 'idle' ? formatPassage(language, listen.passage) : null
-
-  useEffect(() => {
-    if (!speakingHere || !verses) return
-    document.getElementById(`verse-${speakingHere}`)?.scrollIntoView({ block: 'center' })
-  }, [speakingHere, verses])
+  const relatedKey = selected ? `${selected.bookIndex}:${selected.chapter}:${selected.verse}` : ''
+  const relatedRows = related && related.key === relatedKey ? related.rows : null
 
   return (
     <article className="reader">
+      <div className="reader-tools">
+        <p className="tap-hint">{t('scrollHint')}</p>
+        <button type="button" className="text-button" onClick={onShowChapters}>
+          {t('chapters')}
+        </button>
+      </div>
       <p className="tap-hint">{t('tapHint')}</p>
       {failed ? null : (
         <ListenBar
           supported={listen.supported}
           status={listen.status}
           statusText={spokenLabel}
-          canVerse={selectedVerse !== null}
-          canChapter={verses !== null}
-          canContinue={verses !== null}
+          canVerse={selected !== null}
+          canChapter={listenPassage !== null && listenText !== undefined}
+          canContinue={listenPassage !== null && listenText !== undefined}
           notice={listen.refused ? t('listenRefused') : undefined}
           onVerse={() => {
-            if (selectedVerse === null) return
-            listen.start(
-              'verse',
-              { bookIndex, chapter, verse: selectedVerse },
-              verses?.[selectedVerse - 1],
-            )
+            if (!selected || !listenText) return
+            listen.start('verse', selected, listenText)
           }}
           onChapter={() => {
-            const verse = selectedVerse ?? 1
-            listen.start('chapter', { bookIndex, chapter, verse }, verses?.[verse - 1])
+            if (!listenPassage || !listenText) return
+            listen.start('chapter', listenPassage, listenText)
           }}
           onContinue={() => {
-            const verse = selectedVerse ?? 1
-            listen.start('continue', { bookIndex, chapter, verse }, verses?.[verse - 1])
+            if (!listenPassage || !listenText) return
+            listen.start('continue', listenPassage, listenText)
           }}
           onPause={listen.pause}
           onResume={listen.resume}
@@ -142,90 +366,116 @@ export function ChapterReader({
         />
       )}
       {failed ? <p className="empty">{t('chapterFailed')}</p> : null}
-      {verses === null && !failed ? <p className="status">{t('openingChapter')}</p> : null}
-      {verses ? (
-        <div className="scripture">
-          {verses.map((text, index) => {
-            const number = index + 1
-            const current = { bookIndex, chapter, verse: number }
-            const selected = selectedVerse === number
-            const already = savedMatch(saved, current)
-            return (
-              <div
-                key={number}
-                id={`verse-${number}`}
-                className={['verse-block', selected ? 'selected' : '', speakingHere === number ? 'speaking' : '']
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <button
-                  type="button"
-                  className="verse-line"
-                  aria-expanded={selected}
-                  aria-current={speakingHere === number ? 'true' : undefined}
-                  onClick={() => onSelectVerse(selected ? null : number)}
-                >
-                  <sup>{number}</sup>
-                  <span>{text}</span>
-                  {already ? <span className="saved-mark">{t('savedBadge')}</span> : null}
-                </button>
-                {selected ? (
-                  <section className="study-panel" aria-label={t('relatedVerses')}>
-                    <h2>{t('relatedVerses')}</h2>
-                    {relatedRows === null ? <p className="field-note">{t('relatedLoading')}</p> : null}
-                    {relatedRows && relatedRows.length === 0 ? (
-                      <p className="field-note">{t('relatedScriptureEmpty')}</p>
-                    ) : null}
-                    {relatedRows && relatedRows.length > 0 ? (
-                      <ul className="related-list">
-                        {relatedRows.map((row) => (
-                          <li key={formatPassage(language, row)}>
-                            <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
-                              <span className="related-ref">{formatPassage(language, row)}</span>
-                              <span className="related-snippet scripture-snippet">{row.text}</span>
+      {slices.length === 0 && !failed ? <p className="status">{t('openingChapter')}</p> : null}
+      <div ref={topRef} className="scroll-sentinel" />
+      {slices.map((slice) => {
+        const book = BOOKS[slice.bookIndex]
+        const name = book.names[language]
+        return (
+          <section
+            key={`${slice.bookIndex}-${slice.chapter}`}
+            id={chapterDomId(slice.bookIndex, slice.chapter)}
+            className="scroll-chapter"
+            data-book={slice.bookIndex}
+            data-chapter={slice.chapter}
+          >
+            {slice.chapter === 1 ? (
+              <header className="book-open">
+                <BookArt bookId={book.id} />
+                <h2>{name}</h2>
+              </header>
+            ) : (
+              <h2 className="scroll-chapter-label">
+                {name} {slice.chapter}
+              </h2>
+            )}
+            <div className="scripture">
+              {slice.verses.map((text, index) => {
+                const number = index + 1
+                const current = { bookIndex: slice.bookIndex, chapter: slice.chapter, verse: number }
+                const isSelected =
+                  selected !== null &&
+                  selected.bookIndex === current.bookIndex &&
+                  selected.chapter === current.chapter &&
+                  selected.verse === current.verse
+                const speaking =
+                  listen.status !== 'idle' &&
+                  listen.passage !== null &&
+                  listen.passage.bookIndex === current.bookIndex &&
+                  listen.passage.chapter === current.chapter &&
+                  listen.passage.verse === current.verse
+                const already = savedMatch(saved, current)
+                const kept = isSelected ? already : undefined
+                return (
+                  <div
+                    key={number}
+                    id={verseDomId(slice.bookIndex, slice.chapter, number)}
+                    className={['verse-block', isSelected ? 'selected' : '', speaking ? 'speaking' : '']
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <button
+                      type="button"
+                      className="verse-line"
+                      aria-expanded={isSelected}
+                      aria-current={speaking ? 'true' : undefined}
+                      onClick={() => setSelected(isSelected ? null : current)}
+                    >
+                      <sup>{number}</sup>
+                      <span>{text}</span>
+                      {already ? <span className="saved-mark">{t('savedBadge')}</span> : null}
+                    </button>
+                    {isSelected ? (
+                      <section className="study-panel" aria-label={t('relatedVerses')}>
+                        <h2>{t('relatedVerses')}</h2>
+                        {relatedRows === null ? <p className="field-note">{t('relatedLoading')}</p> : null}
+                        {relatedRows && relatedRows.length === 0 ? (
+                          <p className="field-note">{t('relatedScriptureEmpty')}</p>
+                        ) : null}
+                        {relatedRows && relatedRows.length > 0 ? (
+                          <ul className="related-list">
+                            {relatedRows.map((row) => (
+                              <li key={formatPassage(language, row)}>
+                                <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
+                                  <span className="related-ref">{formatPassage(language, row)}</span>
+                                  <span className="related-snippet scripture-snippet">{row.text}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {kept ? (
+                          <div className="kept">
+                            <p className="related-ref">{t('yourNote')}</p>
+                            {kept.note ? <p className="note">{kept.note}</p> : <p className="field-note">{t('savedBadge')}</p>}
+                            <button type="button" className="button button-ghost" onClick={() => onEditSaved(kept.id)}>
+                              {t('editNote')}
                             </button>
-                          </li>
-                        ))}
-                      </ul>
+                          </div>
+                        ) : (
+                          <button type="button" className="button button-block" onClick={() => onSave(current, text)}>
+                            {t('saveThisVerse')}
+                          </button>
+                        )}
+                      </section>
                     ) : null}
-                    {kept ? (
-                      <div className="kept">
-                        <p className="related-ref">{t('yourNote')}</p>
-                        {kept.note ? <p className="note">{kept.note}</p> : <p className="field-note">{t('savedBadge')}</p>}
-                        <button type="button" className="button button-ghost" onClick={() => onEditSaved(kept.id)}>
-                          {t('editNote')}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="button button-block"
-                        onClick={() => onSave(current, text)}
-                      >
-                        {t('saveThisVerse')}
-                      </button>
-                    )}
-                  </section>
-                ) : null}
-              </div>
-            )
-          })}
-        </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
+      <div ref={bottomRef} className="scroll-sentinel" />
+      {moreFailed ? (
+        <p className="empty">
+          {t('chapterFailed')}{' '}
+          <button type="button" className="text-button" onClick={() => void append()}>
+            {t('tryAgain')}
+          </button>
+        </p>
       ) : null}
-      <div className="chapter-nav">
-        {previous ? (
-          <button type="button" className="button button-ghost" onClick={() => onChapter(previous)}>
-            {t('prevChapter')}
-          </button>
-        ) : (
-          <span />
-        )}
-        {next ? (
-          <button type="button" className="button button-ghost" onClick={() => onChapter(next)}>
-            {t('nextChapter')}
-          </button>
-        ) : null}
-      </div>
-      </article>
+      {endReached ? <p className="scripture-end">{t('scriptureEnd')}</p> : null}
+    </article>
   )
 }
