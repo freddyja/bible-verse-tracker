@@ -16,6 +16,13 @@ export type Category = {
   updatedAt: number
 }
 
+/** A verse in the bundled Scripture, when the reference is one we can open. */
+export type Passage = {
+  bookIndex: number
+  chapter: number
+  verse: number
+}
+
 export type Verse = {
   id: string
   /** Book, chapter, and verse — or any freeform reference. */
@@ -24,6 +31,8 @@ export type Verse = {
   /** Personal note. Empty string when the verse has none. */
   note: string
   categoryIds: string[]
+  /** Set when this saved verse points at the bundled text. */
+  passage?: Passage
   createdAt: number
   updatedAt: number
 }
@@ -33,6 +42,7 @@ export type VerseDraft = {
   text: string
   note: string
   categoryIds: string[]
+  passage?: Passage
 }
 
 export type LibraryMeta = {

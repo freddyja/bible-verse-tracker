@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { crossReferencesFor } from '../data/crossRefs'
-import { formatPassage } from '../data/passages'
 import { versesSharingCategory } from '../data/related'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
+import { relatedPassages, type ScriptureHit } from '../scripture/api'
+import { formatPassage, parseReference } from '../scripture/passages'
 
 type RelatedVersesProps = {
   reference: string
@@ -14,7 +14,7 @@ type RelatedVersesProps = {
   locked: boolean
   onClose: () => void
   onOpenVerse: (verseId: string) => void
-  onAddReference: (reference: string) => void
+  onAddReference: (reference: string, text: string) => void
 }
 
 export function RelatedVerses({
@@ -27,12 +27,15 @@ export function RelatedVerses({
   onOpenVerse,
   onAddReference,
 }: RelatedVersesProps) {
-  const { language, t } = useLanguage()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const { language, t } = useLanguage()
   const library = versesSharingCategory(verses, categoryIds, currentId)
-  const passages = crossReferencesFor(reference)
   const hasReference = reference.trim().length > 0
+  const [loaded, setLoaded] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
+  const parsed = hasReference ? parseReference(reference) : null
+  const loadKey = parsed ? `${language}:${parsed.bookIndex}:${parsed.chapter}:${parsed.verse}` : ''
+  const passages = !parsed ? [] : loaded?.key === loadKey ? loaded.rows : null
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -44,12 +47,30 @@ export function RelatedVerses({
     }
   }, [])
 
+  useEffect(() => {
+    const next = parseReference(reference)
+    if (!next) return
+    const key = `${language}:${next.bookIndex}:${next.chapter}:${next.verse}`
+    let cancelled = false
+    relatedPassages(language, next)
+      .then((rows) => {
+        if (!cancelled) setLoaded({ key, rows })
+      })
+      .catch(() => {
+        if (!cancelled) setLoaded({ key, rows: [] })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [language, reference])
+
   let libraryMessage: string | null = null
   if (categoryIds.length === 0) libraryMessage = t('relatedNeedCategory')
   else if (library.length === 0) libraryMessage = t('relatedLibraryEmpty')
 
   let scriptureMessage: string | null = null
   if (!hasReference) scriptureMessage = t('relatedNeedReference')
+  else if (passages === null) scriptureMessage = t('relatedLoading')
   else if (passages.length === 0) scriptureMessage = t('relatedScriptureEmpty')
 
   return createPortal(
@@ -106,19 +127,22 @@ export function RelatedVerses({
             {t('crossReferences')}
           </h3>
           {scriptureMessage ? <p className="field-note">{scriptureMessage}</p> : null}
-          {passages.length > 0 ? (
+          {passages && passages.length > 0 ? (
             <ul className="related-list">
               {passages.map((passage) => {
                 const label = formatPassage(language, passage)
                 return (
                   <li key={label} className="related-row">
-                    <span className="related-ref">{label}</span>
+                    <div className="related-open">
+                      <span className="related-ref">{label}</span>
+                      <span className="related-snippet scripture-snippet">{passage.text}</span>
+                    </div>
                     <button
                       type="button"
                       className="button button-small button-ghost"
                       disabled={locked}
                       aria-label={t('addReference', { reference: label })}
-                      onClick={() => onAddReference(label)}
+                      onClick={() => onAddReference(label, passage.text)}
                     >
                       {t('add')}
                     </button>

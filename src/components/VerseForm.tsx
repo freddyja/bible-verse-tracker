@@ -3,7 +3,8 @@ import type { FormEvent } from 'react'
 import { getVoiceNote } from '../data/db'
 import { LibraryError } from '../data/errors'
 import { categoryNamesMatch, normalizeCategoryName } from '../data/names'
-import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
+import type { Category, Passage, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
+import { parseReference } from '../scripture/passages'
 import { useLanguage } from '../i18n/useLanguage'
 import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -13,6 +14,7 @@ import { VoiceNoteControl } from './VoiceNoteControl'
 type VerseFormProps = {
   verse: Verse | null
   initialReference?: string
+  initialText?: string
   verses: readonly Verse[]
   categories: Category[]
   onSave: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
@@ -20,7 +22,8 @@ type VerseFormProps = {
   onCreateCategory: (name: string) => Promise<Category>
   onDone: () => void
   onOpenVerse: (verseId: string) => void
-  onAddReference: (reference: string) => void
+  onAddReference: (reference: string, text: string) => void
+  onReadPassage: (passage: Passage) => void
 }
 
 function errorText(
@@ -35,6 +38,7 @@ function errorText(
 export function VerseForm({
   verse,
   initialReference,
+  initialText,
   verses,
   categories,
   onSave,
@@ -43,10 +47,11 @@ export function VerseForm({
   onDone,
   onOpenVerse,
   onAddReference,
+  onReadPassage,
 }: VerseFormProps) {
   const { t } = useLanguage()
   const [reference, setReference] = useState(verse?.reference ?? initialReference ?? '')
-  const [text, setText] = useState(verse?.text ?? '')
+  const [text, setText] = useState(verse?.text ?? initialText ?? '')
   const [note, setNote] = useState(verse?.note ?? '')
   const [categoryIds, setCategoryIds] = useState<string[]>(verse?.categoryIds ?? [])
   const [newCategory, setNewCategory] = useState('')
@@ -131,9 +136,20 @@ export function VerseForm({
         ? { kind: 'replace', blob: voiceBlob }
         : { kind: 'remove' }
 
+    const parsed = parseReference(reference)
     setBusy(true)
     try {
-      await onSave({ reference, text, note, categoryIds }, verse?.id, voice)
+      await onSave(
+        {
+          reference,
+          text,
+          note,
+          categoryIds,
+          ...(parsed ? { passage: parsed } : {}),
+        },
+        verse?.id,
+        voice,
+      )
       onDone()
     } catch (caught) {
       setError(errorText(caught, t, 'couldNotSave'))
@@ -189,6 +205,18 @@ export function VerseForm({
       >
         {t('relatedVerses')}
       </button>
+      {parseReference(reference) ? (
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            const next = parseReference(reference)
+            if (next) onReadPassage(next)
+          }}
+        >
+          {t('readInScripture')}
+        </button>
+      ) : null}
 
       <label className="field">
         <span className="label">

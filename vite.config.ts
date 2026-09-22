@@ -15,8 +15,8 @@ export default defineConfig({
       ],
       manifest: {
         name: 'Bible Verse Tracker',
-        short_name: 'Verses',
-        description: 'A private place to keep biblical verses that matter to you.',
+        short_name: 'Scripture',
+        description: 'A study Bible to read, with private notes that stay on this device.',
         theme_color: '#f4efe6',
         background_color: '#f4efe6',
         id: '/',
@@ -44,7 +44,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest,json}'],
         navigateFallback: 'index.html',
       },
       devOptions: {

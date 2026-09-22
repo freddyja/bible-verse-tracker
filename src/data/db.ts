@@ -147,6 +147,7 @@ export async function saveVerse(draft: VerseDraft, id?: string): Promise<Verse> 
     text,
     note,
     categoryIds: [...new Set(draft.categoryIds.filter((categoryId) => validIds.has(categoryId)))],
+    ...(draft.passage ? { passage: draft.passage } : {}),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   }
