@@ -1059,6 +1059,61 @@ main {
   margin-top: 0.15rem;
 }
 
+.study-panel > .button-related + .button-related {
+  margin-top: 0.45rem;
+}
+
+.meaning-block {
+  margin: 0.45rem 0 0.85rem;
+}
+
+.meaning-block + h2 {
+  margin-top: 0.15rem;
+}
+
+.meaning-range {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.meaning-text {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-verse);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.meaning-block .meaning-text {
+  max-height: min(50vh, 24rem);
+  overflow: auto;
+}
+
+.meaning-text p {
+  margin: 0.75rem 0 0;
+}
+
+.meaning-text p:first-child {
+  margin-top: 0;
+}
+
+.meaning-about {
+  margin: 0.9rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.meaning-about p {
+  margin: 0.15rem 0 0;
+}
+
+.meaning-about-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .reader-tools {
   display: flex;
   align-items: baseline;

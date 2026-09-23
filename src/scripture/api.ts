@@ -1,4 +1,5 @@
 import { BOOKS } from './books'
+import { pickMeaning, type MeaningHit } from './meaning'
 import { fold, type PassageRef } from './passages'
 import { versionById } from './versions'
 
@@ -98,6 +99,19 @@ export async function parallelPassages(
     }),
   )
   return rows.filter((row): row is ParallelHit => row !== null)
+}
+
+const meanings = new Map<string, Record<string, [number, number, string][]>>()
+
+export async function meaningFor(passage: PassageRef): Promise<MeaningHit | null> {
+  const id = BOOKS[passage.bookIndex]?.id
+  if (!id) return null
+  let table = meanings.get(id)
+  if (!table) {
+    table = await fetchJson<Record<string, [number, number, string][]>>(scriptureUrl(`meaning/${id}.json`))
+    meanings.set(id, table)
+  }
+  return pickMeaning(table[String(passage.chapter)], passage.verse)
 }
 
 export async function relatedPassages(
