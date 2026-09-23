@@ -5,10 +5,10 @@ import { ListenBar } from './ListenBar'
 import { ScriptureText } from './ScriptureText'
 import { BookArt } from './BookArt'
 import type { ListenController } from '../speech/useListen'
-import { loadBook, relatedPassages, type ScriptureHit } from '../scripture/api'
+import { loadBook, parallelPassages, relatedPassages, type ParallelHit, type ScriptureHit } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import { chapterStep } from '../scripture/canon'
-import { formatPassage, parseReference, samePassage, type PassageRef } from '../scripture/passages'
+import { formatPassage, formatPassageRange, parseReference, samePassage, type PassageRef } from '../scripture/passages'
 
 type Slice = {
   bookIndex: number
@@ -79,6 +79,8 @@ export function ChapterReader({
     startVerse === null ? null : { bookIndex: startBook, chapter: startChapter, verse: startVerse },
   )
   const [related, setRelated] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
+  const [parallelKey, setParallelKey] = useState<string | null>(null)
+  const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
@@ -287,6 +289,23 @@ export function ChapterReader({
   }, [slices])
 
   useEffect(() => {
+    if (parallelKey === null || selected === null) return
+    const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
+    if (parallelKey !== key) return
+    let cancelled = false
+    parallelPassages(versionId, selected)
+      .then((rows) => {
+        if (!cancelled) setParallel({ key, rows })
+      })
+      .catch(() => {
+        if (!cancelled) setParallel({ key, rows: [] })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [versionId, selected, parallelKey])
+
+  useEffect(() => {
     if (selected === null) return
     const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
     let cancelled = false
@@ -330,6 +349,8 @@ export function ChapterReader({
     listen.passage && listen.status !== 'idle' ? formatPassage(language, listen.passage) : null
   const relatedKey = selected ? `${selected.bookIndex}:${selected.chapter}:${selected.verse}` : ''
   const relatedRows = related && related.key === relatedKey ? related.rows : null
+  const parallelOpen = parallelKey !== null && parallelKey === relatedKey
+  const parallelRows = parallelOpen && parallel && parallel.key === relatedKey ? parallel.rows : null
 
   return (
     <article className="reader">
@@ -428,7 +449,41 @@ export function ChapterReader({
                       {already ? <span className="saved-mark">{t('savedBadge')}</span> : null}
                     </button>
                     {isSelected ? (
-                      <section className="study-panel" aria-label={t('relatedVerses')}>
+                      <section className="study-panel">
+                        <button
+                          type="button"
+                          className="button button-related button-block"
+                          aria-expanded={parallelOpen}
+                          onClick={() => setParallelKey(parallelOpen ? null : relatedKey)}
+                        >
+                          {t('parallelPassages')}
+                        </button>
+                        {parallelOpen ? (
+                          <div className="parallel-block">
+                            {parallelRows === null ? <p className="field-note">{t('parallelLoading')}</p> : null}
+                            {parallelRows && parallelRows.length === 0 ? (
+                              <p className="field-note">{t('parallelEmpty')}</p>
+                            ) : null}
+                            {parallelRows && parallelRows.length > 0 ? (
+                              <ul className="related-list">
+                                {parallelRows.map((row) => (
+                                  <li key={formatPassageRange(language, row)}>
+                                    <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
+                                      <span className="related-ref">{formatPassageRange(language, row)}</span>
+                                      <ScriptureText
+                                        bookIndex={row.bookIndex}
+                                        chapter={row.chapter}
+                                        verse={row.verse}
+                                        text={row.text}
+                                        className="related-snippet scripture-snippet"
+                                      />
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </div>
+                        ) : null}
                         <h2>{t('relatedVerses')}</h2>
                         {relatedRows === null ? <p className="field-note">{t('relatedLoading')}</p> : null}
                         {relatedRows && relatedRows.length === 0 ? (

@@ -1,0 +1,10 @@
+UBS Parallel Passage Database
+© 2023 United Bible Societies
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International.
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Source: https://github.com/ubsicap/ubs-open-license/tree/main/parallel%20passages
+
+public/scripture/parallels.json is Adapted Material. Word-match numbers were omitted.
+Hebrew verse numbers were converted to traditional Protestant numbering.
+Long formula lists were left out. See scripts/build-parallels.mjs.

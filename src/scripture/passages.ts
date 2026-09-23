@@ -143,6 +143,16 @@ export function formatPassage(language: Language, passage: PassageRef): string {
   return `${name} ${passage.chapter}:${passage.verse}`
 }
 
+export function formatPassageRange(
+  language: Language,
+  passage: PassageRef & { endVerse?: number },
+): string {
+  const name = BOOKS[passage.bookIndex]?.names[language] ?? ''
+  const end = passage.endVerse
+  if (end !== undefined && end > passage.verse) return `${name} ${passage.chapter}:${passage.verse}–${end}`
+  return `${name} ${passage.chapter}:${passage.verse}`
+}
+
 export function samePassage(a: PassageRef, b: PassageRef): boolean {
   return a.bookIndex === b.bookIndex && a.chapter === b.chapter && a.verse === b.verse
 }

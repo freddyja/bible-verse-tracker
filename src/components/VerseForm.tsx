@@ -12,6 +12,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
 import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
+import { ParallelPassages } from './ParallelPassages'
 import { RelatedVerses } from './RelatedVerses'
 import { VoiceNoteControl } from './VoiceNoteControl'
 
@@ -70,6 +71,7 @@ export function VerseForm({
   const [busy, setBusy] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [relatedOpen, setRelatedOpen] = useState(false)
+  const [parallelOpen, setParallelOpen] = useState(false)
 
   const verseId = verse?.id
   useEffect(() => {
@@ -241,6 +243,14 @@ export function VerseForm({
         type="button"
         className="button button-related button-block"
         aria-haspopup="dialog"
+        onClick={() => setParallelOpen(true)}
+      >
+        {t('parallelPassages')}
+      </button>
+      <button
+        type="button"
+        className="button button-related button-block"
+        aria-haspopup="dialog"
         onClick={() => setRelatedOpen(true)}
       >
         {t('relatedVerses')}
@@ -363,6 +373,15 @@ export function VerseForm({
           confirmLabel={t('deleteConfirm')}
           onCancel={() => setConfirmingDelete(false)}
           onConfirm={() => void handleDelete()}
+        />
+      ) : null}
+
+      {parallelOpen ? (
+        <ParallelPassages
+          reference={reference}
+          locked={recording}
+          onClose={() => setParallelOpen(false)}
+          onReadPassage={onReadPassage}
         />
       ) : null}
 
