@@ -8,6 +8,7 @@
   --line: #e3d9c8;
   --clay: #7c3428;
   --clay-soft: #f6e8e2;
+  --red-letter: #8e1c2c;
   --on-clay: #fbf7f1;
   --shadow: 0 1px 2px rgba(44, 38, 31, 0.05), 0 10px 28px rgba(44, 38, 31, 0.05);
   --font-ui: 'Source Sans 3', 'Segoe UI', sans-serif;
@@ -26,6 +27,7 @@
     --line: #3d352c;
     --clay: #e7b2a4;
     --clay-soft: #3a2a26;
+    --red-letter: #f0a8b0;
     --on-clay: #2a1410;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 28px rgba(0, 0, 0, 0.18);
   }
@@ -965,6 +967,31 @@ main {
   font-family: var(--font-ui);
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.words-of-jesus {
+  color: var(--red-letter);
+}
+
+.votd-card .words-of-jesus {
+  color: #f0a8b0;
+}
+
+.red-letter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+.red-letter-toggle input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--red-letter);
 }
 
 .saved-mark {

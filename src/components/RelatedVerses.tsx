@@ -5,6 +5,7 @@ import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { relatedPassages, type ScriptureHit } from '../scripture/api'
 import { formatPassage, parseReference } from '../scripture/passages'
+import { ScriptureText } from './ScriptureText'
 
 type RelatedVersesProps = {
   reference: string
@@ -135,7 +136,13 @@ export function RelatedVerses({
                   <li key={label} className="related-row">
                     <div className="related-open">
                       <span className="related-ref">{label}</span>
-                      <span className="related-snippet scripture-snippet">{passage.text}</span>
+                      <ScriptureText
+                        bookIndex={passage.bookIndex}
+                        chapter={passage.chapter}
+                        verse={passage.verse}
+                        text={passage.text}
+                        className="related-snippet scripture-snippet"
+                      />
                     </div>
                     <button
                       type="button"

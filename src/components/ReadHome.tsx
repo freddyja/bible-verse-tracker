@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { searchScripture, type ScriptureHit } from '../scripture/api'
 import { BOOKS, NEW_TESTAMENT_INDEX } from '../scripture/books'
 import { formatPassage, matchBook, parseReference } from '../scripture/passages'
+import { ScriptureText } from './ScriptureText'
 import { VerseOfTheDay } from './VerseOfTheDay'
 
 type ReadHomeProps = {
@@ -102,7 +103,13 @@ export function ReadHome({
                       onClick={() => onOpenPassage(hit.bookIndex, hit.chapter, hit.verse)}
                     >
                       <span className="related-ref">{formatPassage(language, hit)}</span>
-                      <span className="related-snippet">{hit.text}</span>
+                      <ScriptureText
+                        bookIndex={hit.bookIndex}
+                        chapter={hit.chapter}
+                        verse={hit.verse}
+                        text={hit.text}
+                        className="related-snippet"
+                      />
                     </button>
                   </li>
                 ))}

@@ -9,6 +9,8 @@ export type LanguageContextValue = {
   versionName: string
   versions: readonly BibleVersion[]
   setVersion: (versionId: string) => void
+  redLetter: boolean
+  setRedLetter: (enabled: boolean) => void
   t: (key: MessageKey, vars?: Record<string, string | number>) => string
 }
 

@@ -5,18 +5,11 @@ import { loadVerse } from '../scripture/api'
 import { dailyPhoto, dailyVerse, daysAgo, greetingKey } from '../scripture/daily'
 import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
+import { ScriptureText } from './ScriptureText'
 
 const READER_NAME = 'Freddy'
 const PAST_PAGE = 12
 const PAST_LIMIT = 90
-
-function snippet(text: string): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
-  if (clean.length <= 120) return clean
-  const cut = clean.slice(0, 117)
-  const space = cut.lastIndexOf(' ')
-  return `${(space > 70 ? cut.slice(0, space) : cut).trim()}…`
-}
 
 function dateLabel(language: Language, offset: number, date: Date, yesterday: string): string {
   if (offset === 1) return yesterday
@@ -109,7 +102,7 @@ export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
           {reference} {abbr}
         </span>
         <span className="votd-text" style={{ fontSize: verseSize }}>
-          {text}
+          <ScriptureText bookIndex={passage.bookIndex} chapter={passage.chapter} verse={passage.verse} text={text} />
         </span>
       </button>
       <div className="votd-past">
@@ -147,7 +140,14 @@ export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
                         <span className="votd-past-ref">
                           {formatPassage(language, pick)} {abbr}
                         </span>
-                        <span className="votd-past-snippet">{snippet(body)}</span>
+                        <ScriptureText
+                          bookIndex={pick.bookIndex}
+                          chapter={pick.chapter}
+                          verse={pick.verse}
+                          text={body}
+                          className="votd-past-snippet"
+                          limit={120}
+                        />
                       </span>
                     </button>
                   </li>

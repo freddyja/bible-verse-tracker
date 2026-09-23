@@ -13,6 +13,7 @@ import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
 import { formatPassage, type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
+import { RedLetterToggle } from './components/RedLetterToggle'
 import { VersionPicker } from './components/VersionPicker'
 
 type ChapterView = {
@@ -139,10 +140,12 @@ export default function App() {
               <p className="credit">Designed by Freddy Jara-Almonte.</p>
               <p className="tagline">{t('tagline')}</p>
               <LanguagePicker />
+              <RedLetterToggle />
             </>
           ) : (
             <LanguagePicker />
           )}
+          {view.kind === 'chapter' ? <RedLetterToggle /> : null}
         </div>
         {view.kind === 'read' ? (
           <button

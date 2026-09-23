@@ -7,6 +7,15 @@ import { translate } from './messages'
 import { LanguageContext, type LanguageContextValue } from './language-context'
 
 const STORAGE_KEY = 'bible-verse-tracker.language'
+const RED_LETTER_KEY = 'bible-verse-tracker.red-letter'
+
+function readRedLetter(): boolean {
+  try {
+    return localStorage.getItem(RED_LETTER_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
 
 function versionKey(language: Language): string {
   return `bible-verse-tracker.version.${language}`
@@ -29,6 +38,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     es: readStoredVersion('es'),
     pt: readStoredVersion('pt'),
   }))
+  const [redLetter, setRedLetterState] = useState(readRedLetter)
 
   const versionId = chosen[language]
   const versionName = versionById(versionId)?.name ?? versionsFor(language)[0].name
@@ -54,9 +64,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         if (versionById(next)?.language !== language) return
         setChosen((current) => (current[language] === next ? current : { ...current, [language]: next }))
       },
+      redLetter,
+      setRedLetter: (enabled) => {
+        setRedLetterState(enabled)
+        try {
+          localStorage.setItem(RED_LETTER_KEY, enabled ? '1' : '0')
+        } catch {
+          // The choice still applies until the page closes.
+        }
+      },
       t: (key, vars) => translate(language, key, vars),
     }),
-    [language, versionId, versionName],
+    [language, versionId, versionName, redLetter],
   )
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
