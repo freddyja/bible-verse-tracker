@@ -1043,6 +1043,22 @@ main {
   font-weight: 600;
 }
 
+.study-panel > .button-related {
+  margin-top: 0.35rem;
+}
+
+.study-panel > .button-related + h2 {
+  margin-top: 0.85rem;
+}
+
+.parallel-block {
+  margin: 0.45rem 0 0.85rem;
+}
+
+.parallel-block + h2 {
+  margin-top: 0.15rem;
+}
+
 .reader-tools {
   display: flex;
   align-items: baseline;

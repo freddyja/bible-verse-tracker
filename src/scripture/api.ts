@@ -69,6 +69,37 @@ export async function loadCrossReferences(bookIndex: number): Promise<number[][]
   return table
 }
 
+let parallelTable: Record<string, Record<string, Record<string, number[][]>>> | null = null
+
+async function loadParallelBooks(): Promise<Record<string, Record<string, Record<string, number[][]>>>> {
+  if (parallelTable) return parallelTable
+  const table = await fetchJson<Record<string, Record<string, Record<string, number[][]>>>>(
+    scriptureUrl('parallels.json'),
+  )
+  parallelTable = table
+  return table
+}
+
+export type ParallelHit = ScriptureHit & { endVerse: number }
+
+export async function parallelPassages(
+  versionId: string,
+  passage: PassageRef,
+): Promise<ParallelHit[]> {
+  const table = await loadParallelBooks()
+  const id = BOOKS[passage.bookIndex]?.id
+  if (!id) return []
+  const refs = table[id]?.[String(passage.chapter)]?.[String(passage.verse)] ?? []
+  const rows = await Promise.all(
+    refs.map(async ([bookIndex, chapter, verse, endVerse]) => {
+      const text = await loadVerse(versionId, bookIndex, chapter, verse)
+      if (!text) return null
+      return { bookIndex, chapter, verse, endVerse, text }
+    }),
+  )
+  return rows.filter((row): row is ParallelHit => row !== null)
+}
+
 export async function relatedPassages(
   versionId: string,
   passage: PassageRef,
