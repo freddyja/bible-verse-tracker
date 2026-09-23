@@ -43,6 +43,8 @@ The King James Version, Reina-Valera 1909, and Bíblia Livre were already in the
 
 The Open English Bible is published under CC0. Its Old Testament is still unfinished in the public text, so it is not offered as a choice. Cross-references are a short selection from [Open Bible](https://www.openbible.info/labs/cross-references/), used under Creative Commons Attribution. Book names follow the language he chose. Verse numbers are the traditional Protestant numbering.
 
+Words of Jesus are shown in red, in the manner of a red-letter Bible. The spans come from the public-domain World English Bible `\wj` markers published by [eBible.org](https://ebible.org/Scriptures/engwebp_usfm.zip), not from a commercial red-letter edition. The same verse spans are used for every bundled translation. Where the public-domain text itself names God as the speaker — the Father’s voice from heaven, and Old Testament speeches introduced as the LORD speaking — those words use the same red. A verse is left in the ordinary color when the speaker is not clear. “Red letter words of Jesus,” under the title, turns this off. The phone still reads the verse aloud as plain text.
+
 ## Language
 
 The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. EN, ES, and PT in the header remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
+import { ScriptureText } from './ScriptureText'
 import { BookArt } from './BookArt'
 import type { ListenController } from '../speech/useListen'
 import { loadBook, relatedPassages, type ScriptureHit } from '../scripture/api'
@@ -423,7 +424,7 @@ export function ChapterReader({
                       onClick={() => setSelected(isSelected ? null : current)}
                     >
                       <sup>{number}</sup>
-                      <span>{text}</span>
+                      <ScriptureText bookIndex={slice.bookIndex} chapter={slice.chapter} verse={number} text={text} />
                       {already ? <span className="saved-mark">{t('savedBadge')}</span> : null}
                     </button>
                     {isSelected ? (
@@ -439,7 +440,13 @@ export function ChapterReader({
                               <li key={formatPassage(language, row)}>
                                 <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
                                   <span className="related-ref">{formatPassage(language, row)}</span>
-                                  <span className="related-snippet scripture-snippet">{row.text}</span>
+                                  <ScriptureText
+                                    bookIndex={row.bookIndex}
+                                    chapter={row.chapter}
+                                    verse={row.verse}
+                                    text={row.text}
+                                    className="related-snippet scripture-snippet"
+                                  />
                                 </button>
                               </li>
                             ))}
