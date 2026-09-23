@@ -63,6 +63,8 @@ export default defineConfig(({ command }) => {
           '**/scripture/rv1865/**',
           '**/scripture/nva/**',
           '**/scripture/blivre-tr/**',
+          '**/scripture/lexicon/**',
+          '**/scripture/study/**',
         ],
         navigateFallback: 'index.html',
         runtimeCaching: [
@@ -72,7 +74,7 @@ export default defineConfig(({ command }) => {
             options: {
               cacheName: 'scripture',
               expiration: {
-                maxEntries: 900,
+                maxEntries: 1400,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
