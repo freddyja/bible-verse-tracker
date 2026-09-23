@@ -10,8 +10,12 @@
     "preview": "vite preview",
     "check:red-letter": "node --experimental-strip-types scripts/check-red-letter.mjs",
     "check:meaning": "node --experimental-strip-types scripts/check-meaning.mjs",
+    "check:lexicon": "node --experimental-strip-types scripts/check-lexicon.mjs",
+    "check:study": "node --experimental-strip-types scripts/check-study.mjs",
     "build:parallels": "node scripts/build-parallels.mjs",
-    "build:meaning": "node scripts/build-meaning.mjs"
+    "build:meaning": "node scripts/build-meaning.mjs",
+    "build:lexicon": "node scripts/build-lexicon.mjs",
+    "build:study": "node scripts/build-study.mjs"
   },
   "dependencies": {
     "@fontsource/literata": "^5.3.0",

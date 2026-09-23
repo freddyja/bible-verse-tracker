@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
+import { LexiconBody } from './LexiconPanel'
 import { MeaningBody } from './MeaningNote'
 import { ScriptureText } from './ScriptureText'
 import { BookArt } from './BookArt'
@@ -83,6 +84,7 @@ export function ChapterReader({
   const [parallelKey, setParallelKey] = useState<string | null>(null)
   const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
   const [meaningKey, setMeaningKey] = useState<string | null>(null)
+  const [lexiconKey, setLexiconKey] = useState<string | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
@@ -354,6 +356,7 @@ export function ChapterReader({
   const parallelOpen = parallelKey !== null && parallelKey === relatedKey
   const parallelRows = parallelOpen && parallel && parallel.key === relatedKey ? parallel.rows : null
   const meaningOpen = meaningKey !== null && meaningKey === relatedKey
+  const lexiconOpen = lexiconKey !== null && lexiconKey === relatedKey
 
   return (
     <article className="reader">
@@ -485,6 +488,23 @@ export function ChapterReader({
                                 ))}
                               </ul>
                             ) : null}
+                          </div>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="button button-related button-block"
+                          aria-expanded={lexiconOpen}
+                          onClick={() => setLexiconKey(lexiconOpen ? null : relatedKey)}
+                        >
+                          {t('lexicon')}
+                        </button>
+                        {lexiconOpen && selected ? (
+                          <div className="meaning-block">
+                            <LexiconBody
+                              bookIndex={selected.bookIndex}
+                              chapter={selected.chapter}
+                              verse={selected.verse}
+                            />
                           </div>
                         ) : null}
                         <button

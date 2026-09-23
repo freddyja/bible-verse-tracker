@@ -1,0 +1,49 @@
+Greek and Hebrew lexicon
+STEP Bible data, Creative Commons Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+https://github.com/STEPBible/STEPBible-Data
+
+Credit: STEP Bible, www.STEPBible.org
+The datasets were created by STEP Bible from work at Tyndale House, Cambridge.
+
+public/scripture/lexicon/words/*.json
+  Word-by-word text for each book.
+  New Testament: Translators Amalgamated Greek NT (TAGNT).
+  Only words present in the Textus Receptus (Scrivener 1894) are included.
+  STEP Bible marks those words with K outside parentheses. Where the file
+  records a distinct Textus Receptus spelling, that spelling is the form shown.
+  Old Testament: Translators Amalgamated Hebrew OT (TAHOT), the Leningrad
+  reading (type L), including Aramaic in Daniel and Ezra when that reading
+  is marked Aramaic.
+  Morpheme slashes, cantillation, and verse punctuation are not shown.
+  A hyphen in the Hebrew transliteration marks a prefix. A capital letter
+  is the stressed syllable in the STEP Bible transliteration.
+  Strong's numbers are written without leading zeros. A final letter, such
+  as H1254A, is STEP Bible's disambiguation of that number.
+
+public/scripture/lexicon/greek.json
+  Translators Brief lexicon of Extended Strongs for Greek (TBESG).
+  Brief definitions from Abbott-Smith where STEP Bible used that lexicon,
+  and from other brief definitions where Abbott-Smith had none.
+  Abbott-Smith's Manual Greek Lexicon of the New Testament (1922) is in the
+  public domain in the United States. The STEP Bible compilation is CC BY 4.0.
+
+public/scripture/lexicon/hebrew.json
+  Translators Brief lexicon of Extended Strongs for Hebrew (TBESH).
+  Abridged Brown-Driver-Briggs definitions. BDB (1906) is in the public
+  domain. The STEP Bible abridgement is CC BY 4.0.
+
+Changes recorded for CC BY 4.0:
+  The files were reformatted as JSON and split by book so a phone can load
+  one book at a time. Morphology codes, edition lists, and readings that are
+  not the Textus Receptus or the Leningrad text were left out. Definitions
+  longer than about 900 Greek characters or 1,200 Hebrew characters were cut
+  at a sentence or a line. Markup for bold, line breaks, and Abbott-Smith
+  sense numbers was turned into plain text. Related words are Strong's
+  numbers cited in the definition, plus a Greek lemma the definition already
+  names when that lemma is in this lexicon. The wording of the definitions
+  was not rewritten.
+
+STEP Bible asks projects to point back to github.com/STEPBible/STEPBible-Data
+as the place where corrections are collected. These files are the extract
+this app needs offline. They are not a mirror of the full datasets.

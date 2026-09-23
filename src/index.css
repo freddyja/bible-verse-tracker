@@ -1114,6 +1114,90 @@ main {
   text-transform: uppercase;
 }
 
+.study-section {
+  margin: 0.85rem 0 0;
+}
+
+.study-section .related-heading {
+  margin: 0 0 0.35rem;
+}
+
+.study-section .meaning-text {
+  max-height: min(40vh, 18rem);
+  overflow: auto;
+}
+
+.lex-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lex-word {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  max-width: 11rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  text-align: left;
+}
+
+.lex-word.selected {
+  border-color: var(--clay);
+  background: var(--clay-soft);
+}
+
+.lex-surface {
+  font-family: 'Times New Roman', 'Noto Serif', 'Noto Serif Hebrew', Palatino, serif;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.lex-mini,
+.lex-translit,
+.lex-strong,
+.lex-verse-gloss,
+.lex-gloss-line {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.lex-detail {
+  margin: 0.7rem 0 0;
+  padding: 0.7rem 0.15rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.lex-lemma {
+  margin: 0;
+  font-family: 'Times New Roman', 'Noto Serif', 'Noto Serif Hebrew', Palatino, serif;
+  font-size: 1.7rem;
+  line-height: 1.25;
+}
+
+.lex-translit,
+.lex-strong,
+.lex-verse-gloss,
+.lex-gloss-line {
+  margin: 0.25rem 0 0;
+}
+
+.lex-related {
+  margin-top: 0.75rem;
+}
+
+.lex-related .meaning-about-label {
+  margin: 0;
+}
+
 .reader-tools {
   display: flex;
   align-items: baseline;

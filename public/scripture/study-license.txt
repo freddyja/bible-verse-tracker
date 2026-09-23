@@ -1,0 +1,47 @@
+Study notes beyond Matthew Henry's Concise Commentary
+
+In context
+  Matthew Henry's Concise Commentary on the Whole Bible. Public domain.
+  See public/scripture/meaning-license.txt.
+  The whole note is shown under "In context". It was not split into an
+  original-audience section or a today section. The commentary does not
+  label those parts, and this app does not invent the division.
+
+Then (original audience)
+  unfoldingWord Translation Notes, version 85.
+  Copyright © 2022 by unfoldingWord.
+  Creative Commons Attribution-ShareAlike 4.0
+  https://creativecommons.org/licenses/by-sa/4.0/
+  https://git.door43.org/unfoldingWord/en_tn/releases/tag/v85
+
+  public/scripture/study/then/*.json is an extract, not the whole resource.
+  From each book's introduction, the kept sections are the ones the source
+  already separates as the author, the occasion, and "Important Religious
+  and Cultural Concepts" (Part 2, or a heading of that kind).
+  Left out: outlines, "how should the title be translated", "special
+  formatting", and Part 3 "Important Translation Issues", including any
+  subsection whose heading is about translation or textual issues.
+  The kept sentences were not rewritten. Markdown links and emphasis were
+  removed so the note can be shown as plain text. An empty "(See:)" left
+  behind by a removed translator link was dropped.
+  The note is about the whole book. The screen says so. It is not presented
+  as a comment written for the single verse.
+  Books that this release of the Translation Notes does not include, such
+  as Psalms and Isaiah, have no file. The screen says there is no note.
+
+  These JSON files are Adapted Material under CC BY-SA 4.0. Share them
+  with the same license and with attribution to unfoldingWord.
+
+Today
+  Charles H. Spurgeon, Faith's Checkbook (1888). Public domain.
+  Source text: https://archive.spurgeon.org/fcb/fcb-bod.htm
+
+  public/scripture/study/today/*.json keeps a reading only on the verse
+  cited in that reading's heading. The date and the repeated quotation of
+  the verse were left out. The title and the comment were not rewritten.
+  A citation printed as "Psalm l46:8" was read as Psalm 146:8, and a
+  citation with no space before the chapter, such as "Exodus8:23", was
+  read as Exodus 8:23. No other verse was attached.
+  A verse with no reading in this book has no today note. The screen says so.
+
+Nothing in these files was written by a model to fill a gap.

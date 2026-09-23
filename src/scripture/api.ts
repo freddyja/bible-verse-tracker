@@ -1,7 +1,17 @@
 import { BOOKS } from './books'
+import {
+  baseStrong,
+  entryFromRow,
+  normalizeStrong,
+  wordFromRow,
+  type LexiconEntry,
+  type LexiconWord,
+} from './lexicon'
 import { pickMeaning, type MeaningHit } from './meaning'
 import { fold, type PassageRef } from './passages'
 import { versionById } from './versions'
+
+export type { LexiconEntry, LexiconWord }
 
 export type ScriptureHit = PassageRef & { text: string }
 
@@ -14,6 +24,13 @@ function scriptureUrl(path: string): string {
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
+  if (!response.ok) throw new Error(url)
+  return response.json() as Promise<T>
+}
+
+async function fetchOptional<T>(url: string): Promise<T | null> {
+  const response = await fetch(url)
+  if (response.status === 404) return null
   if (!response.ok) throw new Error(url)
   return response.json() as Promise<T>
 }
@@ -112,6 +129,77 @@ export async function meaningFor(passage: PassageRef): Promise<MeaningHit | null
     meanings.set(id, table)
   }
   return pickMeaning(table[String(passage.chapter)], passage.verse)
+}
+
+const lexiconWords = new Map<string, Record<string, Record<string, string[][]>> | null>()
+const lexiconDict = new Map<string, Record<string, [string, string, string, string, string[]]>>()
+const audienceNotes = new Map<string, string | null>()
+const todayNotes = new Map<string, Record<string, Record<string, string>> | null>()
+
+async function loadLexiconBook(bookIndex: number): Promise<Record<string, Record<string, string[][]>> | null> {
+  const id = BOOKS[bookIndex]?.id
+  if (!id) return null
+  if (lexiconWords.has(id)) return lexiconWords.get(id) ?? null
+  const table = await fetchOptional<Record<string, Record<string, string[][]>>>(scriptureUrl(`lexicon/words/${id}.json`))
+  lexiconWords.set(id, table)
+  return table
+}
+
+export async function lexiconFor(passage: PassageRef): Promise<LexiconWord[]> {
+  const table = await loadLexiconBook(passage.bookIndex)
+  const rows = table?.[String(passage.chapter)]?.[String(passage.verse)] ?? []
+  return rows.map(wordFromRow).filter((word): word is LexiconWord => word !== null)
+}
+
+async function loadLexiconDict(kind: 'greek' | 'hebrew'): Promise<Record<string, [string, string, string, string, string[]]>> {
+  const cached = lexiconDict.get(kind)
+  if (cached) return cached
+  const table = await fetchJson<Record<string, [string, string, string, string, string[]]>>(
+    scriptureUrl(`lexicon/${kind}.json`),
+  )
+  lexiconDict.set(kind, table)
+  return table
+}
+
+export function peekLexiconEntry(id: string): LexiconEntry | null {
+  const kind = id.startsWith('G') ? 'greek' : 'hebrew'
+  const table = lexiconDict.get(kind)
+  if (!table) return null
+  const normalized = normalizeStrong(id) ?? id
+  const row = table[normalized] ?? table[baseStrong(normalized)]
+  if (!row) return null
+  return entryFromRow(normalized, row)
+}
+
+export async function lexiconEntry(id: string): Promise<LexiconEntry | null> {
+  const normalized = normalizeStrong(id)
+  if (!normalized) return null
+  const kind = normalized.startsWith('G') ? 'greek' : 'hebrew'
+  const table = await loadLexiconDict(kind)
+  const row = table[normalized] ?? table[baseStrong(normalized)]
+  if (!row) return null
+  return entryFromRow(normalized, row)
+}
+
+export async function audienceFor(passage: PassageRef): Promise<string | null> {
+  const id = BOOKS[passage.bookIndex]?.id
+  if (!id) return null
+  if (audienceNotes.has(id)) return audienceNotes.get(id) ?? null
+  const table = await fetchOptional<{ book?: string }>(scriptureUrl(`study/then/${id}.json`))
+  const note = table?.book?.trim() || null
+  audienceNotes.set(id, note)
+  return note
+}
+
+export async function todayFor(passage: PassageRef): Promise<string | null> {
+  const id = BOOKS[passage.bookIndex]?.id
+  if (!id) return null
+  if (!todayNotes.has(id)) {
+    const table = await fetchOptional<Record<string, Record<string, string>>>(scriptureUrl(`study/today/${id}.json`))
+    todayNotes.set(id, table)
+  }
+  const text = todayNotes.get(id)?.[String(passage.chapter)]?.[String(passage.verse)]?.trim()
+  return text || null
 }
 
 export async function relatedPassages(

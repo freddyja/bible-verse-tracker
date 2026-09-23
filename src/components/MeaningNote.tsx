@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLanguage } from '../i18n/useLanguage'
-import { meaningFor } from '../scripture/api'
+import { audienceFor, meaningFor, todayFor } from '../scripture/api'
 import type { MeaningHit } from '../scripture/meaning'
 import { parseReference } from '../scripture/passages'
 
@@ -11,62 +11,98 @@ type MeaningBodyProps = {
   verse: number
 }
 
-function MeaningAbout() {
+function NoteParagraphs({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\n+/).filter((paragraph) => paragraph.length > 0)
+  return (
+    <div className="meaning-text" lang="en">
+      {paragraphs.map((paragraph, index) => (
+        <p key={index}>{paragraph}</p>
+      ))}
+    </div>
+  )
+}
+
+function StudySection({
+  title,
+  empty,
+  source,
+  children,
+}: {
+  title: string
+  empty: string
+  source: string
+  children: ReactNode | null
+}) {
   const { t } = useLanguage()
   return (
-    <footer className="meaning-about">
-      <p className="meaning-about-label">{t('meaningAbout')}</p>
-      <p>{t('meaningSource')}</p>
-    </footer>
+    <section className="study-section">
+      <h3 className="related-heading">{title}</h3>
+      {children ?? <p className="field-note">{empty}</p>}
+      <footer className="meaning-about">
+        <p className="meaning-about-label">{t('meaningAbout')}</p>
+        <p>{source}</p>
+      </footer>
+    </section>
   )
 }
 
 export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
   const { language, t } = useLanguage()
-  const [loaded, setLoaded] = useState<{ key: string; note: MeaningHit | null } | null>(null)
   const key = `${bookIndex}:${chapter}:${verse}`
-  const note = loaded?.key === key ? loaded.note : null
-  const pending = loaded?.key !== key
+  const [loaded, setLoaded] = useState<{
+    key: string
+    context: MeaningHit | null
+    thenNote: string | null
+    todayNote: string | null
+  } | null>(null)
+  const study = loaded?.key === key ? loaded : null
 
   useEffect(() => {
     let cancelled = false
-    meaningFor({ bookIndex, chapter, verse })
-      .then((next) => {
-        if (!cancelled) setLoaded({ key, note: next })
+    Promise.all([
+      meaningFor({ bookIndex, chapter, verse }),
+      audienceFor({ bookIndex, chapter, verse }),
+      todayFor({ bookIndex, chapter, verse }),
+    ])
+      .then(([context, thenNote, todayNote]) => {
+        if (!cancelled) setLoaded({ key, context, thenNote, todayNote })
       })
       .catch(() => {
-        if (!cancelled) setLoaded({ key, note: null })
+        if (!cancelled) setLoaded({ key, context: null, thenNote: null, todayNote: null })
       })
     return () => {
       cancelled = true
     }
   }, [bookIndex, chapter, verse, key])
 
-  if (pending) return <p className="field-note">{t('meaningLoading')}</p>
+  if (!study) return <p className="field-note">{t('meaningLoading')}</p>
 
-  if (!note) {
-    return (
-      <>
-        <p className="field-note">{t('meaningEmpty')}</p>
-        <MeaningAbout />
-      </>
-    )
-  }
-
-  const paragraphs = note.text.split(/\n\n+/).filter((paragraph) => paragraph.length > 0)
+  const context = study.context
 
   return (
     <div className="meaning-note">
       {language !== 'en' ? <p className="field-note">{t('meaningEnglish')}</p> : null}
-      {note.end > note.start ? (
-        <p className="meaning-range">{t('meaningRange', { start: note.start, end: note.end })}</p>
-      ) : null}
-      <div className="meaning-text" lang="en">
-        {paragraphs.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
-      </div>
-      <MeaningAbout />
+      <StudySection title={t('studyContext')} empty={t('studyContextEmpty')} source={t('meaningSource')}>
+        {context ? (
+          <>
+            {context.end > context.start ? (
+              <p className="meaning-range">{t('meaningRange', { start: context.start, end: context.end })}</p>
+            ) : null}
+            <NoteParagraphs text={context.text} />
+          </>
+        ) : null}
+      </StudySection>
+      <StudySection title={t('studyThen')} empty={t('studyThenEmpty')} source={t('studyThenSource')}>
+        {study.thenNote ? (
+          <>
+            <p className="meaning-range">{t('studyBookNote')}</p>
+            <NoteParagraphs text={study.thenNote} />
+          </>
+        ) : null}
+      </StudySection>
+      <StudySection title={t('studyToday')} empty={t('studyTodayEmpty')} source={t('studyTodaySource')}>
+        {study.todayNote ? <NoteParagraphs text={study.todayNote} /> : null}
+      </StudySection>
     </div>
   )
 }
