@@ -12,6 +12,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
 import type { MessageKey } from '../i18n/messages'
 import { ConfirmDialog } from './ConfirmDialog'
+import { MeaningNote } from './MeaningNote'
 import { ParallelPassages } from './ParallelPassages'
 import { RelatedVerses } from './RelatedVerses'
 import { VoiceNoteControl } from './VoiceNoteControl'
@@ -72,6 +73,7 @@ export function VerseForm({
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [relatedOpen, setRelatedOpen] = useState(false)
   const [parallelOpen, setParallelOpen] = useState(false)
+  const [meaningOpen, setMeaningOpen] = useState(false)
 
   const verseId = verse?.id
   useEffect(() => {
@@ -251,6 +253,14 @@ export function VerseForm({
         type="button"
         className="button button-related button-block"
         aria-haspopup="dialog"
+        onClick={() => setMeaningOpen(true)}
+      >
+        {t('meaning')}
+      </button>
+      <button
+        type="button"
+        className="button button-related button-block"
+        aria-haspopup="dialog"
         onClick={() => setRelatedOpen(true)}
       >
         {t('relatedVerses')}
@@ -383,6 +393,10 @@ export function VerseForm({
           onClose={() => setParallelOpen(false)}
           onReadPassage={onReadPassage}
         />
+      ) : null}
+
+      {meaningOpen ? (
+        <MeaningNote reference={reference} locked={recording} onClose={() => setMeaningOpen(false)} />
       ) : null}
 
       {relatedOpen ? (

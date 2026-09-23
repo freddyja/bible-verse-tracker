@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "check:red-letter": "node --experimental-strip-types scripts/check-red-letter.mjs",
-    "build:parallels": "node scripts/build-parallels.mjs"
+    "check:meaning": "node --experimental-strip-types scripts/check-meaning.mjs",
+    "build:parallels": "node scripts/build-parallels.mjs",
+    "build:meaning": "node scripts/build-meaning.mjs"
   },
   "dependencies": {
     "@fontsource/literata": "^5.3.0",

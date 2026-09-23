@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
+import { MeaningBody } from './MeaningNote'
 import { ScriptureText } from './ScriptureText'
 import { BookArt } from './BookArt'
 import type { ListenController } from '../speech/useListen'
@@ -81,6 +82,7 @@ export function ChapterReader({
   const [related, setRelated] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
   const [parallelKey, setParallelKey] = useState<string | null>(null)
   const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
+  const [meaningKey, setMeaningKey] = useState<string | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
@@ -351,6 +353,7 @@ export function ChapterReader({
   const relatedRows = related && related.key === relatedKey ? related.rows : null
   const parallelOpen = parallelKey !== null && parallelKey === relatedKey
   const parallelRows = parallelOpen && parallel && parallel.key === relatedKey ? parallel.rows : null
+  const meaningOpen = meaningKey !== null && meaningKey === relatedKey
 
   return (
     <article className="reader">
@@ -482,6 +485,23 @@ export function ChapterReader({
                                 ))}
                               </ul>
                             ) : null}
+                          </div>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="button button-related button-block"
+                          aria-expanded={meaningOpen}
+                          onClick={() => setMeaningKey(meaningOpen ? null : relatedKey)}
+                        >
+                          {t('meaning')}
+                        </button>
+                        {meaningOpen && selected ? (
+                          <div className="meaning-block">
+                            <MeaningBody
+                              bookIndex={selected.bookIndex}
+                              chapter={selected.chapter}
+                              verse={selected.verse}
+                            />
                           </div>
                         ) : null}
                         <h2>{t('relatedVerses')}</h2>

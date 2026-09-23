@@ -1,0 +1,18 @@
+Matthew Henry's Concise Commentary on the Whole Bible
+Matthew Henry
+Public domain. Copy freely.
+
+Source text: https://ccel.org/ccel/h/henry/mhcc/cache/mhcc.txt
+CCEL labels that text "Rights: Public Domain".
+
+The same public-domain text is distributed by the CrossWire Bible Society
+as the SWORD module MHCC (DistributionLicense=Public Domain):
+https://crosswire.org/sword/modules/ModInfo.jsp?modName=MHCC
+
+public/scripture/meaning/*.json is that commentary, split by book.
+Each note keeps the verse or verse range it was written for.
+Book introductions that are not a chapter note, chapter outlines, and the
+index were left out. CCEL markers written as #(n) were restored to the
+verse numbers. A leading "--" used as a print dash was removed.
+The wording of the notes was not rewritten.
+See scripts/build-meaning.mjs.
