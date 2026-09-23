@@ -1,6 +1,6 @@
 import { useLanguage } from '../i18n/useLanguage'
 
-export function RedLetterToggle() {
+export function RedLetterToggle({ hint = false }: { hint?: boolean }) {
   const { redLetter, setRedLetter, t } = useLanguage()
   return (
     <label className="red-letter-toggle">
@@ -9,7 +9,10 @@ export function RedLetterToggle() {
         checked={redLetter}
         onChange={(event) => setRedLetter(event.target.checked)}
       />
-      <span>{t('redLetter')}</span>
+      <span className="red-letter-copy">
+        <span>{t('redLetter')}</span>
+        {hint ? <span className="setting-help">{t('redLetterHelp')}</span> : null}
+      </span>
     </label>
   )
 }

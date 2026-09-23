@@ -126,51 +126,57 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="top">
-        <div className="title-block">
-          {view.kind === 'read' ? null : (
-            <button type="button" className="back" onClick={goBack}>
-              {backLabel}
-            </button>
-          )}
-          <h1 className="brand">{title}</h1>
-          <VersionPicker />
+      <header className="mast">
+        <div className="top">
+          <div className="title-block">
+            {view.kind === 'read' ? null : (
+              <button type="button" className="back" onClick={goBack}>
+                {backLabel}
+              </button>
+            )}
+            <h1 className="brand">{title}</h1>
+            {view.kind === 'read' ? (
+              <>
+                <p className="credit">{t('designedBy')}</p>
+                <p className="tagline">{t('tagline')}</p>
+              </>
+            ) : null}
+          </div>
           {view.kind === 'read' ? (
-            <>
-              <p className="credit">Designed by Freddy Jara-Almonte.</p>
-              <p className="tagline">{t('tagline')}</p>
-              <LanguagePicker />
-              <RedLetterToggle />
-            </>
-          ) : (
-            <LanguagePicker />
-          )}
-          {view.kind === 'chapter' ? <RedLetterToggle /> : null}
+            <button
+              type="button"
+              className="button button-ghost"
+              onClick={() => {
+                listen.stop()
+                setView({ kind: 'saved' })
+              }}
+            >
+              {t('saved')}
+            </button>
+          ) : null}
+          {view.kind === 'saved' ? (
+            <button
+              type="button"
+              className="button button-ghost"
+              onClick={() => {
+                listen.stop()
+                setView({ kind: 'categories', returnTo: 'saved' })
+              }}
+            >
+              {t('categories')}
+            </button>
+          ) : null}
         </div>
+        <VersionPicker hint={view.kind === 'read'} />
         {view.kind === 'read' ? (
-          <button
-            type="button"
-            className="button button-ghost"
-            onClick={() => {
-              listen.stop()
-              setView({ kind: 'saved' })
-            }}
-          >
-            {t('saved')}
-          </button>
-        ) : null}
-        {view.kind === 'saved' ? (
-          <button
-            type="button"
-            className="button button-ghost"
-            onClick={() => {
-              listen.stop()
-              setView({ kind: 'categories', returnTo: 'saved' })
-            }}
-          >
-            {t('categories')}
-          </button>
-        ) : null}
+          <>
+            <LanguagePicker hint />
+            <RedLetterToggle hint />
+          </>
+        ) : (
+          <LanguagePicker />
+        )}
+        {view.kind === 'chapter' ? <RedLetterToggle /> : null}
       </header>
 
       {library.status === 'loading' && (view.kind === 'saved' || view.kind === 'edit' || view.kind === 'categories') ? (

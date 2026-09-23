@@ -47,7 +47,7 @@ Words of Jesus are shown in red, in the manner of a red-letter Bible. The spans 
 
 ## Language
 
-The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. EN, ES, and PT in the header remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.
+The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. English, Español, and Português in the header, under the label Language, remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.
 
 Buttons, empty states, and the four starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. The line under the home title stays “Designed by Freddy Jara-Almonte.” The line under the title is the Bible version he selected for that language.
 
