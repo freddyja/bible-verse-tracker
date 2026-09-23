@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
 
-export function VersionPicker() {
+export function VersionPicker({ hint = false }: { hint?: boolean }) {
   const { versionId, versionName, versions, setVersion, t } = useLanguage()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const listId = useId()
+  const labelId = useId()
+  const nameId = useId()
 
   useEffect(() => {
     if (!open) return
@@ -25,15 +27,19 @@ export function VersionPicker() {
 
   return (
     <div className="version-picker" ref={rootRef}>
+      <span id={labelId} className="setting-label">
+        {t('bibleVersion')}
+      </span>
       <button
         type="button"
         className="version-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
+        aria-labelledby={`${labelId} ${nameId}`}
         onClick={() => setOpen((current) => !current)}
       >
-        <span>{versionName}</span>
+        <span id={nameId}>{versionName}</span>
         <span className="version-chevron" aria-hidden="true">
           {open ? '▴' : '▾'}
         </span>
@@ -61,6 +67,7 @@ export function VersionPicker() {
           })}
         </ul>
       ) : null}
+      {hint ? <p className="setting-help">{t('bibleVersionHelp')}</p> : null}
     </div>
   )
 }

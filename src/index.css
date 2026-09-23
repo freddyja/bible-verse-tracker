@@ -97,13 +97,16 @@ button {
   padding: 0 1rem;
 }
 
+.mast {
+  padding-top: calc(1rem + env(safe-area-inset-top));
+  padding-bottom: 0.85rem;
+}
+
 .top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding-top: calc(1rem + env(safe-area-inset-top));
-  padding-bottom: 0.85rem;
 }
 
 .top > .button {
@@ -124,9 +127,28 @@ button {
   line-height: 1.15;
 }
 
+.setting-label {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.setting-help {
+  display: block;
+  margin: 0.2rem 0 0;
+  max-width: 28rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
 .version-picker {
   position: relative;
-  margin: 0.35rem 0 0;
+  margin: 0.45rem 0 0;
   max-width: 24rem;
 }
 
@@ -569,20 +591,23 @@ main {
 }
 
 .lang {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
+  margin-top: 0.75rem;
+}
+
+.lang-options {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.1rem;
-  margin-top: 0.65rem;
+  max-width: 100%;
   padding: 0.12rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
-}
-
-.top > .lang {
-  flex: none;
-  align-self: center;
-  margin-top: 0;
 }
 
 .lang-option {
@@ -590,11 +615,12 @@ main {
   background: transparent;
   color: var(--ink-soft);
   border-radius: 999px;
-  padding: 0.18rem 0.48rem;
-  font-size: 0.72rem;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .lang-option[aria-pressed='true'] {
@@ -979,18 +1005,24 @@ main {
 
 .red-letter-toggle {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.45rem;
-  margin: 0.55rem 0 0;
-  color: var(--ink-soft);
+  margin: 0.7rem 0 0;
+  max-width: 28rem;
+  color: var(--ink);
   font-size: 0.92rem;
   line-height: 1.3;
+}
+
+.red-letter-copy {
+  display: block;
+  min-width: 0;
 }
 
 .red-letter-toggle input {
   width: 1rem;
   height: 1rem;
-  margin: 0;
+  margin: 0.15rem 0 0;
   accent-color: var(--red-letter);
 }
 
