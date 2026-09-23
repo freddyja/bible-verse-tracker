@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { Verse } from '../data/types'
+import { verseForPassage } from '../data/matchVerse'
+import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
 import { LexiconBody } from './LexiconPanel'
 import { MeaningBody } from './MeaningNote'
 import { ScriptureText } from './ScriptureText'
+import { ShelfSave } from './ShelfSave'
 import { BookArt } from './BookArt'
 import type { ListenController } from '../speech/useListen'
 import { loadBook, parallelPassages, relatedPassages, type ParallelHit, type ScriptureHit } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import { chapterStep } from '../scripture/canon'
-import { formatPassage, formatPassageRange, parseReference, samePassage, type PassageRef } from '../scripture/passages'
+import { formatPassage, formatPassageRange, samePassage, type PassageRef } from '../scripture/passages'
 
 type Slice = {
   bookIndex: number
@@ -25,9 +27,10 @@ type ChapterReaderProps = {
   startChapter: number
   startVerse: number | null
   saved: readonly Verse[]
+  categories: Category[]
   onOpenPassage: (passage: PassageRef) => void
-  onSave: (passage: PassageRef, text: string) => void
-  onEditSaved: (verseId: string) => void
+  onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
+  onCreateCategory: (name: string) => Promise<Category>
   onShowChapters: () => void
   onVisible: (bookIndex: number, chapter: number) => void
   listen: ListenController
@@ -41,21 +44,6 @@ function chapterDomId(bookIndex: number, chapter: number): string {
   return `c-${bookIndex}-${chapter}`
 }
 
-function savedMatch(verses: readonly Verse[], passage: PassageRef): Verse | undefined {
-  return verses.find((verse) => {
-    if (
-      verse.passage &&
-      verse.passage.bookIndex === passage.bookIndex &&
-      verse.passage.chapter === passage.chapter &&
-      verse.passage.verse === passage.verse
-    ) {
-      return true
-    }
-    const parsed = parseReference(verse.reference)
-    return parsed ? samePassage(parsed, passage) : false
-  })
-}
-
 function hasSlice(list: readonly Slice[], bookIndex: number, chapter: number): boolean {
   return list.some((slice) => slice.bookIndex === bookIndex && slice.chapter === chapter)
 }
@@ -65,9 +53,10 @@ export function ChapterReader({
   startChapter,
   startVerse,
   saved,
+  categories,
   onOpenPassage,
-  onSave,
-  onEditSaved,
+  onSaveVerse,
+  onCreateCategory,
   onShowChapters,
   onVisible,
   listen,
@@ -84,6 +73,7 @@ export function ChapterReader({
   const [parallelKey, setParallelKey] = useState<string | null>(null)
   const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
   const [meaningKey, setMeaningKey] = useState<string | null>(null)
+  const [shelfAim, setShelfAim] = useState<{ key: string; passage: PassageRef } | null>(null)
   const [lexiconKey, setLexiconKey] = useState<string | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
@@ -357,6 +347,7 @@ export function ChapterReader({
   const parallelRows = parallelOpen && parallel && parallel.key === relatedKey ? parallel.rows : null
   const meaningOpen = meaningKey !== null && meaningKey === relatedKey
   const lexiconOpen = lexiconKey !== null && lexiconKey === relatedKey
+  const shelfPassage = shelfAim && shelfAim.key === relatedKey ? shelfAim.passage : null
 
   return (
     <article className="reader">
@@ -433,8 +424,12 @@ export function ChapterReader({
                   listen.passage.bookIndex === current.bookIndex &&
                   listen.passage.chapter === current.chapter &&
                   listen.passage.verse === current.verse
-                const already = savedMatch(saved, current)
-                const kept = isSelected ? already : undefined
+                const already = verseForPassage(saved, current)
+                const formPassage = shelfPassage ?? current
+                const listed =
+                  (parallel?.key === relatedKey ? parallel.rows : []).find((row) => samePassage(row, formPassage)) ??
+                  (related?.key === relatedKey ? related.rows : []).find((row) => samePassage(row, formPassage))
+                const formText = samePassage(formPassage, current) ? text : (listed?.text ?? '')
                 return (
                   <div
                     key={number}
@@ -472,20 +467,36 @@ export function ChapterReader({
                             ) : null}
                             {parallelRows && parallelRows.length > 0 ? (
                               <ul className="related-list">
-                                {parallelRows.map((row) => (
-                                  <li key={formatPassageRange(language, row)}>
-                                    <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
-                                      <span className="related-ref">{formatPassageRange(language, row)}</span>
-                                      <ScriptureText
-                                        bookIndex={row.bookIndex}
-                                        chapter={row.chapter}
-                                        verse={row.verse}
-                                        text={row.text}
-                                        className="related-snippet scripture-snippet"
-                                      />
-                                    </button>
-                                  </li>
-                                ))}
+                                {parallelRows.map((row) => {
+                                  const label = formatPassageRange(language, row)
+                                  const aimed = shelfPassage !== null && samePassage(shelfPassage, row)
+                                  return (
+                                    <li key={label} className="related-row">
+                                      <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
+                                        <span className="related-ref">{label}</span>
+                                        <ScriptureText
+                                          bookIndex={row.bookIndex}
+                                          chapter={row.chapter}
+                                          verse={row.verse}
+                                          text={row.text}
+                                          className="related-snippet scripture-snippet"
+                                        />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="button button-small button-ghost"
+                                        aria-expanded={aimed}
+                                        aria-label={t('saveReference', { reference: label })}
+                                        onClick={() => {
+                                          setShelfAim(aimed ? null : { key: relatedKey, passage: row })
+                                          document.getElementById('shelf-save')?.scrollIntoView({ block: 'nearest' })
+                                        }}
+                                      >
+                                        {verseForPassage(saved, row) ? t('savedBadge') : t('save')}
+                                      </button>
+                                    </li>
+                                  )
+                                })}
                               </ul>
                             ) : null}
                           </div>
@@ -531,35 +542,56 @@ export function ChapterReader({
                         ) : null}
                         {relatedRows && relatedRows.length > 0 ? (
                           <ul className="related-list">
-                            {relatedRows.map((row) => (
-                              <li key={formatPassage(language, row)}>
-                                <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
-                                  <span className="related-ref">{formatPassage(language, row)}</span>
-                                  <ScriptureText
-                                    bookIndex={row.bookIndex}
-                                    chapter={row.chapter}
-                                    verse={row.verse}
-                                    text={row.text}
-                                    className="related-snippet scripture-snippet"
-                                  />
-                                </button>
-                              </li>
-                            ))}
+                            {relatedRows.map((row) => {
+                              const label = formatPassage(language, row)
+                              const aimed = shelfPassage !== null && samePassage(shelfPassage, row)
+                              return (
+                                <li key={label} className="related-row">
+                                  <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
+                                    <span className="related-ref">{label}</span>
+                                    <ScriptureText
+                                      bookIndex={row.bookIndex}
+                                      chapter={row.chapter}
+                                      verse={row.verse}
+                                      text={row.text}
+                                      className="related-snippet scripture-snippet"
+                                    />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button button-small button-ghost"
+                                    aria-expanded={aimed}
+                                    aria-label={t('saveReference', { reference: label })}
+                                    onClick={() => {
+                                      setShelfAim(aimed ? null : { key: relatedKey, passage: row })
+                                      document.getElementById('shelf-save')?.scrollIntoView({ block: 'nearest' })
+                                    }}
+                                  >
+                                    {verseForPassage(saved, row) ? t('savedBadge') : t('save')}
+                                  </button>
+                                </li>
+                              )
+                            })}
                           </ul>
                         ) : null}
-                        {kept ? (
-                          <div className="kept">
-                            <p className="related-ref">{t('yourNote')}</p>
-                            {kept.note ? <p className="note">{kept.note}</p> : <p className="field-note">{t('savedBadge')}</p>}
-                            <button type="button" className="button button-ghost" onClick={() => onEditSaved(kept.id)}>
-                              {t('editNote')}
-                            </button>
-                          </div>
-                        ) : (
-                          <button type="button" className="button button-block" onClick={() => onSave(current, text)}>
-                            {t('saveThisVerse')}
+                        {shelfPassage && !samePassage(shelfPassage, current) ? (
+                          <button type="button" className="text-button" onClick={() => setShelfAim(null)}>
+                            {t('shelfThisVerse')}
                           </button>
-                        )}
+                        ) : null}
+                        <ShelfSave
+                          key={`${formPassage.bookIndex}-${formPassage.chapter}-${formPassage.verse}`}
+                          domId="shelf-save"
+                          passage={formPassage}
+                          text={formText}
+                          saved={verseForPassage(saved, formPassage) ?? null}
+                          categories={categories}
+                          onSave={onSaveVerse}
+                          onCreateCategory={onCreateCategory}
+                          onRecordingChange={(next) => {
+                            if (next) listen.stop()
+                          }}
+                        />
                       </section>
                     ) : null}
                   </div>

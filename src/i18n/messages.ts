@@ -140,6 +140,15 @@ const en = {
   studyBookNote: 'This note is about the whole book: who it was written to, and the world they knew. It is not a separate comment on this verse.',
   studyThenSource: 'unfoldingWord Translation Notes, the introduction to this book. CC BY-SA 4.0.',
   studyTodaySource: 'Charles Spurgeon, Faith’s Checkbook. Public domain.',
+  meaningSourceComplete: 'Matthew Henry’s Commentary on the Whole Bible. Public domain.',
+  studyContextSources:
+    'Matthew Henry’s Concise Commentary, and his Commentary on the Whole Bible where the concise note is silent. Public domain.',
+  studyTodaySourceMorning: 'Charles Spurgeon, Morning and Evening. Public domain.',
+  studyTodaySources:
+    'Charles Spurgeon, Faith’s Checkbook, and Morning and Evening where Checkbook is silent. Public domain.',
+  shelfSaved: 'Saved on this phone.',
+  saveReference: 'Save {reference}',
+  shelfThisVerse: 'This verse',
   lexicon: 'Lexicon',
   lexiconLoading: 'Opening the words…',
   lexiconEmpty: 'No Greek or Hebrew words are listed for this verse.',
@@ -329,6 +338,15 @@ const es: Record<MessageKey, string> = {
   studyBookNote: 'Esta nota es sobre todo el libro: a quién se escribió y el mundo que conocían. No es un comentario aparte de este versículo.',
   studyThenSource: 'Notas de traducción de unfoldingWord, la introducción de este libro. CC BY-SA 4.0.',
   studyTodaySource: 'Charles Spurgeon, Faith’s Checkbook. Dominio público.',
+  meaningSourceComplete: 'Matthew Henry’s Commentary on the Whole Bible. Dominio público.',
+  studyContextSources:
+    'Matthew Henry’s Concise Commentary y, si esa nota calla, su Commentary on the Whole Bible. Dominio público.',
+  studyTodaySourceMorning: 'Charles Spurgeon, Morning and Evening. Dominio público.',
+  studyTodaySources:
+    'Charles Spurgeon, Faith’s Checkbook y, si esa nota calla, Morning and Evening. Dominio público.',
+  shelfSaved: 'Guardado en este teléfono.',
+  saveReference: 'Guardar {reference}',
+  shelfThisVerse: 'Este versículo',
   lexicon: 'Léxico',
   lexiconLoading: 'Abriendo las palabras…',
   lexiconEmpty: 'No hay palabras griegas o hebreas registradas para este versículo.',
@@ -518,6 +536,15 @@ const pt: Record<MessageKey, string> = {
   studyBookNote: 'Esta nota é sobre o livro inteiro: para quem foi escrito e o mundo que conheciam. Não é um comentário separado deste versículo.',
   studyThenSource: 'Notas de tradução da unfoldingWord, a introdução deste livro. CC BY-SA 4.0.',
   studyTodaySource: 'Charles Spurgeon, Faith’s Checkbook. Domínio público.',
+  meaningSourceComplete: 'Matthew Henry’s Commentary on the Whole Bible. Domínio público.',
+  studyContextSources:
+    'Matthew Henry’s Concise Commentary e, se essa nota cala, o Commentary on the Whole Bible. Domínio público.',
+  studyTodaySourceMorning: 'Charles Spurgeon, Morning and Evening. Domínio público.',
+  studyTodaySources:
+    'Charles Spurgeon, Faith’s Checkbook e, se essa nota cala, Morning and Evening. Domínio público.',
+  shelfSaved: 'Salvo neste telefone.',
+  saveReference: 'Guardar {reference}',
+  shelfThisVerse: 'Este versículo',
   lexicon: 'Léxico',
   lexiconLoading: 'Abrindo as palavras…',
   lexiconEmpty: 'Não há palavras gregas ou hebraicas registradas para este versículo.',

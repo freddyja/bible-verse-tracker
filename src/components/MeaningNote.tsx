@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLanguage } from '../i18n/useLanguage'
-import { audienceFor, meaningFor, todayFor } from '../scripture/api'
-import type { MeaningHit } from '../scripture/meaning'
+import { audienceFor, contextFor, todayFor } from '../scripture/api'
+import type { ContextSource, TodaySource } from '../scripture/studyNotes'
 import { parseReference } from '../scripture/passages'
+import { StudyKeep, type ShelfKeep } from './ShelfSave'
 
 type MeaningBodyProps = {
   bookIndex: number
@@ -51,24 +52,47 @@ export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
   const key = `${bookIndex}:${chapter}:${verse}`
   const [loaded, setLoaded] = useState<{
     key: string
-    context: MeaningHit | null
+    contextText: string | null
+    contextRange: { start: number; end: number } | null
+    contextSource: ContextSource | null
     thenNote: string | null
     todayNote: string | null
+    todaySource: TodaySource | null
   } | null>(null)
   const study = loaded?.key === key ? loaded : null
 
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      meaningFor({ bookIndex, chapter, verse }),
+      contextFor({ bookIndex, chapter, verse }),
       audienceFor({ bookIndex, chapter, verse }),
       todayFor({ bookIndex, chapter, verse }),
     ])
-      .then(([context, thenNote, todayNote]) => {
-        if (!cancelled) setLoaded({ key, context, thenNote, todayNote })
+      .then(([context, thenNote, today]) => {
+        if (!cancelled) {
+          setLoaded({
+            key,
+            contextText: context?.text ?? null,
+            contextRange: context ? { start: context.start, end: context.end } : null,
+            contextSource: context?.source ?? null,
+            thenNote,
+            todayNote: today?.text ?? null,
+            todaySource: today?.source ?? null,
+          })
+        }
       })
       .catch(() => {
-        if (!cancelled) setLoaded({ key, context: null, thenNote: null, todayNote: null })
+        if (!cancelled) {
+          setLoaded({
+            key,
+            contextText: null,
+            contextRange: null,
+            contextSource: null,
+            thenNote: null,
+            todayNote: null,
+            todaySource: null,
+          })
+        }
       })
     return () => {
       cancelled = true
@@ -77,18 +101,31 @@ export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
 
   if (!study) return <p className="field-note">{t('meaningLoading')}</p>
 
-  const context = study.context
+  const contextSource =
+    study.contextSource === 'complete'
+      ? t('meaningSourceComplete')
+      : study.contextSource === 'concise'
+        ? t('meaningSource')
+        : t('studyContextSources')
+  const todaySource =
+    study.todaySource === 'morning'
+      ? t('studyTodaySourceMorning')
+      : study.todaySource === 'checkbook'
+        ? t('studyTodaySource')
+        : t('studyTodaySources')
 
   return (
     <div className="meaning-note">
       {language !== 'en' ? <p className="field-note">{t('meaningEnglish')}</p> : null}
-      <StudySection title={t('studyContext')} empty={t('studyContextEmpty')} source={t('meaningSource')}>
-        {context ? (
+      <StudySection title={t('studyContext')} empty={t('studyContextEmpty')} source={contextSource}>
+        {study.contextText ? (
           <>
-            {context.end > context.start ? (
-              <p className="meaning-range">{t('meaningRange', { start: context.start, end: context.end })}</p>
+            {study.contextRange && study.contextRange.end > study.contextRange.start ? (
+              <p className="meaning-range">
+                {t('meaningRange', { start: study.contextRange.start, end: study.contextRange.end })}
+              </p>
             ) : null}
-            <NoteParagraphs text={context.text} />
+            <NoteParagraphs text={study.contextText} />
           </>
         ) : null}
       </StudySection>
@@ -100,7 +137,7 @@ export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
           </>
         ) : null}
       </StudySection>
-      <StudySection title={t('studyToday')} empty={t('studyTodayEmpty')} source={t('studyTodaySource')}>
+      <StudySection title={t('studyToday')} empty={t('studyTodayEmpty')} source={todaySource}>
         {study.todayNote ? <NoteParagraphs text={study.todayNote} /> : null}
       </StudySection>
     </div>
@@ -110,10 +147,11 @@ export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
 type MeaningNoteProps = {
   reference: string
   locked: boolean
+  keep?: ShelfKeep
   onClose: () => void
 }
 
-export function MeaningNote({ reference, locked, onClose }: MeaningNoteProps) {
+export function MeaningNote({ reference, locked, keep, onClose }: MeaningNoteProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const { t } = useLanguage()
@@ -158,6 +196,7 @@ export function MeaningNote({ reference, locked, onClose }: MeaningNoteProps) {
         {parsed ? (
           <MeaningBody bookIndex={parsed.bookIndex} chapter={parsed.chapter} verse={parsed.verse} />
         ) : null}
+        {keep && !locked ? <StudyKeep reference={reference} keep={keep} /> : null}
       </div>
     </dialog>,
     document.body,

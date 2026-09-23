@@ -8,10 +8,12 @@ import {
   type LexiconWord,
 } from './lexicon'
 import { pickMeaning, type MeaningHit } from './meaning'
+import { pickContext, pickToday, type ContextHit, type TodayHit } from './studyNotes'
 import { fold, type PassageRef } from './passages'
 import { versionById } from './versions'
 
 export type { LexiconEntry, LexiconWord }
+export type { ContextHit, TodayHit }
 
 export type ScriptureHit = PassageRef & { text: string }
 
@@ -119,6 +121,7 @@ export async function parallelPassages(
 }
 
 const meanings = new Map<string, Record<string, [number, number, string][]>>()
+const completeNotes = new Map<string, Record<string, [number, number, string][]> | null>()
 
 export async function meaningFor(passage: PassageRef): Promise<MeaningHit | null> {
   const id = BOOKS[passage.bookIndex]?.id
@@ -131,10 +134,28 @@ export async function meaningFor(passage: PassageRef): Promise<MeaningHit | null
   return pickMeaning(table[String(passage.chapter)], passage.verse)
 }
 
+async function completeFor(passage: PassageRef): Promise<MeaningHit | null> {
+  const id = BOOKS[passage.bookIndex]?.id
+  if (!id) return null
+  if (!completeNotes.has(id)) {
+    const table = await fetchOptional<Record<string, [number, number, string][]>>(scriptureUrl(`context/${id}.json`))
+    completeNotes.set(id, table)
+  }
+  return pickMeaning(completeNotes.get(id)?.[String(passage.chapter)], passage.verse)
+}
+
+/** Concise commentary when it has this verse, otherwise the complete commentary. */
+export async function contextFor(passage: PassageRef): Promise<ContextHit | null> {
+  const concise = await meaningFor(passage)
+  if (concise) return pickContext(concise, null)
+  return pickContext(null, await completeFor(passage))
+}
+
 const lexiconWords = new Map<string, Record<string, Record<string, string[][]>> | null>()
 const lexiconDict = new Map<string, Record<string, [string, string, string, string, string[]]>>()
 const audienceNotes = new Map<string, string | null>()
 const todayNotes = new Map<string, Record<string, Record<string, string>> | null>()
+const morningNotes = new Map<string, Record<string, Record<string, string>> | null>()
 
 async function loadLexiconBook(bookIndex: number): Promise<Record<string, Record<string, string[][]>> | null> {
   const id = BOOKS[bookIndex]?.id
@@ -191,15 +212,28 @@ export async function audienceFor(passage: PassageRef): Promise<string | null> {
   return note
 }
 
-export async function todayFor(passage: PassageRef): Promise<string | null> {
+async function noteTable(
+  cache: Map<string, Record<string, Record<string, string>> | null>,
+  folder: string,
+  bookId: string,
+): Promise<Record<string, Record<string, string>> | null> {
+  if (!cache.has(bookId)) {
+    const table = await fetchOptional<Record<string, Record<string, string>>>(scriptureUrl(`${folder}/${bookId}.json`))
+    cache.set(bookId, table)
+  }
+  return cache.get(bookId) ?? null
+}
+
+export async function todayFor(passage: PassageRef): Promise<TodayHit | null> {
   const id = BOOKS[passage.bookIndex]?.id
   if (!id) return null
-  if (!todayNotes.has(id)) {
-    const table = await fetchOptional<Record<string, Record<string, string>>>(scriptureUrl(`study/today/${id}.json`))
-    todayNotes.set(id, table)
-  }
-  const text = todayNotes.get(id)?.[String(passage.chapter)]?.[String(passage.verse)]?.trim()
-  return text || null
+  const [checkbook, morning] = await Promise.all([
+    noteTable(todayNotes, 'study/today', id),
+    noteTable(morningNotes, 'study/morning', id),
+  ])
+  const chapter = String(passage.chapter)
+  const verse = String(passage.verse)
+  return pickToday(checkbook?.[chapter]?.[verse], morning?.[chapter]?.[verse])
 }
 
 export async function relatedPassages(

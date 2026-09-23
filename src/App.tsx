@@ -11,7 +11,7 @@ import type { Passage } from './data/types'
 import { useLibrary } from './hooks/useLibrary'
 import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
-import { formatPassage, type PassageRef } from './scripture/passages'
+import { type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
 import { RedLetterToggle } from './components/RedLetterToggle'
 import { VersionPicker } from './components/VersionPicker'
@@ -235,7 +235,10 @@ export default function App() {
             startChapter={view.startChapter}
             startVerse={view.startVerse}
             saved={library.verses}
+            categories={library.categories}
             onOpenPassage={openPassage}
+            onSaveVerse={library.saveVerse}
+            onCreateCategory={library.createCategory}
             onShowChapters={() => {
               listen.stop()
               setView({ kind: 'book', bookIndex: view.bookIndex })
@@ -247,24 +250,6 @@ export default function App() {
                 return { ...current, bookIndex, chapter }
               })
             }
-            onSave={(passage, text) => {
-              listen.stop()
-              setView({
-                kind: 'edit',
-                verseId: null,
-                prefillReference: formatPassage(language, passage),
-                prefillText: text,
-                returnTo: openAt(passage.bookIndex, passage.chapter, passage.verse),
-              })
-            }}
-            onEditSaved={(verseId) => {
-              listen.stop()
-              setView({
-                kind: 'edit',
-                verseId,
-                returnTo: openAt(view.bookIndex, view.chapter, null),
-              })
-            }}
             listen={listen}
           />
         </main>

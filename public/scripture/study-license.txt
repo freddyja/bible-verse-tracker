@@ -42,6 +42,20 @@ Today
   A citation printed as "Psalm l46:8" was read as Psalm 146:8, and a
   citation with no space before the chapter, such as "Exodus8:23", was
   read as Exodus 8:23. No other verse was attached.
-  A verse with no reading in this book has no today note. The screen says so.
+  A verse with no reading in this book has no today note from this book.
+
+  Charles H. Spurgeon, Morning and Evening. Public domain.
+  Source text: https://ccel.org/ccel/s/spurgeon/morneve/cache/morneve.txt
+  CCEL labels that text "Rights: Public Domain".
+
+  public/scripture/study/morning/*.json is the fallback, used only when
+  Faith's Checkbook has no note for that verse. A reading is stored on
+  the verse named under that day's text, not on verses mentioned later
+  in the comment. A comma list attaches each named verse. A single-chapter
+  book cited without a colon, such as Jude 20, is chapter 1. The date,
+  the "go to" line, and the repeated quotation were left out. The comment
+  was not rewritten. When two readings name the same verse, both comments
+  are kept, separated by a blank line. The screen names the book the note
+  came from. A verse named in neither book says there is no note.
 
 Nothing in these files was written by a model to fill a gap.

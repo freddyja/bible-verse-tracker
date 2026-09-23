@@ -78,6 +78,25 @@ export function VerseForm({
   const [lexiconOpen, setLexiconOpen] = useState(false)
 
   const verseId = verse?.id
+  const shelfKeep = {
+    text,
+    saved: verse,
+    verses,
+    draft: {
+      note,
+      categoryIds,
+      voiceBlob,
+      voiceReady,
+      voiceDirty: voiceTouched,
+    },
+    categories,
+    onSave,
+    onCreateCategory,
+    onRecordingChange: (next: boolean) => {
+      if (next) listen.stop()
+    },
+    onKept: onDone,
+  }
   useEffect(() => {
     if (!verseId) return
     let cancelled = false
@@ -400,17 +419,18 @@ export function VerseForm({
         <ParallelPassages
           reference={reference}
           locked={recording}
+          keep={shelfKeep}
           onClose={() => setParallelOpen(false)}
           onReadPassage={onReadPassage}
         />
       ) : null}
 
       {lexiconOpen ? (
-        <LexiconNote reference={reference} locked={recording} onClose={() => setLexiconOpen(false)} />
+        <LexiconNote reference={reference} locked={recording} keep={shelfKeep} onClose={() => setLexiconOpen(false)} />
       ) : null}
 
       {meaningOpen ? (
-        <MeaningNote reference={reference} locked={recording} onClose={() => setMeaningOpen(false)} />
+        <MeaningNote reference={reference} locked={recording} keep={shelfKeep} onClose={() => setMeaningOpen(false)} />
       ) : null}
 
       {relatedOpen ? (
@@ -420,6 +440,7 @@ export function VerseForm({
           verses={verses}
           currentId={verse?.id ?? null}
           locked={recording}
+          keep={shelfKeep}
           onClose={() => setRelatedOpen(false)}
           onOpenVerse={onOpenVerse}
           onAddReference={onAddReference}
