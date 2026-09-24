@@ -7,4 +7,6 @@ Source: https://github.com/ubsicap/ubs-open-license/tree/main/parallel%20passage
 
 public/scripture/parallels.json is Adapted Material. Word-match numbers were omitted.
 Hebrew verse numbers were converted to traditional Protestant numbering.
-Long formula lists were left out. See scripts/build-parallels.mjs.
+Repeated sayings a reader would follow were kept.
+Long formula lists were left out: offerings, letter openings, and “the word of the LORD came.”
+See scripts/build-parallels.mjs.

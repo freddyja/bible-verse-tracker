@@ -14,10 +14,13 @@
  *   Psalm superscriptions that are a whole Hebrew verse have no English verse
  *   number; those references are left out rather than attached to verse 1.
  * - A passage is kept when it is a real parallel a reader would follow:
- *   two or more of Matthew, Mark, Luke, and John; or at most eight references
- *   in two or more books; or at most five references in one book (a retelling
- *   or a repeated saying). Longer formula lists — offerings, letter openings,
- *   “the word of the LORD came” — are left out.
+ *   two or more of Matthew, Mark, Luke, and John; or at most twelve references
+ *   in two or more books; or at most eight references in one book (a retelling,
+ *   or a saying repeated inside one discourse). The previous caps (eight and
+ *   five) dropped a few of those sayings along with the formula lists.
+ *   Formula lists still stay out: near-duplicate lines (offerings, “the word
+ *   of the LORD came”), letter openings spread across the epistles, and a
+ *   single-book catalogue of separated slots in one or two chapters.
  *
  * Usage: node scripts/build-parallels.mjs
  * Reads /tmp/ParallelPassages.xml when present, otherwise downloads it.
@@ -236,13 +239,94 @@ function clipRange(web, range) {
   return segments
 }
 
-function keepPassage(references) {
+const MULTI_BOOK_MAX = 12
+const SINGLE_BOOK_MAX = 8
+
+function referenceStarts(references) {
+  return references.map((reference) => {
+    const match = /^([1-3A-Z]{3}) (\d+):(\d+)/.exec(reference)
+    if (!match) throw new Error(`reference ${reference}`)
+    return { book: match[1].toLowerCase(), chapter: Number(match[2]), verse: Number(match[3]) }
+  })
+}
+
+function contentWords(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9'\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2)
+}
+
+function jaccard(left, right) {
+  let shared = 0
+  for (const word of left) if (right.has(word)) shared += 1
+  const union = left.size + right.size - shared
+  return union === 0 ? 0 : shared / union
+}
+
+function medianSimilarity(web, starts) {
+  const lists = []
+  for (const start of starts) {
+    const text = verseText(web, start.book, start.chapter, start.verse)
+    if (!text) return 0
+    lists.push(new Set(contentWords(text)))
+  }
+  const scores = []
+  for (let i = 0; i < lists.length; i += 1) {
+    for (let j = i + 1; j < lists.length; j += 1) scores.push(jaccard(lists[i], lists[j]))
+  }
+  if (scores.length === 0) return 0
+  scores.sort((a, b) => a - b)
+  return scores[Math.floor(scores.length / 2)]
+}
+
+/** Greetings and thanksgivings that open letter after letter. */
+function isLetterOpening(starts) {
+  const books = new Set(starts.map((start) => start.book))
+  if (books.size < 8) return false
+  const openings = starts.filter((start) => start.chapter === 1 && start.verse <= 8).length
+  return openings / starts.length >= 0.7
+}
+
+/**
+ * A ritual or oracle catalogue: one book, one or two chapters, and no two
+ * lines sitting on adjacent verses. A discourse that repeats a saying
+ * (John 6) has adjacent verses and is not a catalogue.
+ */
+function isSeparatedCatalogue(starts) {
+  if (starts.length < 6) return false
+  if (new Set(starts.map((start) => start.book)).size !== 1) return false
+  const chapters = starts.map((start) => start.chapter)
+  if (Math.max(...chapters) - Math.min(...chapters) > 1) return false
+  const ordered = [...starts].sort((a, b) => a.chapter - b.chapter || a.verse - b.verse)
+  for (let index = 1; index < ordered.length; index += 1) {
+    const previous = ordered[index - 1]
+    const next = ordered[index]
+    if (previous.chapter === next.chapter && next.verse <= previous.verse + 1) return false
+  }
+  return true
+}
+
+function isFormulaList(references, web) {
+  const starts = referenceStarts(references)
+  if (isLetterOpening(starts)) return true
+  if (isSeparatedCatalogue(starts)) return true
+  if (references.length >= 6 && medianSimilarity(web, starts) >= 0.85) return true
+  return false
+}
+
+function keepPassage(references, web) {
   const books = new Set(references.map((reference) => reference.slice(0, 3).toLowerCase()))
   let gospels = 0
   for (const book of books) if (GOSPELS.has(book)) gospels += 1
   if (gospels >= 2) return true
-  if (books.size >= 2 && references.length <= 8) return true
-  if (books.size === 1 && references.length <= 5) return true
+  const withinPrevious =
+    (books.size >= 2 && references.length <= 8) || (books.size === 1 && references.length <= 5)
+  if (withinPrevious) return true
+  if (isFormulaList(references, web)) return false
+  if (books.size >= 2 && references.length <= MULTI_BOOK_MAX) return true
+  if (books.size === 1 && references.length <= SINGLE_BOOK_MAX) return true
   return false
 }
 
@@ -337,7 +421,7 @@ function build() {
 
   for (const passage of passages) {
     const references = passage.map((verse) => verse.reference)
-    if (!keepPassage(references)) continue
+    if (!keepPassage(references, web)) continue
     const ranges = []
     const seen = new Set()
     for (const verse of passage) {
@@ -406,10 +490,27 @@ function build() {
   includes('psa', '22', '1', idIndex.get('mat'), 27, 46, 46)
   includes('psa', '14', '1', idIndex.get('psa'), 53, 1, 1)
   includes('mat', '5', '43', idIndex.get('mrk'), 12, 31, 31)
+  includes('mat', '6', '9', idIndex.get('luk'), 11, 2, 2)
+  includes('mat', '28', '19', idIndex.get('mrk'), 16, 15, 15)
+  includes('mat', '28', '19', idIndex.get('luk'), 24, 46, 48)
+  includes('jhn', '6', '32', idIndex.get('jhn'), 6, 51, 51)
+  includes('heb', '5', '6', idIndex.get('heb'), 7, 17, 17)
+  includes('1jn', '2', '3', idIndex.get('1jn'), 4, 13, 13)
+  includes('rom', '11', '36', idIndex.get('eph'), 3, 21, 21)
+  includes('rev', '5', '9', idIndex.get('rev'), 7, 9, 9)
+  if (index.size <= 5493) throw new Error(`expected wider coverage than 5493 verses, got ${index.size}`)
   if (rowsFor('rut', '1', '1')) throw new Error('ruth should have no parallels')
   if (rowsFor('num', '7', '14')) throw new Error('numbers 7 formula list should be omitted')
+  if (rowsFor('num', '29', '18')) throw new Error('numbers 29 offering formula should be omitted')
   if (rowsFor('jer', '13', '8')) throw new Error('jeremiah formula list should be omitted')
+  if (rowsFor('ezk', '32', '20')) throw new Error('ezekiel 32 catalogue should be omitted')
+  if (rowsFor('amo', '1', '3')) throw new Error('amos oracle formula should be omitted')
   if (rowsFor('rom', '1', '7')) throw new Error('epistle greetings should be omitted')
+  if (rowsFor('rom', '1', '8')) throw new Error('epistle thanksgivings should be omitted')
+  if (rowsFor('rev', '2', '1')) throw new Error('revelation letter openings should be omitted')
+  if (rowsFor('jhn', '3', '16')) throw new Error('john 3:16 is not a UBS parallel')
+  if (rowsFor('psa', '23', '1')) throw new Error('psalm 23:1 is not a UBS parallel')
+  if (rowsFor('rom', '8', '28')) throw new Error('romans 8:28 is not a UBS parallel')
 
   writeFileSync(outPath, `${JSON.stringify(books)}\n`)
   writeFileSync(
@@ -424,7 +525,9 @@ function build() {
       '',
       'public/scripture/parallels.json is Adapted Material. Word-match numbers were omitted.',
       'Hebrew verse numbers were converted to traditional Protestant numbering.',
-      'Long formula lists were left out. See scripts/build-parallels.mjs.',
+      'Repeated sayings a reader would follow were kept.',
+      'Long formula lists were left out: offerings, letter openings, and “the word of the LORD came.”',
+      'See scripts/build-parallels.mjs.',
       '',
     ].join('\n'),
   )

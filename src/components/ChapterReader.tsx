@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
 import { LexiconBody } from './LexiconPanel'
 import { MeaningBody } from './MeaningNote'
+import { ParallelEmptyNote } from './ParallelEmptyNote'
 import { ScriptureText } from './ScriptureText'
 import { ShelfSave } from './ShelfSave'
 import { BookArt } from './BookArt'
@@ -463,7 +464,13 @@ export function ChapterReader({
                           <div className="parallel-block">
                             {parallelRows === null ? <p className="field-note">{t('parallelLoading')}</p> : null}
                             {parallelRows && parallelRows.length === 0 ? (
-                              <p className="field-note">{t('parallelEmpty')}</p>
+                              <ParallelEmptyNote
+                                onShowRelated={() => {
+                                  const heading = document.getElementById('related-verses')
+                                  heading?.scrollIntoView({ block: 'nearest' })
+                                  heading?.focus()
+                                }}
+                              />
                             ) : null}
                             {parallelRows && parallelRows.length > 0 ? (
                               <ul className="related-list">
@@ -535,7 +542,9 @@ export function ChapterReader({
                             />
                           </div>
                         ) : null}
-                        <h2>{t('relatedVerses')}</h2>
+                        <h2 id="related-verses" tabIndex={-1}>
+                          {t('relatedVerses')}
+                        </h2>
                         {relatedRows === null ? <p className="field-note">{t('relatedLoading')}</p> : null}
                         {relatedRows && relatedRows.length === 0 ? (
                           <p className="field-note">{t('relatedScriptureEmpty')}</p>
