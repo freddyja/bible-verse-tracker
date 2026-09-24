@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { BOOKS } from '../scripture/books'
 import { lexiconEntry, lexiconFor, peekLexiconEntry, type LexiconEntry, type LexiconWord } from '../scripture/api'
 import { parseReference } from '../scripture/passages'
+import { StudyKeep, type ShelfKeep } from './ShelfSave'
 
 type LexiconBodyProps = {
   bookIndex: number
@@ -202,10 +203,11 @@ function LexiconAbout() {
 type LexiconNoteProps = {
   reference: string
   locked: boolean
+  keep?: ShelfKeep
   onClose: () => void
 }
 
-export function LexiconNote({ reference, locked, onClose }: LexiconNoteProps) {
+export function LexiconNote({ reference, locked, keep, onClose }: LexiconNoteProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const { t } = useLanguage()
@@ -248,6 +250,7 @@ export function LexiconNote({ reference, locked, onClose }: LexiconNoteProps) {
         {!hasReference ? <p className="field-note">{t('lexiconNeedReference')}</p> : null}
         {hasReference && !parsed ? <p className="field-note">{t('lexiconEmpty')}</p> : null}
         {parsed ? <LexiconBody bookIndex={parsed.bookIndex} chapter={parsed.chapter} verse={parsed.verse} /> : null}
+        {keep && !locked ? <StudyKeep reference={reference} keep={keep} /> : null}
       </div>
     </dialog>,
     document.body,

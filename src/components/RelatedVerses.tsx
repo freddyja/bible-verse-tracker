@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { verseForPassage } from '../data/matchVerse'
 import { versesSharingCategory } from '../data/related'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { relatedPassages, type ScriptureHit } from '../scripture/api'
-import { formatPassage, parseReference } from '../scripture/passages'
+import { formatPassage, parseReference, samePassage, type PassageRef } from '../scripture/passages'
 import { ScriptureText } from './ScriptureText'
+import { keepPassage } from './keepPassage'
+import { ShelfSave, StudyKeep, type ShelfKeep } from './ShelfSave'
 
 type RelatedVersesProps = {
   reference: string
@@ -13,6 +16,7 @@ type RelatedVersesProps = {
   verses: readonly Verse[]
   currentId: string | null
   locked: boolean
+  keep?: ShelfKeep
   onClose: () => void
   onOpenVerse: (verseId: string) => void
   onAddReference: (reference: string, text: string) => void
@@ -24,6 +28,7 @@ export function RelatedVerses({
   verses,
   currentId,
   locked,
+  keep,
   onClose,
   onOpenVerse,
   onAddReference,
@@ -34,6 +39,7 @@ export function RelatedVerses({
   const library = versesSharingCategory(verses, categoryIds, currentId)
   const hasReference = reference.trim().length > 0
   const [loaded, setLoaded] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
+  const [keeping, setKeeping] = useState<PassageRef | null>(null)
   const parsed = hasReference ? parseReference(reference) : null
   const loadKey = parsed ? `${versionId}:${parsed.bookIndex}:${parsed.chapter}:${parsed.verse}` : ''
   const passages = !parsed ? [] : loaded?.key === loadKey ? loaded.rows : null
@@ -130,10 +136,11 @@ export function RelatedVerses({
           {scriptureMessage ? <p className="field-note">{scriptureMessage}</p> : null}
           {passages && passages.length > 0 ? (
             <ul className="related-list">
-              {passages.map((passage) => {
+            {passages.map((passage) => {
                 const label = formatPassage(language, passage)
+                const open = keeping !== null && samePassage(keeping, passage)
                 return (
-                  <li key={label} className="related-row">
+                  <li key={label} className="related-row shelf-row">
                     <div className="related-open">
                       <span className="related-ref">{label}</span>
                       <ScriptureText
@@ -144,21 +151,36 @@ export function RelatedVerses({
                         className="related-snippet scripture-snippet"
                       />
                     </div>
-                    <button
-                      type="button"
-                      className="button button-small button-ghost"
-                      disabled={locked}
-                      aria-label={t('addReference', { reference: label })}
-                      onClick={() => onAddReference(label, passage.text)}
-                    >
-                      {t('add')}
-                    </button>
+                    {keep ? (
+                      <button
+                        type="button"
+                        className="button button-small button-ghost"
+                        disabled={locked}
+                        aria-expanded={open}
+                        aria-label={t('saveReference', { reference: label })}
+                        onClick={() => setKeeping(open ? null : passage)}
+                      >
+                        {verseForPassage(keep.verses, passage) ? t('savedBadge') : t('save')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="button button-small button-ghost"
+                        disabled={locked}
+                        aria-label={t('addReference', { reference: label })}
+                        onClick={() => onAddReference(label, passage.text)}
+                      >
+                        {t('add')}
+                      </button>
+                    )}
+                    {keep && open ? <ShelfSave {...keepPassage(keep, passage, passage.text)} /> : null}
                   </li>
                 )
               })}
-            </ul>
-          ) : null}
+          </ul>
+        ) : null}
         </section>
+        {keep && !locked ? <StudyKeep reference={reference} keep={keep} /> : null}
       </div>
     </dialog>,
     document.body,

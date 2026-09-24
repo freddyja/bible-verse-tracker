@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { verseForPassage } from '../data/matchVerse'
 import { useLanguage } from '../i18n/useLanguage'
 import { parallelPassages, type ParallelHit } from '../scripture/api'
-import { formatPassageRange, parseReference, type PassageRef } from '../scripture/passages'
+import { formatPassageRange, parseReference, samePassage, type PassageRef } from '../scripture/passages'
 import { ScriptureText } from './ScriptureText'
+import { keepPassage } from './keepPassage'
+import { ShelfSave, StudyKeep, type ShelfKeep } from './ShelfSave'
 
 type ParallelPassagesProps = {
   reference: string
   locked: boolean
+  keep?: ShelfKeep
   onClose: () => void
   onReadPassage: (passage: PassageRef) => void
 }
 
-export function ParallelPassages({ reference, locked, onClose, onReadPassage }: ParallelPassagesProps) {
+export function ParallelPassages({ reference, locked, keep, onClose, onReadPassage }: ParallelPassagesProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const { language, versionId, t } = useLanguage()
   const hasReference = reference.trim().length > 0
   const [loaded, setLoaded] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
+  const [keeping, setKeeping] = useState<PassageRef | null>(null)
   const parsed = hasReference ? parseReference(reference) : null
   const loadKey = parsed ? `${versionId}:${parsed.bookIndex}:${parsed.chapter}:${parsed.verse}` : ''
   const passages = !parsed ? [] : loaded?.key === loadKey ? loaded.rows : null
@@ -82,8 +87,9 @@ export function ParallelPassages({ reference, locked, onClose, onReadPassage }: 
           <ul className="related-list">
             {passages.map((passage) => {
               const label = formatPassageRange(language, passage)
+              const open = keeping !== null && samePassage(keeping, passage)
               return (
-                <li key={label} className="related-row">
+                <li key={label} className="related-row shelf-row">
                   <button
                     type="button"
                     className="related-open"
@@ -99,11 +105,27 @@ export function ParallelPassages({ reference, locked, onClose, onReadPassage }: 
                       className="related-snippet scripture-snippet"
                     />
                   </button>
+                  {keep ? (
+                    <button
+                      type="button"
+                      className="button button-small button-ghost"
+                      disabled={locked}
+                      aria-expanded={open}
+                      aria-label={t('saveReference', { reference: label })}
+                      onClick={() => setKeeping(open ? null : passage)}
+                    >
+                      {verseForPassage(keep.verses, passage) ? t('savedBadge') : t('save')}
+                    </button>
+                  ) : null}
+                  {keep && open ? (
+                    <ShelfSave {...keepPassage(keep, passage, passage.text)} />
+                  ) : null}
                 </li>
               )
             })}
           </ul>
         ) : null}
+        {keep && !locked ? <StudyKeep reference={reference} keep={keep} /> : null}
       </div>
     </dialog>,
     document.body,

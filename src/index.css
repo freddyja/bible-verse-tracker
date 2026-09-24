@@ -683,6 +683,31 @@ main {
   border-bottom: 1px solid var(--line);
 }
 
+.shelf-row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.shelf-row > .shelf-save {
+  flex: 1 0 100%;
+}
+
+.shelf-save {
+  margin: 0.85rem 0 0.2rem;
+  padding: 0.85rem 0 0.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.study-panel .shelf-save {
+  margin-top: 1rem;
+}
+
+.shelf-title {
+  margin: 0.15rem 0 0.55rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
 .related-open {
   flex: 1;
   min-width: 0;

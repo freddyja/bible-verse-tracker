@@ -3,6 +3,8 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 
+const { pickToday } = await import('../src/scripture/studyNotes.ts')
+
 function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
@@ -29,5 +31,24 @@ const johnToday = existsSync('public/scripture/study/today/jhn.json')
   ? JSON.parse(readFileSync('public/scripture/study/today/jhn.json', 'utf8'))
   : {}
 assert(!johnToday['1']?.['1'], 'John 1:1 is not given a today note it was not written for')
+
+const morningJohn = existsSync('public/scripture/study/morning/jhn.json')
+  ? JSON.parse(readFileSync('public/scripture/study/morning/jhn.json', 'utf8'))
+  : {}
+assert(!morningJohn['1']?.['1'], 'John 1:1 is not given a morning note it was not written for')
+assert(pickToday(johnToday['1']?.['1'], morningJohn['1']?.['1']) === null, 'John 1:1 stays empty when neither reading names it')
+
+const checkbookLove = johnToday['3']?.['16']
+assert(checkbookLove && /His Love/.test(checkbookLove), 'John 3:16 keeps the Faith’s Checkbook reading')
+assert(pickToday(checkbookLove, 'a morning line that must not replace it')?.source === 'checkbook', 'Faith’s Checkbook is shown when both readings exist')
+
+const checkbookJoshua = existsSync('public/scripture/study/today/jos.json')
+  ? JSON.parse(readFileSync('public/scripture/study/today/jos.json', 'utf8'))
+  : {}
+assert(!checkbookJoshua['5']?.['12'], 'Joshua 5:12 is not a Faith’s Checkbook reading')
+const rest = JSON.parse(readFileSync('public/scripture/study/morning/jos.json', 'utf8'))['5']['12']
+assert(/promised rest/.test(rest), 'Joshua 5:12 keeps the Morning and Evening reading')
+const joshua = pickToday(checkbookJoshua['5']?.['12'], rest)
+assert(joshua?.source === 'morning' && joshua.text === rest, 'Morning and Evening fills a verse Faith’s Checkbook does not cover')
 
 console.log('study checks passed')

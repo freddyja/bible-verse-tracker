@@ -1,0 +1,30 @@
+Matthew Henry's Commentary on the Whole Bible
+Matthew Henry
+Public domain. Copy freely.
+
+This is the fallback for In context, used only when the Concise commentary
+has no note for that verse. The concise notes stay in
+public/scripture/meaning/. See public/scripture/meaning-license.txt.
+
+Source text, Christian Classics Ethereal Library, labeled
+"Rights: Public domain. May be copied and distributed freely."
+https://ccel.org/ccel/h/henry/mhc1/cache/mhc1.txt
+https://ccel.org/ccel/h/henry/mhc3/cache/mhc3.txt
+https://ccel.org/ccel/h/henry/mhc5/cache/mhc5.txt
+
+public/scripture/context/*.json keeps only the books that have a verse
+the Concise commentary leaves empty: Deuteronomy, Proverbs, Matthew, and
+John. The phone loads one of those books when the concise note is missing.
+The whole commentary is not bundled.
+
+A stored note is Henry's explanation of the passage he printed, not the
+Bible verses printed above it. When a paragraph names a verse (v. 16,
+ver. 19-20), that paragraph is the note for those verses. A paragraph
+that names none keeps the verse named by the paragraph before it. When
+no paragraph names a verse, the explanation of the whole printed passage
+is the note. The tightest of those ranges is the one shown.
+CCEL link markers and print rules were removed. The wording was not
+rewritten, and it was not translated.
+See scripts/build-context.mjs.
+
+Nothing in these files was written by a model to fill a gap.

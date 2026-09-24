@@ -65,6 +65,7 @@ export default defineConfig(({ command }) => {
           '**/scripture/blivre-tr/**',
           '**/scripture/lexicon/**',
           '**/scripture/study/**',
+          '**/scripture/context/**',
         ],
         navigateFallback: 'index.html',
         runtimeCaching: [
