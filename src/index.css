@@ -264,6 +264,18 @@ main {
   padding-left: 1rem;
 }
 
+.search-mode {
+  margin-top: 0.55rem;
+}
+
+.search-results .related-open {
+  padding: 0.75rem 0;
+}
+
+.search-results .related-list li + li {
+  border-top: 1px solid var(--line);
+}
+
 .field textarea {
   resize: vertical;
   min-height: 8.5rem;

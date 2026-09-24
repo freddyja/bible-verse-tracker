@@ -10,12 +10,18 @@ import {
 import { pickMeaning, type MeaningHit } from './meaning'
 import { pickContext, pickToday, type ContextHit, type TodayHit } from './studyNotes'
 import { fold, type PassageRef } from './passages'
+import { parseTopicIndex, selectTopicGroups, type TopicIndexEntry } from './topics'
 import { versionById } from './versions'
 
 export type { LexiconEntry, LexiconWord }
 export type { ContextHit, TodayHit }
 
-export type ScriptureHit = PassageRef & { text: string }
+export type ScriptureHit = PassageRef & { text: string; endVerse?: number }
+
+export type TopicGroup = {
+  name: string
+  hits: ScriptureHit[]
+}
 
 const books = new Map<string, string[][]>()
 const xrefs = new Map<string, number[][][][]>()
@@ -277,4 +283,39 @@ export async function searchScripture(
     }
   }
   return hits
+}
+
+let topicIndex: TopicIndexEntry[] | null = null
+
+async function loadTopicIndex(): Promise<TopicIndexEntry[]> {
+  if (topicIndex) return topicIndex
+  const table = await fetchJson<unknown>(scriptureUrl('topics.json'))
+  topicIndex = parseTopicIndex(table)
+  return topicIndex
+}
+
+export async function searchTopics(versionId: string, query: string): Promise<TopicGroup[]> {
+  const index = await loadTopicIndex()
+  const selected = selectTopicGroups(index, query)
+  const groups: TopicGroup[] = []
+  for (const topic of selected) {
+    const loaded = await Promise.all(
+      topic.refs.map(async (ref) => {
+        const text = await loadVerse(versionId, ref.bookIndex, ref.chapter, ref.verse)
+        if (!text) return null
+        const hit: ScriptureHit = {
+          bookIndex: ref.bookIndex,
+          chapter: ref.chapter,
+          verse: ref.verse,
+          text,
+        }
+        if (ref.endVerse && ref.endVerse > ref.verse) hit.endVerse = ref.endVerse
+        return hit
+      }),
+    )
+    const hits = loaded.filter((hit): hit is ScriptureHit => hit !== null)
+    if (hits.length === 0) continue
+    groups.push({ name: topic.name, hits })
+  }
+  return groups
 }
