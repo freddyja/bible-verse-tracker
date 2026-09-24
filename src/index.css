@@ -1080,6 +1080,21 @@ main {
   margin: 0.45rem 0 0.85rem;
 }
 
+.parallel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.parallel-empty .button {
+  margin-top: 0.55rem;
+}
+
+.study-panel h2:focus {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+
 .parallel-block + h2 {
   margin-top: 0.15rem;
 }

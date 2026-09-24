@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { parallelPassages, type ParallelHit } from '../scripture/api'
 import { formatPassageRange, parseReference, samePassage, type PassageRef } from '../scripture/passages'
 import { ScriptureText } from './ScriptureText'
+import { ParallelEmptyNote } from './ParallelEmptyNote'
 import { keepPassage } from './keepPassage'
 import { ShelfSave, StudyKeep, type ShelfKeep } from './ShelfSave'
 
@@ -55,9 +56,11 @@ export function ParallelPassages({ reference, locked, keep, onClose, onReadPassa
   }, [versionId, reference])
 
   let message: string | null = null
-  if (!hasReference || !parsed) message = hasReference ? t('parallelEmpty') : t('parallelNeedReference')
+  let showEmpty = false
+  if (!hasReference) message = t('parallelNeedReference')
+  else if (!parsed) message = t('parallelEmpty')
   else if (passages === null) message = t('parallelLoading')
-  else if (passages.length === 0) message = t('parallelEmpty')
+  else if (passages.length === 0) showEmpty = true
 
   return createPortal(
     <dialog
@@ -83,6 +86,7 @@ export function ParallelPassages({ reference, locked, keep, onClose, onReadPassa
       <div className="related-body">
         {locked ? <p className="field-note">{t('stopThenSave')}</p> : null}
         {message ? <p className="field-note">{message}</p> : null}
+        {showEmpty ? <ParallelEmptyNote /> : null}
         {passages && passages.length > 0 ? (
           <ul className="related-list">
             {passages.map((passage) => {
