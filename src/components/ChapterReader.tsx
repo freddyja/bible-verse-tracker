@@ -3,17 +3,14 @@ import { verseForPassage } from '../data/matchVerse'
 import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
 import { ListenBar } from './ListenBar'
-import { LexiconBody } from './LexiconPanel'
-import { MeaningBody } from './MeaningNote'
-import { ParallelEmptyNote } from './ParallelEmptyNote'
 import { ScriptureText } from './ScriptureText'
-import { ShelfSave } from './ShelfSave'
 import { BookArt } from './BookArt'
+import { VerseSheet } from './VerseSheet'
 import type { ListenController } from '../speech/useListen'
-import { loadBook, parallelPassages, relatedPassages, type ParallelHit, type ScriptureHit } from '../scripture/api'
+import { loadBook } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import { chapterStep } from '../scripture/canon'
-import { formatPassage, formatPassageRange, samePassage, type PassageRef } from '../scripture/passages'
+import { formatPassage, type PassageRef } from '../scripture/passages'
 
 type Slice = {
   bookIndex: number
@@ -67,15 +64,10 @@ export function ChapterReader({
   const [failed, setFailed] = useState(false)
   const [armed, setArmed] = useState(false)
   const [moreFailed, setMoreFailed] = useState(false)
-  const [selected, setSelected] = useState<PassageRef | null>(
+  const [picked, setPicked] = useState<PassageRef | null>(
     startVerse === null ? null : { bookIndex: startBook, chapter: startChapter, verse: startVerse },
   )
-  const [related, setRelated] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
-  const [parallelKey, setParallelKey] = useState<string | null>(null)
-  const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
-  const [meaningKey, setMeaningKey] = useState<string | null>(null)
-  const [shelfAim, setShelfAim] = useState<{ key: string; passage: PassageRef } | null>(null)
-  const [lexiconKey, setLexiconKey] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
@@ -284,39 +276,6 @@ export function ChapterReader({
   }, [slices])
 
   useEffect(() => {
-    if (parallelKey === null || selected === null) return
-    const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
-    if (parallelKey !== key) return
-    let cancelled = false
-    parallelPassages(versionId, selected)
-      .then((rows) => {
-        if (!cancelled) setParallel({ key, rows })
-      })
-      .catch(() => {
-        if (!cancelled) setParallel({ key, rows: [] })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [versionId, selected, parallelKey])
-
-  useEffect(() => {
-    if (selected === null) return
-    const key = `${selected.bookIndex}:${selected.chapter}:${selected.verse}`
-    let cancelled = false
-    relatedPassages(versionId, selected)
-      .then((rows) => {
-        if (!cancelled) setRelated({ key, rows })
-      })
-      .catch(() => {
-        if (!cancelled) setRelated({ key, rows: [] })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [versionId, selected])
-
-  useEffect(() => {
     const target = listen.passage
     if (!target || listen.status === 'idle' || slices.length === 0) return
     if (hasSlice(slices, target.bookIndex, target.chapter)) {
@@ -333,22 +292,28 @@ export function ChapterReader({
   }, [listen.passage, listen.status, slices, append, prepend])
 
   const focusedSlice = slices.find((slice) => slice.bookIndex === focused.bookIndex && slice.chapter === focused.chapter)
-  const listenPassage =
-    selected ??
-    (focusedSlice ? { bookIndex: focused.bookIndex, chapter: focused.chapter, verse: 1 } : null)
-  const listenText = listenPassage
-    ? slices.find((slice) => slice.bookIndex === listenPassage.bookIndex && slice.chapter === listenPassage.chapter)
-        ?.verses[listenPassage.verse - 1]
+  const pickedInFocus =
+    picked !== null &&
+    focusedSlice !== undefined &&
+    picked.bookIndex === focused.bookIndex &&
+    picked.chapter === focused.chapter
+  const chapterStart = pickedInFocus
+    ? picked
+    : focusedSlice
+      ? { bookIndex: focused.bookIndex, chapter: focused.chapter, verse: 1 }
+      : null
+  const chapterText = chapterStart
+    ? slices.find((slice) => slice.bookIndex === chapterStart.bookIndex && slice.chapter === chapterStart.chapter)
+        ?.verses[chapterStart.verse - 1]
+    : undefined
+  const pickedText = picked
+    ? slices.find((slice) => slice.bookIndex === picked.bookIndex && slice.chapter === picked.chapter)?.verses[
+        picked.verse - 1
+      ]
     : undefined
   const spokenLabel =
     listen.passage && listen.status !== 'idle' ? formatPassage(language, listen.passage) : null
-  const relatedKey = selected ? `${selected.bookIndex}:${selected.chapter}:${selected.verse}` : ''
-  const relatedRows = related && related.key === relatedKey ? related.rows : null
-  const parallelOpen = parallelKey !== null && parallelKey === relatedKey
-  const parallelRows = parallelOpen && parallel && parallel.key === relatedKey ? parallel.rows : null
-  const meaningOpen = meaningKey !== null && meaningKey === relatedKey
-  const lexiconOpen = lexiconKey !== null && lexiconKey === relatedKey
-  const shelfPassage = shelfAim && shelfAim.key === relatedKey ? shelfAim.passage : null
+  const sheetText = sheetOpen ? pickedText : undefined
 
   return (
     <article className="reader">
@@ -364,21 +329,21 @@ export function ChapterReader({
           supported={listen.supported}
           status={listen.status}
           statusText={spokenLabel}
-          canVerse={selected !== null}
-          canChapter={listenPassage !== null && listenText !== undefined}
-          canContinue={listenPassage !== null && listenText !== undefined}
+          canVerse={picked !== null && pickedText !== undefined}
+          canChapter={chapterStart !== null && chapterText !== undefined}
+          canContinue={chapterStart !== null && chapterText !== undefined}
           notice={listen.refused ? t('listenRefused') : undefined}
           onVerse={() => {
-            if (!selected || !listenText) return
-            listen.start('verse', selected, listenText)
+            if (!picked || pickedText === undefined) return
+            listen.start('verse', picked, pickedText)
           }}
           onChapter={() => {
-            if (!listenPassage || !listenText) return
-            listen.start('chapter', listenPassage, listenText)
+            if (!chapterStart || chapterText === undefined) return
+            listen.start('chapter', chapterStart, chapterText)
           }}
           onContinue={() => {
-            if (!listenPassage || !listenText) return
-            listen.start('continue', listenPassage, listenText)
+            if (!chapterStart || chapterText === undefined) return
+            listen.start('continue', chapterStart, chapterText)
           }}
           onPause={listen.pause}
           onResume={listen.resume}
@@ -414,11 +379,12 @@ export function ChapterReader({
                 if (!text.trim()) return null
                 const number = index + 1
                 const current = { bookIndex: slice.bookIndex, chapter: slice.chapter, verse: number }
-                const isSelected =
-                  selected !== null &&
-                  selected.bookIndex === current.bookIndex &&
-                  selected.chapter === current.chapter &&
-                  selected.verse === current.verse
+                const isOpen =
+                  sheetOpen &&
+                  picked !== null &&
+                  picked.bookIndex === current.bookIndex &&
+                  picked.chapter === current.chapter &&
+                  picked.verse === current.verse
                 const speaking =
                   listen.status !== 'idle' &&
                   listen.passage !== null &&
@@ -426,183 +392,33 @@ export function ChapterReader({
                   listen.passage.chapter === current.chapter &&
                   listen.passage.verse === current.verse
                 const already = verseForPassage(saved, current)
-                const formPassage = shelfPassage ?? current
-                const listed =
-                  (parallel?.key === relatedKey ? parallel.rows : []).find((row) => samePassage(row, formPassage)) ??
-                  (related?.key === relatedKey ? related.rows : []).find((row) => samePassage(row, formPassage))
-                const formText = samePassage(formPassage, current) ? text : (listed?.text ?? '')
                 return (
                   <div
                     key={number}
                     id={verseDomId(slice.bookIndex, slice.chapter, number)}
-                    className={['verse-block', isSelected ? 'selected' : '', speaking ? 'speaking' : '']
+                    className={['verse-block', isOpen ? 'selected' : '', speaking ? 'speaking' : '']
                       .filter(Boolean)
                       .join(' ')}
                   >
                     <button
                       type="button"
                       className="verse-line"
-                      aria-expanded={isSelected}
+                      aria-haspopup="dialog"
+                      aria-expanded={isOpen}
+                      aria-controls={isOpen ? 'verse-sheet' : undefined}
                       aria-current={speaking ? 'true' : undefined}
-                      onClick={() => setSelected(isSelected ? null : current)}
+                      onClick={() => {
+                        document.getElementById(verseDomId(slice.bookIndex, slice.chapter, number))?.scrollIntoView({
+                          block: 'start',
+                        })
+                        setPicked(current)
+                        setSheetOpen(true)
+                      }}
                     >
                       <sup>{number}</sup>
                       <ScriptureText bookIndex={slice.bookIndex} chapter={slice.chapter} verse={number} text={text} />
                       {already ? <span className="saved-mark">{t('savedBadge')}</span> : null}
                     </button>
-                    {isSelected ? (
-                      <section className="study-panel">
-                        <button
-                          type="button"
-                          className="button button-related button-block"
-                          aria-expanded={parallelOpen}
-                          onClick={() => setParallelKey(parallelOpen ? null : relatedKey)}
-                        >
-                          {t('parallelPassages')}
-                        </button>
-                        {parallelOpen ? (
-                          <div className="parallel-block">
-                            {parallelRows === null ? <p className="field-note">{t('parallelLoading')}</p> : null}
-                            {parallelRows && parallelRows.length === 0 ? (
-                              <ParallelEmptyNote
-                                onShowRelated={() => {
-                                  const heading = document.getElementById('related-verses')
-                                  heading?.scrollIntoView({ block: 'nearest' })
-                                  heading?.focus()
-                                }}
-                              />
-                            ) : null}
-                            {parallelRows && parallelRows.length > 0 ? (
-                              <ul className="related-list">
-                                {parallelRows.map((row) => {
-                                  const label = formatPassageRange(language, row)
-                                  const aimed = shelfPassage !== null && samePassage(shelfPassage, row)
-                                  return (
-                                    <li key={label} className="related-row">
-                                      <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
-                                        <span className="related-ref">{label}</span>
-                                        <ScriptureText
-                                          bookIndex={row.bookIndex}
-                                          chapter={row.chapter}
-                                          verse={row.verse}
-                                          text={row.text}
-                                          className="related-snippet scripture-snippet"
-                                        />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="button button-small button-ghost"
-                                        aria-expanded={aimed}
-                                        aria-label={t('saveReference', { reference: label })}
-                                        onClick={() => {
-                                          setShelfAim(aimed ? null : { key: relatedKey, passage: row })
-                                          document.getElementById('shelf-save')?.scrollIntoView({ block: 'nearest' })
-                                        }}
-                                      >
-                                        {verseForPassage(saved, row) ? t('savedBadge') : t('save')}
-                                      </button>
-                                    </li>
-                                  )
-                                })}
-                              </ul>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="button button-related button-block"
-                          aria-expanded={lexiconOpen}
-                          onClick={() => setLexiconKey(lexiconOpen ? null : relatedKey)}
-                        >
-                          {t('lexicon')}
-                        </button>
-                        {lexiconOpen && selected ? (
-                          <div className="meaning-block">
-                            <LexiconBody
-                              bookIndex={selected.bookIndex}
-                              chapter={selected.chapter}
-                              verse={selected.verse}
-                            />
-                          </div>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="button button-related button-block"
-                          aria-expanded={meaningOpen}
-                          onClick={() => setMeaningKey(meaningOpen ? null : relatedKey)}
-                        >
-                          {t('meaning')}
-                        </button>
-                        {meaningOpen && selected ? (
-                          <div className="meaning-block">
-                            <MeaningBody
-                              bookIndex={selected.bookIndex}
-                              chapter={selected.chapter}
-                              verse={selected.verse}
-                            />
-                          </div>
-                        ) : null}
-                        <h2 id="related-verses" tabIndex={-1}>
-                          {t('relatedVerses')}
-                        </h2>
-                        {relatedRows === null ? <p className="field-note">{t('relatedLoading')}</p> : null}
-                        {relatedRows && relatedRows.length === 0 ? (
-                          <p className="field-note">{t('relatedScriptureEmpty')}</p>
-                        ) : null}
-                        {relatedRows && relatedRows.length > 0 ? (
-                          <ul className="related-list">
-                            {relatedRows.map((row) => {
-                              const label = formatPassage(language, row)
-                              const aimed = shelfPassage !== null && samePassage(shelfPassage, row)
-                              return (
-                                <li key={label} className="related-row">
-                                  <button type="button" className="related-open" onClick={() => onOpenPassage(row)}>
-                                    <span className="related-ref">{label}</span>
-                                    <ScriptureText
-                                      bookIndex={row.bookIndex}
-                                      chapter={row.chapter}
-                                      verse={row.verse}
-                                      text={row.text}
-                                      className="related-snippet scripture-snippet"
-                                    />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="button button-small button-ghost"
-                                    aria-expanded={aimed}
-                                    aria-label={t('saveReference', { reference: label })}
-                                    onClick={() => {
-                                      setShelfAim(aimed ? null : { key: relatedKey, passage: row })
-                                      document.getElementById('shelf-save')?.scrollIntoView({ block: 'nearest' })
-                                    }}
-                                  >
-                                    {verseForPassage(saved, row) ? t('savedBadge') : t('save')}
-                                  </button>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                        ) : null}
-                        {shelfPassage && !samePassage(shelfPassage, current) ? (
-                          <button type="button" className="text-button" onClick={() => setShelfAim(null)}>
-                            {t('shelfThisVerse')}
-                          </button>
-                        ) : null}
-                        <ShelfSave
-                          key={`${formPassage.bookIndex}-${formPassage.chapter}-${formPassage.verse}`}
-                          domId="shelf-save"
-                          passage={formPassage}
-                          text={formText}
-                          saved={verseForPassage(saved, formPassage) ?? null}
-                          categories={categories}
-                          onSave={onSaveVerse}
-                          onCreateCategory={onCreateCategory}
-                          onRecordingChange={(next) => {
-                            if (next) listen.stop()
-                          }}
-                        />
-                      </section>
-                    ) : null}
                   </div>
                 )
               })}
@@ -620,6 +436,27 @@ export function ChapterReader({
         </p>
       ) : null}
       {endReached ? <p className="scripture-end">{t('scriptureEnd')}</p> : null}
+      {sheetOpen && picked && sheetText ? (
+        <VerseSheet
+          key={`${picked.bookIndex}-${picked.chapter}-${picked.verse}`}
+          passage={picked}
+          text={sheetText}
+          saved={saved}
+          categories={categories}
+          listenSupported={listen.supported}
+          onListen={() => {
+            if (pickedText === undefined) return
+            listen.start('verse', picked, pickedText)
+          }}
+          onClose={() => setSheetOpen(false)}
+          onOpenPassage={onOpenPassage}
+          onSaveVerse={onSaveVerse}
+          onCreateCategory={onCreateCategory}
+          onRecordingChange={(next) => {
+            if (next) listen.stop()
+          }}
+        />
+      ) : null}
     </article>
   )
 }
