@@ -1,0 +1,21 @@
+Open Bible topical index
+https://www.openbible.info/topics/
+
+Topic names and the votes that ranked their verses are from Open Bible.
+Creative Commons Attribution 4.0 International.
+https://creativecommons.org/licenses/by/4.0/
+
+Source file: https://a.openbible.info/data/topic-votes.txt
+The file header states: CC-BY License: www.openbible.info/topics
+Verse ID = bbcccvvv (01 = Genesis, 66 = Revelation).
+
+public/scripture/topics.json is adapted material, still CC BY 4.0.
+This copy keeps topic names and verse references only.
+It does not include the Bible text. Verses shown in the app are the translation the reader selected.
+For each topic, the twelve references with the most votes are kept, when a reference has at least ten votes.
+A second citation of the same starting verse is left out.
+A short range in one chapter (five verses or fewer after the first) keeps its ending verse.
+A longer range, or a range that crosses a chapter, keeps the starting verse.
+A reference is left out when that verse is not in the bundled King James text.
+Vote counts are not stored.
+See scripts/build-topics.mjs.

@@ -1,5 +1,5 @@
 import type { Language } from '../i18n/messages'
-import { BOOKS } from './books'
+import { BOOKS } from './books.ts'
 
 export type PassageRef = {
   bookIndex: number
