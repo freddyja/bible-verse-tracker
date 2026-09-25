@@ -198,6 +198,7 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
       <p className="votd-greeting">
         {greeting} <span className="votd-blessing">{t('greetingBlessing')}</span>
       </p>
+      <p className="votd-blessing">{t('greetingBlessing')}</p>
       <p className="votd-date">{dateLine}</p>
       <article className="votd-card" style={{ backgroundImage: `url("${photo}")` }}>
         <button

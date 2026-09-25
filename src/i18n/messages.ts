@@ -362,6 +362,20 @@ const en = {
   installIos: 'In Safari, tap Share, then Add to Home Screen.',
   installManual: 'Open the browser menu and choose Install or Add to Home Screen.',
   installInstalled: 'This app is already on your home screen.',
+  greetingBlessing: 'God bless you.',
+  oldShort: 'Old',
+  newShort: 'New',
+  testamentSwitch: 'Testament',
+  bookCount: '{count} books',
+  sectionLaw: 'Law',
+  sectionHistory: 'History',
+  sectionWisdom: 'Wisdom',
+  sectionMajorProphets: 'Major Prophets',
+  sectionMinorProphets: 'Minor Prophets',
+  sectionGospels: 'Gospels',
+  sectionPauline: 'Pauline Epistles',
+  sectionGeneral: 'General Epistles',
+  sectionRevelation: 'Revelation',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -729,6 +743,20 @@ const es: Record<MessageKey, string> = {
   installIos: 'En Safari, toca Compartir y luego Agregar a pantalla de inicio.',
   installManual: 'Abre el menú del navegador y elige Instalar o Agregar a pantalla de inicio.',
   installInstalled: 'Esta app ya está en tu pantalla de inicio.',
+  greetingBlessing: 'Dios te bendiga.',
+  oldShort: 'Antiguo',
+  newShort: 'Nuevo',
+  testamentSwitch: 'Testamento',
+  bookCount: '{count} libros',
+  sectionLaw: 'Ley',
+  sectionHistory: 'Historia',
+  sectionWisdom: 'Sabiduría',
+  sectionMajorProphets: 'Profetas mayores',
+  sectionMinorProphets: 'Profetas menores',
+  sectionGospels: 'Evangelios',
+  sectionPauline: 'Epístolas paulinas',
+  sectionGeneral: 'Epístolas generales',
+  sectionRevelation: 'Apocalipsis',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -1096,6 +1124,20 @@ const pt: Record<MessageKey, string> = {
   installIos: 'No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.',
   installManual: 'Abra o menu do navegador e escolha Instalar ou Adicionar à Tela de Início.',
   installInstalled: 'Este app já está na tela de início.',
+  greetingBlessing: 'Deus te abençoe.',
+  oldShort: 'Antigo',
+  newShort: 'Novo',
+  testamentSwitch: 'Testamento',
+  bookCount: '{count} livros',
+  sectionLaw: 'Lei',
+  sectionHistory: 'História',
+  sectionWisdom: 'Sabedoria',
+  sectionMajorProphets: 'Profetas maiores',
+  sectionMinorProphets: 'Profetas menores',
+  sectionGospels: 'Evangelhos',
+  sectionPauline: 'Epístolas paulinas',
+  sectionGeneral: 'Epístolas gerais',
+  sectionRevelation: 'Apocalipse',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }
