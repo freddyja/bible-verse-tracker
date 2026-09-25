@@ -287,6 +287,12 @@ export default function App() {
                 {t('navBack')}
               </button>
             ) : null}
+            {onDaily ? (
+              <div className="home-brand">
+                <p className="brand home-brand-name">{t('brandName')}</p>
+                <p className="credit">{t('designedBy')}</p>
+              </div>
+            ) : null}
             {onReadSurface && (read.kind === 'book' || read.kind === 'chapter') ? (
               <h1 className="brand">
                 <nav className="crumb" aria-label={t('readingCrumb')}>
@@ -304,7 +310,6 @@ export default function App() {
             )}
             {onDaily ? (
               <>
-                <p className="credit">{t('designedBy')}</p>
                 <p className="tagline">{t('tagline')}</p>
                 <LanguagePicker />
               </>

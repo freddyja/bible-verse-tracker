@@ -121,6 +121,18 @@ button {
   line-height: 1.15;
 }
 
+.home-brand {
+  margin: 0 0 0.85rem;
+}
+
+.home-brand-name {
+  margin: 0;
+}
+
+.home-brand .credit {
+  margin-top: 0.15rem;
+}
+
 .setting-label {
   display: block;
   color: var(--ink-soft);
