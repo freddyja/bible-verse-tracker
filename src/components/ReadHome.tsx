@@ -7,7 +7,6 @@ import { BOOKS, NEW_TESTAMENT_INDEX } from '../scripture/books'
 import { formatPassage, formatPassageRange, matchBook, parseReference } from '../scripture/passages'
 import { titleCaseTopic } from '../scripture/topics'
 import { ScriptureText } from './ScriptureText'
-import { VerseOfTheDay } from './VerseOfTheDay'
 
 type SearchMode = 'word' | 'topics'
 
@@ -31,6 +30,7 @@ function storeSearchMode(mode: SearchMode) {
 
 type ReadHomeProps = {
   verses: readonly Verse[]
+  planToday: { range: string; onRead: () => void } | null
   onOpenBook: (bookIndex: number) => void
   onOpenPassage: (bookIndex: number, chapter: number, verse: number) => void
   onOpenSaved: (verseId: string) => void
@@ -39,6 +39,7 @@ type ReadHomeProps = {
 
 export function ReadHome({
   verses,
+  planToday,
   onOpenBook,
   onOpenPassage,
   onOpenSaved,
@@ -91,7 +92,15 @@ export function ReadHome({
 
   return (
     <div className="read-home">
-      {trimmed ? null : <VerseOfTheDay onOpen={onOpenPassage} />}
+      {trimmed || !planToday ? null : (
+        <section className="gold-card plan-banner">
+          <p className="votd-kicker">{t('planToday')}</p>
+          <p className="plan-range">{planToday.range}</p>
+          <button type="button" className="button" onClick={planToday.onRead}>
+            {t('planRead')}
+          </button>
+        </section>
+      )}
       <label className="search">
         <span className="sr-only">{t('searchScripture')}</span>
         <input

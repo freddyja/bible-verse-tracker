@@ -12,6 +12,8 @@ Study sits beside the lexicon. It has three labeled parts. In context is Matthew
 
 Each book opens with a small picture drawn for this app. The drawings are original, the same in English, Spanish, and Portuguese, and they are not copied from a study Bible.
 
+Grow sits on the bottom bar between Read and Saved. Practice offers one small action for the day, short original summaries of the faith, a gratitude journal, a light question, a missing-word line from the King James Version, a short fact, and two ways to pray or pass on today’s verse. Planning keeps a purpose statement, a goal list, and two habit lines. All of that stays on this phone. There is no chat and no account.
+
 The home screen offers a verse for the calendar day. The same date always chooses the same passage. The words are the Bible version selected under the title, and the card shows that version’s abbreviation. Tapping the card opens the passage, where it can be saved. The photographs on the card were made for this app. They are original, and they rotate with the date. Past verses, under the card, lists earlier days on this phone. Each one is the passage that date would have shown. Nothing about those days is stored in an account.
 
 Listen reads the Scripture aloud with the phone’s own voice: this verse, this chapter, or Read Out Loud, which continues through the books until he taps Stop. This chapter and Read Out Loud stay on the chapter. This verse is there as well, and again on the sheet for the verse he tapped. The verse being spoken is marked. English, Spanish, and Portuguese follow the language he chose, when the phone has that voice. No account and no audio service. A voice note is still his own recording, kept apart from this reading.

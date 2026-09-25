@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLanguage } from '../i18n/useLanguage'
-import { audienceFor, contextFor, todayFor } from '../scripture/api'
-import type { ContextSource, TodaySource } from '../scripture/studyNotes'
+import { useStudyLayers } from '../scripture/useStudyLayers'
 import { parseReference } from '../scripture/passages'
 import { StudyKeep, type ShelfKeep } from './ShelfSave'
 
@@ -49,55 +48,7 @@ function StudySection({
 
 export function MeaningBody({ bookIndex, chapter, verse }: MeaningBodyProps) {
   const { language, t } = useLanguage()
-  const key = `${bookIndex}:${chapter}:${verse}`
-  const [loaded, setLoaded] = useState<{
-    key: string
-    contextText: string | null
-    contextRange: { start: number; end: number } | null
-    contextSource: ContextSource | null
-    thenNote: string | null
-    todayNote: string | null
-    todaySource: TodaySource | null
-  } | null>(null)
-  const study = loaded?.key === key ? loaded : null
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([
-      contextFor({ bookIndex, chapter, verse }),
-      audienceFor({ bookIndex, chapter, verse }),
-      todayFor({ bookIndex, chapter, verse }),
-    ])
-      .then(([context, thenNote, today]) => {
-        if (!cancelled) {
-          setLoaded({
-            key,
-            contextText: context?.text ?? null,
-            contextRange: context ? { start: context.start, end: context.end } : null,
-            contextSource: context?.source ?? null,
-            thenNote,
-            todayNote: today?.text ?? null,
-            todaySource: today?.source ?? null,
-          })
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoaded({
-            key,
-            contextText: null,
-            contextRange: null,
-            contextSource: null,
-            thenNote: null,
-            todayNote: null,
-            todaySource: null,
-          })
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [bookIndex, chapter, verse, key])
+  const study = useStudyLayers(bookIndex, chapter, verse)
 
   if (!study) return <p className="field-note">{t('meaningLoading')}</p>
 

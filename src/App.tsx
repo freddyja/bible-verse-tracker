@@ -2,19 +2,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
-import { LanguagePicker } from './components/LanguagePicker'
+import { DailyHome } from './components/DailyHome'
+import { GrowHome } from './components/GrowHome'
+import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
+import { ReadingOptions } from './components/ReadingOptions'
+import { SettingsPanel } from './components/SettingsPanel'
+import { TabBar, type TabId } from './components/TabBar'
 import { VerseForm } from './components/VerseForm'
 import { VerseList } from './components/VerseList'
+import { RedLetterToggle } from './components/RedLetterToggle'
+import { VersionPicker } from './components/VersionPicker'
 import { filterVerses } from './data/filter'
 import type { Passage } from './data/types'
 import { useLibrary } from './hooks/useLibrary'
+import { useReadingPlan } from './hooks/useReadingPlan'
 import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
+import { formatPlanSpan, type PlanDay } from './scripture/readingPlan'
 import { type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
-import { RedLetterToggle } from './components/RedLetterToggle'
-import { VersionPicker } from './components/VersionPicker'
 
 type ChapterView = {
   kind: 'chapter'
@@ -26,27 +33,53 @@ type ChapterView = {
   startVerse: number | null
 }
 
-type Shell =
-  | { kind: 'read' }
-  | { kind: 'book'; bookIndex: number }
-  | ChapterView
-  | { kind: 'saved' }
-  | { kind: 'categories'; returnTo: 'read' | 'saved' }
+type ReadPlace = { kind: 'home' } | { kind: 'book'; bookIndex: number } | ChapterView
+
+type Panel = null | 'settings' | 'options' | 'plan'
+
+type EditReturn = { kind: 'saved' } | { kind: 'daily' } | { kind: 'read' } | ChapterView
 
 type View =
-  | Shell
+  | { kind: 'tabs' }
+  | { kind: 'categories' }
   | {
       kind: 'edit'
       verseId: string | null
       prefillReference?: string
       prefillText?: string
-      returnTo: Shell
+      returnTo: EditReturn
     }
+
+function GearIcon() {
+  return (
+    <svg className="gear-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M19.4 13.1a7.7 7.7 0 0 0 .05-2.2l1.7-1.3-1.6-2.8-2 .8a7.6 7.6 0 0 0-1.9-1.1l-.3-2.1h-3.2l-.3 2.1a7.6 7.6 0 0 0-1.9 1.1l-2-.8-1.6 2.8 1.7 1.3a7.7 7.7 0 0 0 0 2.2l-1.7 1.3 1.6 2.8 2-.8c.6.45 1.2.82 1.9 1.1l.3 2.1h3.2l.3-2.1c.7-.28 1.3-.65 1.9-1.1l2 .8 1.6-2.8-1.7-1.3z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 export default function App() {
   const library = useLibrary()
-  const { language, versionId, t } = useLanguage()
-  const [view, setView] = useState<View>({ kind: 'read' })
+  const reading = useReadingPlan()
+  const { language, setVersion, versionId, t } = useLanguage()
+  const [tab, setTab] = useState<TabId>('daily')
+  const [growKey, setGrowKey] = useState(0)
+  const [panel, setPanel] = useState<Panel>(null)
+  const [panelFrom, setPanelFrom] = useState<Panel>(null)
+  const [read, setRead] = useState<ReadPlace>({ kind: 'home' })
+  const [view, setView] = useState<View>({ kind: 'tabs' })
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
 
@@ -65,34 +98,42 @@ export default function App() {
       ? (library.verses.find((verse) => verse.id === view.verseId) ?? null)
       : null
 
-  const bookIndex = view.kind === 'book' || view.kind === 'chapter' ? view.bookIndex : null
+  const bookIndex = read.kind === 'book' || read.kind === 'chapter' ? read.bookIndex : null
   const bookName = bookIndex === null ? '' : BOOKS[bookIndex].names[language]
 
-  let title = t('appTitle')
-  if (view.kind === 'book') title = bookName
-  if (view.kind === 'chapter') title = `${bookName} ${view.chapter}`
-  if (view.kind === 'saved') title = t('saved')
-  if (view.kind === 'categories') title = t('categoriesTitle')
-  if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
+  let title = t('brandName')
+  if (panel === 'settings') title = t('settingsTitle')
+  else if (panel === 'options') title = t('readingOptions')
+  else if (panel === 'plan') title = t('planProgressTitle')
+  else if (view.kind === 'categories') title = t('categoriesTitle')
+  else if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
+  else if (tab === 'read' && read.kind === 'home') title = t('navRead')
+  else if (tab === 'read' && read.kind === 'book') title = bookName
+  else if (tab === 'read' && read.kind === 'chapter') title = `${bookName} ${read.chapter}`
+  else if (tab === 'grow') title = t('navGrow')
+  else if (tab === 'saved') title = t('navSaved')
 
   useEffect(() => {
     document.title = title
   }, [title])
 
-  function openAt(bookIndex: number, chapter: number, verse: number | null): ChapterView {
+  function openAt(nextBook: number, chapter: number, verse: number | null): ChapterView {
     return {
       kind: 'chapter',
-      bookIndex,
+      bookIndex: nextBook,
       chapter,
       verse,
-      startBook: bookIndex,
+      startBook: nextBook,
       startChapter: chapter,
       startVerse: verse,
     }
   }
 
   function followSpoken(passage: PassageRef) {
-    setView((current) => {
+    setTab('read')
+    setPanel(null)
+    setView({ kind: 'tabs' })
+    setRead((current) => {
       if (current.kind === 'chapter') {
         if (current.bookIndex === passage.bookIndex && current.chapter === passage.chapter) return current
         return { ...current, bookIndex: passage.bookIndex, chapter: passage.chapter }
@@ -103,89 +144,157 @@ export default function App() {
 
   const listen = useListen(language, versionId, followSpoken)
 
-  function goBack() {
-    listen.stop()
-    if (view.kind === 'book' || view.kind === 'saved') setView({ kind: 'read' })
-    if (view.kind === 'chapter') setView({ kind: 'book', bookIndex: view.bookIndex })
-    if (view.kind === 'categories') setView(view.returnTo === 'saved' ? { kind: 'saved' } : { kind: 'read' })
-    if (view.kind === 'edit') setView(view.returnTo)
+  function showTabs() {
+    setPanel(null)
+    setPanelFrom(null)
+    setView({ kind: 'tabs' })
   }
 
-  let backLabel = t('backHome')
-  if (view.kind === 'chapter') backLabel = `← ${BOOKS[view.bookIndex].names[language]}`
-  if (view.kind === 'categories' && view.returnTo === 'saved') backLabel = t('backSaved')
-  if (view.kind === 'edit' && view.returnTo.kind === 'saved') backLabel = t('backSaved')
-  if (view.kind === 'edit' && view.returnTo.kind === 'chapter') {
-    backLabel = `← ${BOOKS[view.returnTo.bookIndex].names[language]} ${view.returnTo.chapter}`
+  function openPanel(next: Panel, from: Panel = null) {
+    listen.stop()
+    setView({ kind: 'tabs' })
+    setPanelFrom(from)
+    setPanel(next)
+  }
+
+  function selectTab(next: TabId) {
+    listen.stop()
+    setPanel(null)
+    setPanelFrom(null)
+    setView({ kind: 'tabs' })
+    if (next === 'read' && tab === 'read' && read.kind !== 'home') setRead({ kind: 'home' })
+    if (next === 'grow' && tab === 'grow') setGrowKey((current) => current + 1)
+    setTab(next)
   }
 
   function openPassage(passage: Passage) {
     listen.stop()
-    setView(openAt(passage.bookIndex, passage.chapter, passage.verse))
+    setTab('read')
+    setPanel(null)
+    setView({ kind: 'tabs' })
+    setRead(openAt(passage.bookIndex, passage.chapter, passage.verse))
   }
 
+  function readPlanDay(day: PlanDay) {
+    if (reading.plan) setVersion(reading.plan.versionId)
+    listen.stop()
+    setTab('read')
+    setPanel(null)
+    setPanelFrom(null)
+    setView({ kind: 'tabs' })
+    setRead(openAt(day.start.bookIndex, day.start.chapter, null))
+  }
+
+  const showTabBar = view.kind === 'tabs'
+  const onDaily = view.kind === 'tabs' && panel === null && tab === 'daily'
+  const onReadSurface = view.kind === 'tabs' && panel === null && tab === 'read'
+  const onGrow = view.kind === 'tabs' && panel === null && tab === 'grow'
+  const showGear = view.kind === 'tabs' && panel !== 'settings'
+
+  let backLabel = ''
+  if ((panel === 'options' || panel === 'plan') && panelFrom === 'settings') backLabel = `← ${t('settingsTitle')}`
+  else if (panel) {
+    if (tab === 'daily') backLabel = t('backDaily')
+    else if (tab === 'saved') backLabel = t('backSaved')
+    else if (tab === 'grow') backLabel = t('backGrow')
+    else backLabel = t('backRead')
+  } else if (view.kind === 'categories') {
+    backLabel = tab === 'saved' ? t('backSaved') : tab === 'daily' ? t('backDaily') : t('backRead')
+  } else if (view.kind === 'edit') {
+    if (view.returnTo.kind === 'saved') backLabel = t('backSaved')
+    else if (view.returnTo.kind === 'daily') backLabel = t('backDaily')
+    else if (view.returnTo.kind === 'chapter') {
+      backLabel = `← ${BOOKS[view.returnTo.bookIndex].names[language]} ${view.returnTo.chapter}`
+    } else backLabel = t('backRead')
+  } else if (tab === 'read' && read.kind === 'book') backLabel = t('backRead')
+  else if (tab === 'read' && read.kind === 'chapter') backLabel = `← ${BOOKS[read.bookIndex].names[language]}`
+
+  function goBack() {
+    listen.stop()
+    if (panel === 'options' || panel === 'plan') {
+      setPanel(panelFrom)
+      setPanelFrom(null)
+      return
+    }
+    if (panel) {
+      setPanel(null)
+      setPanelFrom(null)
+      return
+    }
+    if (view.kind === 'categories' || view.kind === 'edit') {
+      if (view.kind === 'edit' && view.returnTo.kind === 'chapter') {
+        setTab('read')
+        setRead(view.returnTo)
+      } else if (view.kind === 'edit' && view.returnTo.kind === 'daily') setTab('daily')
+      else if (view.kind === 'edit' && view.returnTo.kind === 'saved') setTab('saved')
+      else if (view.kind === 'edit') setTab('read')
+      setView({ kind: 'tabs' })
+      return
+    }
+    if (tab === 'read' && read.kind === 'chapter') setRead({ kind: 'book', bookIndex: read.bookIndex })
+    else if (tab === 'read' && read.kind === 'book') setRead({ kind: 'home' })
+  }
+
+  const today = reading.currentDay
+  const planToday =
+    onReadSurface && read.kind === 'home' && today
+      ? { range: formatPlanSpan(language, today), onRead: () => readPlanDay(today) }
+      : null
+
   return (
-    <div className="app">
+    <div className={showTabBar ? 'app app-tabs' : 'app'}>
       <header className="mast">
         <div className="top">
           <div className="title-block">
-            {view.kind === 'read' ? null : (
+            {backLabel ? (
               <button type="button" className="back" onClick={goBack}>
                 {backLabel}
               </button>
-            )}
-            <h1 className="brand">{title}</h1>
-            {view.kind === 'read' ? (
+            ) : null}
+            <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
+            {onDaily ? (
               <>
                 <p className="credit">{t('designedBy')}</p>
                 <p className="tagline">{t('tagline')}</p>
               </>
             ) : null}
           </div>
-          {view.kind === 'read' ? (
-            <button
-              type="button"
-              className="button button-ghost"
-              onClick={() => {
-                listen.stop()
-                setView({ kind: 'saved' })
-              }}
-            >
-              {t('saved')}
-            </button>
-          ) : null}
-          {view.kind === 'saved' ? (
-            <button
-              type="button"
-              className="button button-ghost"
-              onClick={() => {
-                listen.stop()
-                setView({ kind: 'categories', returnTo: 'saved' })
-              }}
-            >
-              {t('categories')}
-            </button>
-          ) : null}
+          <div className="top-actions">
+            {view.kind === 'tabs' && panel === null && tab === 'saved' ? (
+              <button
+                type="button"
+                className="button button-ghost"
+                onClick={() => {
+                  listen.stop()
+                  setView({ kind: 'categories' })
+                }}
+              >
+                {t('categories')}
+              </button>
+            ) : null}
+            {showGear ? (
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={t('openSettings')}
+                onClick={() => openPanel('settings')}
+              >
+                <GearIcon />
+              </button>
+            ) : null}
+          </div>
         </div>
-        <VersionPicker hint={view.kind === 'read'} />
-        {view.kind === 'read' ? (
-          <>
-            <LanguagePicker hint />
-            <RedLetterToggle hint />
-          </>
-        ) : (
-          <LanguagePicker />
-        )}
-        {view.kind === 'chapter' ? <RedLetterToggle /> : null}
+        {onReadSurface ? <VersionPicker /> : null}
+        {onReadSurface && read.kind === 'chapter' ? <RedLetterToggle /> : null}
       </header>
 
-      {library.status === 'loading' && (view.kind === 'saved' || view.kind === 'edit' || view.kind === 'categories') ? (
+      {library.status === 'loading' && (tab === 'saved' || view.kind === 'edit' || view.kind === 'categories') && panel === null ? (
         <p className="status" role="status">
           {t('opening')}
         </p>
       ) : null}
 
-      {library.status === 'error' && (view.kind === 'saved' || view.kind === 'edit' || view.kind === 'categories') ? (
+      {library.status === 'error' && (tab === 'saved' || view.kind === 'edit' || view.kind === 'categories') && panel === null ? (
         <div className="status">
           <p>{t('openFailed')}</p>
           <button type="button" className="button" onClick={() => void library.reload()}>
@@ -194,14 +303,91 @@ export default function App() {
         </div>
       ) : null}
 
-      {view.kind === 'read' ? (
+      {view.kind === 'tabs' && panel === 'settings' ? (
+        <main>
+          <SettingsPanel
+            hasPlan={reading.plan !== null}
+            onReadingOptions={() => openPanel('options', 'settings')}
+            onPlan={() => openPanel('plan', 'settings')}
+          />
+        </main>
+      ) : null}
+
+      {view.kind === 'tabs' && panel === 'options' ? (
+        <main>
+          <ReadingOptions
+            plan={reading.plan}
+            onSave={(pace, nextVersion) => {
+              reading.saveOptions(pace, nextVersion)
+              setVersion(nextVersion)
+              setPanel(null)
+              setPanelFrom(null)
+              setTab('daily')
+            }}
+          />
+        </main>
+      ) : null}
+
+      {view.kind === 'tabs' && panel === 'plan' && reading.plan ? (
+        <main>
+          <PlanProgress
+            plan={reading.plan}
+            days={reading.days}
+            completedCount={reading.completedCount}
+            currentDay={reading.currentDay}
+            onToggle={reading.toggleDay}
+            onRead={readPlanDay}
+          />
+        </main>
+      ) : null}
+
+      {onGrow ? (
+        <main>
+          <GrowHome
+            key={growKey}
+            versionId={versionId}
+            onOpenPassage={(nextBook, chapter, verse) => {
+              listen.stop()
+              setTab('read')
+              setRead(openAt(nextBook, chapter, verse))
+            }}
+          />
+        </main>
+      ) : null}
+
+      {onDaily ? (
+        <main>
+          <DailyHome
+            verses={library.verses}
+            plan={reading.plan}
+            completedCount={reading.completedCount}
+            currentDay={reading.currentDay}
+            onOpenPassage={(nextBook, chapter, verse) => {
+              listen.stop()
+              setTab('read')
+              setRead(openAt(nextBook, chapter, verse))
+            }}
+            onOpenSaved={(verseId) => {
+              listen.stop()
+              setView({ kind: 'edit', verseId, returnTo: { kind: 'daily' } })
+            }}
+            onSaveVerse={library.saveVerse}
+            onOpenOptions={() => openPanel('options')}
+            onOpenPlan={() => openPanel('plan')}
+            onReadPlan={readPlanDay}
+          />
+        </main>
+      ) : null}
+
+      {onReadSurface && read.kind === 'home' ? (
         <main>
           <ReadHome
             verses={library.verses}
-            onOpenBook={(next) => setView({ kind: 'book', bookIndex: next })}
+            planToday={planToday}
+            onOpenBook={(next) => setRead({ kind: 'book', bookIndex: next })}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
-              setView(openAt(nextBook, chapter, verse))
+              setRead(openAt(nextBook, chapter, verse))
             }}
             onOpenSaved={(verseId) => {
               listen.stop()
@@ -209,31 +395,31 @@ export default function App() {
             }}
             onOpenCategories={() => {
               listen.stop()
-              setView({ kind: 'categories', returnTo: 'read' })
+              setView({ kind: 'categories' })
             }}
           />
         </main>
       ) : null}
 
-      {view.kind === 'book' ? (
+      {onReadSurface && read.kind === 'book' ? (
         <main>
           <ChapterPicker
-            bookIndex={view.bookIndex}
+            bookIndex={read.bookIndex}
             onOpenChapter={(chapter) => {
               listen.stop()
-              setView(openAt(view.bookIndex, chapter, null))
+              setRead(openAt(read.bookIndex, chapter, null))
             }}
           />
         </main>
       ) : null}
 
-      {view.kind === 'chapter' ? (
+      {onReadSurface && read.kind === 'chapter' ? (
         <main>
           <ChapterReader
-            key={`${versionId}:${view.startBook}:${view.startChapter}:${view.startVerse ?? 0}`}
-            startBook={view.startBook}
-            startChapter={view.startChapter}
-            startVerse={view.startVerse}
+            key={`${versionId}:${read.startBook}:${read.startChapter}:${read.startVerse ?? 0}`}
+            startBook={read.startBook}
+            startChapter={read.startChapter}
+            startVerse={read.startVerse}
             saved={library.verses}
             categories={library.categories}
             onOpenPassage={openPassage}
@@ -241,13 +427,13 @@ export default function App() {
             onCreateCategory={library.createCategory}
             onShowChapters={() => {
               listen.stop()
-              setView({ kind: 'book', bookIndex: view.bookIndex })
+              setRead({ kind: 'book', bookIndex: read.bookIndex })
             }}
-            onVisible={(bookIndex, chapter) =>
-              setView((current) => {
+            onVisible={(nextBook, chapter) =>
+              setRead((current) => {
                 if (current.kind !== 'chapter') return current
-                if (current.bookIndex === bookIndex && current.chapter === chapter) return current
-                return { ...current, bookIndex, chapter }
+                if (current.bookIndex === nextBook && current.chapter === chapter) return current
+                return { ...current, bookIndex: nextBook, chapter }
               })
             }
             listen={listen}
@@ -255,7 +441,7 @@ export default function App() {
         </main>
       ) : null}
 
-      {library.status === 'ready' && view.kind === 'saved' ? (
+      {library.status === 'ready' && view.kind === 'tabs' && panel === null && tab === 'saved' ? (
         <>
           <main>
             <VerseList
@@ -294,7 +480,7 @@ export default function App() {
           {view.verseId && !editingVerse ? (
             <div className="status">
               <p>{t('verseGone')}</p>
-              <button type="button" className="button" onClick={() => setView(view.returnTo)}>
+              <button type="button" className="button" onClick={showTabs}>
                 {t('backToVerses')}
               </button>
             </div>
@@ -309,7 +495,15 @@ export default function App() {
               onSave={library.saveVerse}
               onDelete={library.deleteVerse}
               onCreateCategory={library.createCategory}
-              onDone={() => setView(view.returnTo)}
+              onDone={() => {
+                if (view.returnTo.kind === 'chapter') {
+                  setTab('read')
+                  setRead(view.returnTo)
+                } else if (view.returnTo.kind === 'daily') setTab('daily')
+                else if (view.returnTo.kind === 'saved') setTab('saved')
+                else setTab('read')
+                setView({ kind: 'tabs' })
+              }}
               onOpenVerse={(verseId) => setView({ kind: 'edit', verseId, returnTo: view.returnTo })}
               onAddReference={(reference, text) =>
                 setView({
@@ -340,6 +534,8 @@ export default function App() {
           />
         </main>
       ) : null}
+
+      {showTabBar ? <TabBar tab={tab} onSelect={selectTab} /> : null}
     </div>
   )
 }

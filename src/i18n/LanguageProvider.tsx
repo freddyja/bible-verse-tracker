@@ -61,8 +61,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       versionName,
       versions: versionsFor(language),
       setVersion: (next) => {
-        if (versionById(next)?.language !== language) return
-        setChosen((current) => (current[language] === next ? current : { ...current, [language]: next }))
+        const version = versionById(next)
+        if (!version) return
+        setChosen((current) =>
+          current[version.language] === next ? current : { ...current, [version.language]: next },
+        )
+        setLanguage((current) => (current === version.language ? current : version.language))
       },
       redLetter,
       setRedLetter: (enabled) => {

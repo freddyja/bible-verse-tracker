@@ -26,6 +26,7 @@ type VerseSheetProps = {
   onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onRecordingChange?: (recording: boolean) => void
+  initialTool?: Tool | null
 }
 
 const DRILL: { id: Exclude<Tool, 'save'>; label: MessageKey; hint: MessageKey }[] = [
@@ -47,6 +48,7 @@ export function VerseSheet({
   onSaveVerse,
   onCreateCategory,
   onRecordingChange,
+  initialTool = null,
 }: VerseSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -54,7 +56,7 @@ export function VerseSheet({
   const bodyRef = useRef<HTMLDivElement>(null)
   const returnFocus = useRef<Tool | null>(null)
   const { language, versionId, t } = useLanguage()
-  const [tool, setTool] = useState<Tool | null>(null)
+  const [tool, setTool] = useState<Tool | null>(initialTool)
   const [shelfAim, setShelfAim] = useState<PassageRef | null>(null)
   const [related, setRelated] = useState<{ key: string; rows: ScriptureHit[] } | null>(null)
   const [parallel, setParallel] = useState<{ key: string; rows: ParallelHit[] } | null>(null)
