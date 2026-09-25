@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import type { Language } from '../i18n/messages'
+import { LibraryError } from '../data/errors'
+import { verseForPassage } from '../data/matchVerse'
+import type { Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
+import type { Language, MessageKey } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
 import { loadVerse } from '../scripture/api'
-import { dailyPhoto, dailyVerse, daysAgo, greetingKey } from '../scripture/daily'
+import { dailyVerse, daysAgo, greetingKey } from '../scripture/daily'
 import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
 import { ScriptureText } from './ScriptureText'
@@ -21,14 +24,21 @@ function dateLabel(language: Language, offset: number, date: Date, yesterday: st
 }
 
 type VerseOfTheDayProps = {
+  verses: readonly Verse[]
   onOpen: (bookIndex: number, chapter: number, verse: number) => void
+  onOpenSaved: (verseId: string) => void
+  onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
 }
 
-export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
+function saveError(caught: unknown, t: (key: MessageKey) => string): string {
+  if (caught instanceof LibraryError) return t(caught.code)
+  return t('couldNotSave')
+}
+
+export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: VerseOfTheDayProps) {
   const { language, versionId, t } = useLanguage()
   const now = new Date()
   const passage = dailyVerse(now)
-  const photo = `${import.meta.env.BASE_URL}votd/${dailyPhoto(now)}`
   const abbr = versionById(versionId)?.abbr ?? ''
   const reference = formatPassage(language, passage)
   const [text, setText] = useState('')
@@ -47,8 +57,38 @@ export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
     }
   }, [versionId, passage.bookIndex, passage.chapter, passage.verse])
 
-  const verseSize = text.length > 220 ? '1.22rem' : text.length > 140 ? '1.38rem' : '1.62rem'
+  const verseSize = text.length > 220 ? '1.15rem' : text.length > 140 ? '1.28rem' : '1.42rem'
   const [pastOpen, setPastOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveNotice, setSaveNotice] = useState<string | null>(null)
+  const already = verseForPassage(verses, passage)
+
+  async function keepVerse() {
+    if (!text) return
+    if (already) {
+      onOpenSaved(already.id)
+      return
+    }
+    setSaving(true)
+    setSaveNotice(null)
+    try {
+      await onSaveVerse(
+        {
+          reference,
+          text,
+          note: '',
+          categoryIds: [],
+          passage,
+        },
+        undefined,
+        { kind: 'keep' },
+      )
+    } catch (caught) {
+      setSaveNotice(saveError(caught, t))
+    } finally {
+      setSaving(false)
+    }
+  }
   const [pastCount, setPastCount] = useState(PAST_PAGE)
   const [pastText, setPastText] = useState<Record<number, string>>({})
 
@@ -91,20 +131,27 @@ export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
   return (
     <section className="votd">
       <p className="votd-greeting">{t(greetingKey(now), { name: READER_NAME })}</p>
-      <button
-        type="button"
-        className="votd-card"
-        style={{ ['--votd-photo' as string]: `url("${photo}")` }}
-        onClick={() => onOpen(passage.bookIndex, passage.chapter, passage.verse)}
-      >
-        <span className="votd-kicker">{t('verseOfTheDay')}</span>
-        <span className="votd-ref">
-          {reference} {abbr}
-        </span>
-        <span className="votd-text" style={{ fontSize: verseSize }}>
-          <ScriptureText bookIndex={passage.bookIndex} chapter={passage.chapter} verse={passage.verse} text={text} />
-        </span>
-      </button>
+      <article className="votd-card gold-card">
+        <button
+          type="button"
+          className="votd-open"
+          onClick={() => onOpen(passage.bookIndex, passage.chapter, passage.verse)}
+        >
+          <span className="votd-kicker">{t('verseOfTheDay')}</span>
+          <span className="votd-ref">
+            {reference} {abbr}
+          </span>
+          <span className="votd-text" style={{ fontSize: verseSize }}>
+            <ScriptureText bookIndex={passage.bookIndex} chapter={passage.chapter} verse={passage.verse} text={text} />
+          </span>
+        </button>
+        <div className="votd-actions">
+          <button type="button" className="button" disabled={saving || !text} onClick={() => void keepVerse()}>
+            {already ? t('savedBadge') : t('save')}
+          </button>
+        </div>
+        {saveNotice ? <p className="form-error">{saveNotice}</p> : null}
+      </article>
       <div className="votd-past">
         <button
           type="button"
@@ -126,13 +173,6 @@ export function VerseOfTheDay({ onOpen }: VerseOfTheDayProps) {
                       className="votd-past-row"
                       onClick={() => onOpen(pick.bookIndex, pick.chapter, pick.verse)}
                     >
-                      <span
-                        className="votd-thumb"
-                        style={{
-                          backgroundImage: `url("${import.meta.env.BASE_URL}votd/${dailyPhoto(date)}")`,
-                        }}
-                        aria-hidden="true"
-                      />
                       <span className="votd-past-copy">
                         <span className="votd-past-date">
                           {dateLabel(language, offset, date, t('yesterday'))}
