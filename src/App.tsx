@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
@@ -19,6 +19,7 @@ import { useLibrary } from './hooks/useLibrary'
 import { useReadingPlan } from './hooks/useReadingPlan'
 import { useLanguage } from './i18n/useLanguage'
 import { BOOKS } from './scripture/books'
+import { dailyVerse } from './scripture/daily'
 import { formatPlanSpan, type PlanDay } from './scripture/readingPlan'
 import { type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
@@ -75,6 +76,8 @@ export default function App() {
   const reading = useReadingPlan()
   const { language, setVersion, versionId, t } = useLanguage()
   const [tab, setTab] = useState<TabId>('daily')
+  const [topicsToken, setTopicsToken] = useState(0)
+  const clearTopics = useCallback(() => setTopicsToken(0), [])
   const [growKey, setGrowKey] = useState(0)
   const [panel, setPanel] = useState<Panel>(null)
   const [panelFrom, setPanelFrom] = useState<Panel>(null)
@@ -155,6 +158,15 @@ export default function App() {
     setView({ kind: 'tabs' })
     setPanelFrom(from)
     setPanel(next)
+  }
+
+  function showReadingHome() {
+    listen.stop()
+    setPanel(null)
+    setPanelFrom(null)
+    setView({ kind: 'tabs' })
+    setRead({ kind: 'home' })
+    setTab('read')
   }
 
   function selectTab(next: TabId) {
@@ -359,9 +371,6 @@ export default function App() {
         <main>
           <DailyHome
             verses={library.verses}
-            plan={reading.plan}
-            completedCount={reading.completedCount}
-            currentDay={reading.currentDay}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
               setTab('read')
@@ -372,9 +381,23 @@ export default function App() {
               setView({ kind: 'edit', verseId, returnTo: { kind: 'daily' } })
             }}
             onSaveVerse={library.saveVerse}
-            onOpenOptions={() => openPanel('options')}
-            onOpenPlan={() => openPanel('plan')}
-            onReadPlan={readPlanDay}
+            onOpenRead={showReadingHome}
+            onOpenTopics={() => {
+              showReadingHome()
+              setTopicsToken((current) => current + 1)
+            }}
+            onOpenPlan={() => openPanel(reading.plan ? 'plan' : 'options')}
+            onOpenGrow={() => selectTab('grow')}
+            onOpenSavedTab={() => selectTab('saved')}
+            onOpenListen={() => {
+              const passage = dailyVerse()
+              listen.stop()
+              setPanel(null)
+              setPanelFrom(null)
+              setView({ kind: 'tabs' })
+              setTab('read')
+              setRead(openAt(passage.bookIndex, passage.chapter, passage.verse))
+            }}
           />
         </main>
       ) : null}
@@ -384,6 +407,8 @@ export default function App() {
           <ReadHome
             verses={library.verses}
             planToday={planToday}
+            topicsToken={topicsToken}
+            onTopicsReady={clearTopics}
             onOpenBook={(next) => setRead({ kind: 'book', bookIndex: next })}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()

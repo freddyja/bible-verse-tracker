@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { filterVerses } from '../data/filter'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
@@ -31,6 +31,8 @@ function storeSearchMode(mode: SearchMode) {
 type ReadHomeProps = {
   verses: readonly Verse[]
   planToday: { range: string; onRead: () => void } | null
+  topicsToken: number
+  onTopicsReady: () => void
   onOpenBook: (bookIndex: number) => void
   onOpenPassage: (bookIndex: number, chapter: number, verse: number) => void
   onOpenSaved: (verseId: string) => void
@@ -40,6 +42,8 @@ type ReadHomeProps = {
 export function ReadHome({
   verses,
   planToday,
+  topicsToken,
+  onTopicsReady,
   onOpenBook,
   onOpenPassage,
   onOpenSaved,
@@ -47,8 +51,14 @@ export function ReadHome({
 }: ReadHomeProps) {
   const { language, versionId, versionName, t } = useLanguage()
   const modeLabelId = useId()
+  const searchRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<SearchMode>(readSearchMode)
+  const [appliedToken, setAppliedToken] = useState(0)
+  if (topicsToken !== appliedToken) {
+    setAppliedToken(topicsToken)
+    if (topicsToken !== 0) setMode('topics')
+  }
   const [loaded, setLoaded] = useState<{ key: string; hits: ScriptureHit[]; groups: TopicGroup[] } | null>(null)
   const trimmed = query.trim()
   const direct = trimmed ? parseReference(trimmed) : null
@@ -82,6 +92,13 @@ export function ReadHome({
     }
   }, [searchKey, versionId, trimmed, mode])
 
+  useEffect(() => {
+    if (topicsToken === 0) return
+    storeSearchMode('topics')
+    searchRef.current?.focus()
+    onTopicsReady()
+  }, [topicsToken, onTopicsReady])
+
   function chooseMode(next: SearchMode) {
     setMode(next)
     storeSearchMode(next)
@@ -104,6 +121,7 @@ export function ReadHome({
       <label className="search">
         <span className="sr-only">{t('searchScripture')}</span>
         <input
+          ref={searchRef}
           type="search"
           value={query}
           placeholder={mode === 'topics' ? t('searchTopicsPlaceholder') : t('searchScripturePlaceholder')}
