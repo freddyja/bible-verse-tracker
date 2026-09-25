@@ -2,6 +2,7 @@ import type { Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { dailyVerse } from '../scripture/daily'
 import { DailyStudy } from './DailyStudy'
 import { ExploreGrid } from './ExploreGrid'
+import { InstallBanner } from './InstallOffer'
 import { VerseOfTheDay } from './VerseOfTheDay'
 
 type DailyHomeProps = {
@@ -33,6 +34,7 @@ export function DailyHome({
 
   return (
     <div className="daily-home">
+      <InstallBanner />
       <VerseOfTheDay
         verses={verses}
         onOpen={onOpenPassage}

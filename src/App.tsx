@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
 import { DailyHome } from './components/DailyHome'
-import { GrowHome } from './components/GrowHome'
+import { GrowHome, type GrowNested } from './components/GrowHome'
 import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
@@ -51,6 +51,21 @@ type View =
       returnTo: EditReturn
     }
 
+function BackIcon() {
+  return (
+    <svg className="back-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M14.5 6.5 9 12l5.5 5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function GearIcon() {
   return (
     <svg className="gear-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -79,6 +94,8 @@ export default function App() {
   const [topicsToken, setTopicsToken] = useState(0)
   const clearTopics = useCallback(() => setTopicsToken(0), [])
   const [growKey, setGrowKey] = useState(0)
+  const [growPlace, setGrowPlace] = useState({ active: false, title: '' })
+  const growBack = useRef<() => void>(() => {})
   const [panel, setPanel] = useState<Panel>(null)
   const [panelFrom, setPanelFrom] = useState<Panel>(null)
   const [read, setRead] = useState<ReadPlace>({ kind: 'home' })
@@ -113,7 +130,7 @@ export default function App() {
   else if (tab === 'read' && read.kind === 'home') title = t('navRead')
   else if (tab === 'read' && read.kind === 'book') title = bookName
   else if (tab === 'read' && read.kind === 'chapter') title = `${bookName} ${read.chapter}`
-  else if (tab === 'grow') title = t('navGrow')
+  else if (tab === 'grow') title = growPlace.active && growPlace.title ? growPlace.title : t('navGrow')
   else if (tab === 'saved') title = t('navSaved')
 
   useEffect(() => {
@@ -202,27 +219,22 @@ export default function App() {
   const onReadSurface = view.kind === 'tabs' && panel === null && tab === 'read'
   const onGrow = view.kind === 'tabs' && panel === null && tab === 'grow'
   const showGear = view.kind === 'tabs' && panel !== 'settings'
+  const growNested = onGrow && growPlace.active
+  const showBack = panel !== null || view.kind !== 'tabs' || (onReadSurface && read.kind !== 'home') || growNested
 
-  let backLabel = ''
-  if ((panel === 'options' || panel === 'plan') && panelFrom === 'settings') backLabel = `← ${t('settingsTitle')}`
-  else if (panel) {
-    if (tab === 'daily') backLabel = t('backDaily')
-    else if (tab === 'saved') backLabel = t('backSaved')
-    else if (tab === 'grow') backLabel = t('backGrow')
-    else backLabel = t('backRead')
-  } else if (view.kind === 'categories') {
-    backLabel = tab === 'saved' ? t('backSaved') : tab === 'daily' ? t('backDaily') : t('backRead')
-  } else if (view.kind === 'edit') {
-    if (view.returnTo.kind === 'saved') backLabel = t('backSaved')
-    else if (view.returnTo.kind === 'daily') backLabel = t('backDaily')
-    else if (view.returnTo.kind === 'chapter') {
-      backLabel = `← ${BOOKS[view.returnTo.bookIndex].names[language]} ${view.returnTo.chapter}`
-    } else backLabel = t('backRead')
-  } else if (tab === 'read' && read.kind === 'book') backLabel = t('backRead')
-  else if (tab === 'read' && read.kind === 'chapter') backLabel = `← ${BOOKS[read.bookIndex].names[language]}`
+  const onGrowNested = useCallback((next: GrowNested) => {
+    growBack.current = next.back
+    setGrowPlace((current) =>
+      current.active === next.active && current.title === next.title ? current : { active: next.active, title: next.title },
+    )
+  }, [])
 
   function goBack() {
     listen.stop()
+    if (growNested) {
+      growBack.current()
+      return
+    }
     if (panel === 'options' || panel === 'plan') {
       setPanel(panelFrom)
       setPanelFrom(null)
@@ -255,15 +267,38 @@ export default function App() {
 
   return (
     <div className={showTabBar ? 'app app-tabs' : 'app'}>
-      <header className={onReadSurface && read.kind === 'chapter' ? 'mast mast-chapter' : 'mast'}>
+      <header
+        className={[
+          'mast',
+          onReadSurface && read.kind === 'chapter' ? 'mast-chapter' : '',
+          showBack ? 'mast-nested' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="top">
           <div className="title-block">
-            {backLabel ? (
+            {showBack ? (
               <button type="button" className="back" onClick={goBack}>
-                {backLabel}
+                <BackIcon />
+                {t('navBack')}
               </button>
             ) : null}
-            <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
+            {onReadSurface && (read.kind === 'book' || read.kind === 'chapter') ? (
+              <h1 className="brand">
+                <nav className="crumb" aria-label={t('readingCrumb')}>
+                  <button type="button" onClick={goBack}>
+                    {read.kind === 'chapter' ? bookName : t('navRead')}
+                  </button>
+                  <span className="crumb-sep" aria-hidden="true">
+                    ›
+                  </span>
+                  <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
+                </nav>
+              </h1>
+            ) : (
+              <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
+            )}
             {onDaily ? (
               <>
                 <p className="credit">{t('designedBy')}</p>
@@ -358,6 +393,7 @@ export default function App() {
           <GrowHome
             key={growKey}
             versionId={versionId}
+            onNestedChange={onGrowNested}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
               setTab('read')

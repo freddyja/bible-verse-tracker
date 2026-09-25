@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   CORNERSTONES,
   FACTS,
@@ -10,15 +10,23 @@ import {
   type Cornerstone,
 } from '../grow/content'
 import { useGrow } from '../hooks/useGrow'
+import type { Language, MessageKey } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
 import { BOOKS } from '../scripture/books'
 import { dailyVerse, localDayNumber } from '../scripture/daily'
 import { loadVerse } from '../scripture/api'
 import { formatPassage } from '../scripture/passages'
 
+export type GrowNested = {
+  active: boolean
+  title: string
+  back: () => void
+}
+
 type GrowHomeProps = {
   versionId: string
   onOpenPassage: (bookIndex: number, chapter: number, verse: number) => void
+  onNestedChange: (nested: GrowNested) => void
 }
 
 type Segment = 'planning' | 'practice'
@@ -117,17 +125,8 @@ function Row({
   )
 }
 
-function Detail({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
-  const { t } = useLanguage()
-  return (
-    <div className="grow-detail">
-      <button type="button" className="back" onClick={onBack}>
-        {t('backGrow')}
-      </button>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  )
+function Detail({ children }: { children: ReactNode }) {
+  return <div className="grow-detail">{children}</div>
 }
 
 function composePurpose(language: string, who: string, love: string, serve: string): string {
@@ -139,23 +138,59 @@ function composePurpose(language: string, who: string, love: string, serve: stri
   return `Before God, I am ${w}. I am given to love ${l}. This year I hope to serve by ${s}.`
 }
 
-export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
+function placeTitle(place: Place, language: Language, t: (key: MessageKey) => string): string {
+  if (place.kind === 'practice') return t('growTodayPractice')
+  if (place.kind === 'cornerstones') return t('growCornerstones')
+  if (place.kind === 'cornerstone') {
+    const item = CORNERSTONES.find((entry) => entry.id === place.id) ?? CORNERSTONES[0]
+    return pickCopy(language, item.title)
+  }
+  if (place.kind === 'gratitude') return t('growGratitude')
+  if (place.kind === 'trivia') return t('growTrivia')
+  if (place.kind === 'game') return t('growGame')
+  if (place.kind === 'fact') return t('growFact')
+  if (place.kind === 'pray') return t('growPray')
+  if (place.kind === 'encourage') return t('growEncourage')
+  if (place.kind === 'purpose') return t('growPurposeTitle')
+  if (place.kind === 'goals') return t('growGoals')
+  if (place.kind === 'habits') return t('growHabits')
+  return t('navGrow')
+}
+
+export function GrowHome({ versionId, onOpenPassage, onNestedChange }: GrowHomeProps) {
   const { language, t } = useLanguage()
   const grow = useGrow()
   const [segment, setSegment] = useState<Segment>('practice')
   const [place, setPlace] = useState<Place>({ kind: 'home' })
+  const onNestedChangeRef = useRef(onNestedChange)
   const day = localDayNumber()
   const practice = forToday(PRACTICES)
   const fact = forToday(FACTS)
   const practiceDone = grow.store.practiceDoneDay === day
 
-  function back() {
+  useEffect(() => {
+    onNestedChangeRef.current = onNestedChange
+  }, [onNestedChange])
+
+  const back = useCallback(() => {
     setPlace((current) => (current.kind === 'cornerstone' ? { kind: 'cornerstones' } : { kind: 'home' }))
-  }
+  }, [])
+
+  useEffect(() => {
+    onNestedChangeRef.current({
+      active: place.kind !== 'home',
+      title: placeTitle(place, language, t),
+      back,
+    })
+  }, [place, language, t, back])
+
+  useEffect(() => {
+    return () => onNestedChangeRef.current({ active: false, title: '', back: () => {} })
+  }, [])
 
   if (place.kind === 'practice') {
     return (
-      <Detail title={t('growTodayPractice')} onBack={back}>
+      <Detail>
         <article className="gold-card grow-panel">
           <h3>{pickCopy(language, practice.title)}</h3>
           <p>{pickCopy(language, practice.body)}</p>
@@ -173,7 +208,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'cornerstones') {
     return (
-      <Detail title={t('growCornerstones')} onBack={back}>
+      <Detail>
         <p className="grow-note">{t('growCornerLead')}</p>
         <ul className="grow-list">
           {CORNERSTONES.map((item) => (
@@ -192,12 +227,12 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'cornerstone') {
     const item = CORNERSTONES.find((entry) => entry.id === place.id) ?? CORNERSTONES[0]
-    return <CornerstoneDetail item={item!} onBack={back} />
+    return <CornerstoneDetail item={item!} />
   }
 
   if (place.kind === 'gratitude') {
     return (
-      <Detail title={t('growGratitude')} onBack={back}>
+      <Detail>
         <GratitudeJournal />
       </Detail>
     )
@@ -205,7 +240,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'trivia') {
     return (
-      <Detail title={t('growTrivia')} onBack={back}>
+      <Detail>
         <TriviaCard />
       </Detail>
     )
@@ -213,7 +248,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'game') {
     return (
-      <Detail title={t('growGame')} onBack={back}>
+      <Detail>
         <GameCard onOpenPassage={onOpenPassage} />
       </Detail>
     )
@@ -221,7 +256,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'fact') {
     return (
-      <Detail title={t('growFact')} onBack={back}>
+      <Detail>
         <article className="gold-card grow-panel">
           <p className="grow-verse">{pickCopy(language, fact)}</p>
         </article>
@@ -236,7 +271,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'pray' || place.kind === 'encourage') {
     return (
-      <Detail title={place.kind === 'pray' ? t('growPray') : t('growEncourage')} onBack={back}>
+      <Detail>
         <DailyVerseUse
           mode={place.kind}
           versionId={versionId}
@@ -248,7 +283,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'purpose') {
     return (
-      <Detail title={t('growPurposeTitle')} onBack={back}>
+      <Detail>
         <PurposeForm />
       </Detail>
     )
@@ -256,7 +291,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'goals') {
     return (
-      <Detail title={t('growGoals')} onBack={back}>
+      <Detail>
         <GoalsList />
       </Detail>
     )
@@ -264,7 +299,7 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
 
   if (place.kind === 'habits') {
     return (
-      <Detail title={t('growHabits')} onBack={back}>
+      <Detail>
         <HabitsForm />
       </Detail>
     )
@@ -337,10 +372,10 @@ export function GrowHome({ versionId, onOpenPassage }: GrowHomeProps) {
   )
 }
 
-function CornerstoneDetail({ item, onBack }: { item: Cornerstone; onBack: () => void }) {
+function CornerstoneDetail({ item }: { item: Cornerstone }) {
   const { language } = useLanguage()
   return (
-    <Detail title={pickCopy(language, item.title)} onBack={onBack}>
+    <Detail>
       <article className="gold-card grow-panel">
         <p>{pickCopy(language, item.body)}</p>
         {item.source && pickCopy(language, item.source) ? (

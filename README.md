@@ -95,7 +95,7 @@ npm run build
 npm run preview
 ```
 
-The production build is an installable PWA (web app manifest and a service worker that caches the app, including the Scripture files). After opening the preview or a deployed site over HTTPS, use the browser’s install action or “Add to Home Screen.” Friends can install it on their own phones. Each install keeps its own notes. The dev server does not register a service worker, so installability is checked from the production build.
+The production build is an installable PWA. The manifest names the app, sets the light theme color, and points the start URL at `/bible-verse-tracker/` on GitHub Pages. A service worker caches the app shell and, after a book is opened, the Scripture files for that book. Settings has Install. On Chromium that button uses the browser’s install prompt, and Daily can offer it once. On iPhone and iPad, where that prompt does not exist, Settings says to tap Share, then Add to Home Screen. Friends can install it on their own phones. Each install keeps its own notes. The dev server does not register a service worker, so installability is checked from the production build.
 
 ## On this device
 

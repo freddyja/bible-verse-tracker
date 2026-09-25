@@ -191,7 +191,17 @@ export function VerseSheet({
             </p>
           ) : null}
         </div>
-        <button ref={closeRef} type="button" className="text-button" onClick={onClose}>
+        <button
+          ref={closeRef}
+          type="button"
+          className={variant === 'pane' ? 'pane-close' : 'text-button'}
+          onClick={onClose}
+        >
+          {variant === 'pane' ? (
+            <span className="pane-close-x" aria-hidden="true">
+              ×
+            </span>
+          ) : null}
           {t('close')}
         </button>
       </div>
