@@ -127,6 +127,7 @@ export default function App() {
   else if (panel === 'plan') title = t('planProgressTitle')
   else if (view.kind === 'categories') title = t('categoriesTitle')
   else if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
+  else if (tab === 'daily') title = t('navDaily')
   else if (tab === 'read' && read.kind === 'home') title = t('navRead')
   else if (tab === 'read' && read.kind === 'book') title = bookName
   else if (tab === 'read' && read.kind === 'chapter') title = `${bookName} ${read.chapter}`
@@ -134,8 +135,9 @@ export default function App() {
   else if (tab === 'saved') title = t('navSaved')
 
   useEffect(() => {
-    document.title = title
-  }, [title])
+    const dailyHub = view.kind === 'tabs' && panel === null && tab === 'daily'
+    document.title = dailyHub ? t('brandName') : title
+  }, [title, view.kind, panel, tab, t])
 
   function openAt(nextBook: number, chapter: number, verse: number | null): ChapterView {
     return {

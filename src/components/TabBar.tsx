@@ -75,8 +75,8 @@ function IconSaved() {
   )
 }
 
-const TABS: { id: TabId; label: 'navDaily' | 'navRead' | 'navGrow' | 'navSaved'; icon: () => ReactNode }[] = [
-  { id: 'daily', label: 'navDaily', icon: IconDaily },
+const TABS: { id: TabId; label: 'navHome' | 'navRead' | 'navGrow' | 'navSaved'; icon: () => ReactNode }[] = [
+  { id: 'daily', label: 'navHome', icon: IconDaily },
   { id: 'read', label: 'navRead', icon: IconRead },
   { id: 'grow', label: 'navGrow', icon: IconGrow },
   { id: 'saved', label: 'navSaved', icon: IconSaved },
