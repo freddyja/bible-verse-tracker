@@ -10,6 +10,7 @@ import { dailyPhoto, dailyVerse, daysAgo, greetingKey, namedGreetingKey } from '
 import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
 import { GreetingNamePrompt } from './GreetingNamePrompt'
+import { TABLET_QUERY, useMediaQuery } from '../hooks/useMediaQuery'
 import { ScriptureText } from './ScriptureText'
 
 function BookmarkIcon() {
@@ -88,7 +89,18 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
     }
   }, [versionId, passage.bookIndex, passage.chapter, passage.verse])
 
-  const verseSize = text.length > 220 ? '1.15rem' : text.length > 140 ? '1.28rem' : '1.42rem'
+  const tablet = useMediaQuery(TABLET_QUERY)
+  const verseSize = tablet
+    ? text.length > 220
+      ? '1.5rem'
+      : text.length > 140
+        ? '1.75rem'
+        : '2rem'
+    : text.length > 220
+      ? '1.15rem'
+      : text.length > 140
+        ? '1.28rem'
+        : '1.42rem'
   const [pastOpen, setPastOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveNotice, setSaveNotice] = useState<string | null>(null)

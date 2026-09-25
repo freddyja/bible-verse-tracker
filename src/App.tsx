@@ -255,7 +255,7 @@ export default function App() {
 
   return (
     <div className={showTabBar ? 'app app-tabs' : 'app'}>
-      <header className="mast">
+      <header className={onReadSurface && read.kind === 'chapter' ? 'mast mast-chapter' : 'mast'}>
         <div className="top">
           <div className="title-block">
             {backLabel ? (
@@ -430,6 +430,10 @@ export default function App() {
         <main>
           <ChapterPicker
             bookIndex={read.bookIndex}
+            onOpenBook={(next) => {
+              listen.stop()
+              setRead({ kind: 'book', bookIndex: next })
+            }}
             onOpenChapter={(chapter) => {
               listen.stop()
               setRead(openAt(read.bookIndex, chapter, null))
@@ -453,6 +457,10 @@ export default function App() {
             onShowChapters={() => {
               listen.stop()
               setRead({ kind: 'book', bookIndex: read.bookIndex })
+            }}
+            onJump={(nextBook, chapter) => {
+              listen.stop()
+              setRead(openAt(nextBook, chapter, null))
             }}
             onVisible={(nextBook, chapter) =>
               setRead((current) => {

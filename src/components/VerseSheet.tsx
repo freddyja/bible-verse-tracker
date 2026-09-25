@@ -27,6 +27,7 @@ type VerseSheetProps = {
   onCreateCategory: (name: string) => Promise<Category>
   onRecordingChange?: (recording: boolean) => void
   initialTool?: Tool | null
+  variant?: 'sheet' | 'pane'
 }
 
 const DRILL: { id: Exclude<Tool, 'save'>; label: MessageKey; hint: MessageKey }[] = [
@@ -49,6 +50,7 @@ export function VerseSheet({
   onCreateCategory,
   onRecordingChange,
   initialTool = null,
+  variant = 'sheet',
 }: VerseSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -66,6 +68,7 @@ export function VerseSheet({
   const already = verseForPassage(saved, passage)
 
   useEffect(() => {
+    if (variant !== 'sheet') return
     const dialog = dialogRef.current
     if (!dialog || dialog.open) return
     dialog.showModal()
@@ -73,7 +76,22 @@ export function VerseSheet({
     return () => {
       if (dialog.open) dialog.close()
     }
-  }, [])
+  }, [variant])
+
+  useEffect(() => {
+    if (variant !== 'pane') return
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      if (tool) {
+        returnFocus.current = tool
+        setTool(null)
+        return
+      }
+      onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [variant, tool, onClose])
 
   useEffect(() => {
     if (tool !== 'related') return
@@ -155,24 +173,8 @@ export function VerseSheet({
                 : t('saveThisVerse')
               : ''
 
-  return createPortal(
-    <dialog
-      ref={dialogRef}
-      id="verse-sheet"
-      className="dialog related-sheet verse-sheet"
-      aria-labelledby="verse-sheet-title"
-      onCancel={(event) => {
-        event.preventDefault()
-        if (tool) {
-          closeTool()
-          return
-        }
-        onClose()
-      }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
+  const body = (
+    <>
       <div className="related-head">
         <div className="verse-sheet-title">
           {tool !== null ? (
@@ -375,6 +377,36 @@ export function VerseSheet({
           </section>
         ) : null}
       </div>
+    </>
+  )
+
+  if (variant === 'pane') {
+    return (
+      <section id="verse-sheet" className="study-pane verse-sheet" aria-labelledby="verse-sheet-title">
+        {body}
+      </section>
+    )
+  }
+
+  return createPortal(
+    <dialog
+      ref={dialogRef}
+      id="verse-sheet"
+      className="dialog related-sheet verse-sheet"
+      aria-labelledby="verse-sheet-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        if (tool) {
+          closeTool()
+          return
+        }
+        onClose()
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      {body}
     </dialog>,
     document.body,
   )

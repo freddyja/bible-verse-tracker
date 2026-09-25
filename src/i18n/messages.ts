@@ -345,6 +345,11 @@ const en = {
   growCopy: 'Copy the verse',
   growCopied: 'Copied',
   growCornerLead: 'Short original summaries. Lines from the Apostles’ Creed are public domain.',
+  jumpReading: 'Book and chapter',
+  jumpBook: 'Book',
+  jumpChapter: 'Chapter',
+  studyPaneLabel: 'Study',
+  studyPaneEmpty: 'Tap a verse. Related passages, meaning, and notes stay beside the text.',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -695,6 +700,11 @@ const es: Record<MessageKey, string> = {
   growCopy: 'Copiar el versículo',
   growCopied: 'Copiado',
   growCornerLead: 'Resúmenes breves y originales. Las líneas del Credo de los Apóstoles son de dominio público.',
+  jumpReading: 'Libro y capítulo',
+  jumpBook: 'Libro',
+  jumpChapter: 'Capítulo',
+  studyPaneLabel: 'Estudio',
+  studyPaneEmpty: 'Toca un versículo. Los pasajes relacionados, el significado y las notas quedan al lado del texto.',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -1045,6 +1055,11 @@ const pt: Record<MessageKey, string> = {
   growCopy: 'Copiar o versículo',
   growCopied: 'Copiado',
   growCornerLead: 'Resumos curtos e originais. As linhas do Credo Apostólico são de domínio público.',
+  jumpReading: 'Livro e capítulo',
+  jumpBook: 'Livro',
+  jumpChapter: 'Capítulo',
+  studyPaneLabel: 'Estudo',
+  studyPaneEmpty: 'Toque um versículo. As passagens relacionadas, o significado e as notas ficam ao lado do texto.',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }
