@@ -103,6 +103,19 @@ export function ChapterReader({
     onVisibleRef.current = onVisible
   }, [onVisible])
 
+  useEffect(() => {
+    if (!tablet || !sheetOpen) return
+    function onClick(event: MouseEvent) {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      if (target.closest('.study-pane, .verse-line, .listen-bar, .read-chrome, .mast, .tab-bar, .select-bar')) return
+      setSheetOpen(false)
+      setExplain(false)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [tablet, sheetOpen])
+
   useLayoutEffect(() => {
     let shift = shiftRef.current
     shiftRef.current = 0

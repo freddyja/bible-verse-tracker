@@ -226,6 +226,7 @@ const en = {
   listenRefused: 'This phone did not start reading. You can still read the words here.',
   listenSeparate: 'Listen reads the Scripture. A voice note is your own recording.',
   brandName: 'Bible Verse Tracker',
+  navHome: 'Home',
   navDaily: 'Daily',
   navRead: 'Read',
   navSaved: 'Saved',
@@ -350,6 +351,16 @@ const en = {
   jumpChapter: 'Chapter',
   studyPaneLabel: 'Study',
   studyPaneEmpty: 'Tap a verse. Related passages, meaning, and notes stay beside the text.',
+  navBack: 'Back',
+  readingCrumb: 'Where you are reading',
+  installTitle: 'Add to Home Screen',
+  installAction: 'Install',
+  installHelp: 'Opens from your home screen. Notes stay on this device.',
+  installBanner: 'Add Bible Verse Tracker to your home screen.',
+  installNotNow: 'Not now',
+  installIos: 'In Safari, tap Share, then Add to Home Screen.',
+  installManual: 'Open the browser menu and choose Install or Add to Home Screen.',
+  installInstalled: 'This app is already on your home screen.',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -581,6 +592,7 @@ const es: Record<MessageKey, string> = {
   listenRefused: 'Este teléfono no empezó a leer. Las palabras siguen aquí.',
   listenSeparate: 'Escuchar lee la Escritura. Una nota de voz es tu propia grabación.',
   brandName: 'Bible Verse Tracker',
+  navHome: 'Inicio',
   navDaily: 'Diario',
   navRead: 'Leer',
   navSaved: 'Guardados',
@@ -705,6 +717,16 @@ const es: Record<MessageKey, string> = {
   jumpChapter: 'Capítulo',
   studyPaneLabel: 'Estudio',
   studyPaneEmpty: 'Toca un versículo. Los pasajes relacionados, el significado y las notas quedan al lado del texto.',
+  navBack: 'Atrás',
+  readingCrumb: 'Dónde estás leyendo',
+  installTitle: 'Agregar a la pantalla de inicio',
+  installAction: 'Instalar',
+  installHelp: 'Se abre desde la pantalla de inicio. Las notas se quedan en este dispositivo.',
+  installBanner: 'Agrega Bible Verse Tracker a tu pantalla de inicio.',
+  installNotNow: 'Ahora no',
+  installIos: 'En Safari, toca Compartir y luego Agregar a pantalla de inicio.',
+  installManual: 'Abre el menú del navegador y elige Instalar o Agregar a pantalla de inicio.',
+  installInstalled: 'Esta app ya está en tu pantalla de inicio.',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -936,6 +958,7 @@ const pt: Record<MessageKey, string> = {
   listenRefused: 'Este telefone não começou a ler. As palavras continuam aqui.',
   listenSeparate: 'Ouvir lê a Escritura. Uma nota de voz é a sua gravação.',
   brandName: 'Bible Verse Tracker',
+  navHome: 'Início',
   navDaily: 'Diário',
   navRead: 'Ler',
   navSaved: 'Salvos',
@@ -1060,6 +1083,16 @@ const pt: Record<MessageKey, string> = {
   jumpChapter: 'Capítulo',
   studyPaneLabel: 'Estudo',
   studyPaneEmpty: 'Toque um versículo. As passagens relacionadas, o significado e as notas ficam ao lado do texto.',
+  navBack: 'Voltar',
+  readingCrumb: 'Onde você está lendo',
+  installTitle: 'Adicionar à Tela de Início',
+  installAction: 'Instalar',
+  installHelp: 'Abre a partir da tela de início. As notas ficam neste dispositivo.',
+  installBanner: 'Adicione o Bible Verse Tracker à tela de início.',
+  installNotNow: 'Agora não',
+  installIos: 'No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.',
+  installManual: 'Abra o menu do navegador e escolha Instalar ou Adicionar à Tela de Início.',
+  installInstalled: 'Este app já está na tela de início.',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }

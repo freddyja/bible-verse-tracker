@@ -227,12 +227,105 @@ button {
 
 .back {
   display: inline-flex;
-  margin: 0 0 0.35rem;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 2.75rem;
+  margin: 0 0 0.45rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.55rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--clay);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  box-shadow: 0 1px 2px rgba(20, 40, 70, 0.06);
+}
+
+.back-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+
+.mast-nested .top-actions {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.crumb button {
   padding: 0;
   border: 0;
   background: none;
   color: var(--clay);
   font-weight: 600;
+}
+
+.crumb-sep {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.install-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 0.8rem;
+  margin: 0 0 0.9rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.install-banner p {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.install-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.install-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.install-panel h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.install-panel .setting-help,
+.install-steps {
+  margin: 0;
+}
+
+.install-steps {
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 main {
@@ -2833,6 +2926,28 @@ main {
   .study-pane .text-button,
   .study-pane .verse-sheet-back {
     color: #fff;
+  }
+
+  .pane-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    flex: none;
+    margin: 0.1rem 0 0;
+    padding: 0.42rem 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #1a4f93;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(8, 24, 48, 0.2);
+  }
+
+  .pane-close-x {
+    font-size: 1.2rem;
+    line-height: 0.8;
   }
 
   .study-pane .verse-sheet-snippet {
