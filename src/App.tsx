@@ -245,7 +245,7 @@ export default function App() {
                 {backLabel}
               </button>
             ) : null}
-            <h1 className="brand">{title}</h1>
+            <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
             {onDaily ? (
               <>
                 <p className="credit">{t('designedBy')}</p>

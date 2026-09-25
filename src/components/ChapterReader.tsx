@@ -68,6 +68,12 @@ export function ChapterReader({
     startVerse === null ? null : { bookIndex: startBook, chapter: startChapter, verse: startVerse },
   )
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [explain, setExplain] = useState(false)
+  const [chosen, setChosen] = useState<PassageRef[]>([])
+  const [savingChosen, setSavingChosen] = useState(false)
+  const pressTimer = useRef<number | null>(null)
+  const suppressClick = useRef(false)
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
@@ -315,6 +321,58 @@ export function ChapterReader({
     listen.passage && listen.status !== 'idle' ? formatPassage(language, listen.passage) : null
   const sheetText = sheetOpen ? pickedText : undefined
 
+  function sameChosen(passage: PassageRef) {
+    return chosen.some(
+      (item) => item.bookIndex === passage.bookIndex && item.chapter === passage.chapter && item.verse === passage.verse,
+    )
+  }
+
+  function toggleChosen(passage: PassageRef) {
+    setChosen((list) =>
+      list.some((item) => item.bookIndex === passage.bookIndex && item.chapter === passage.chapter && item.verse === passage.verse)
+        ? list.filter(
+            (item) =>
+              item.bookIndex !== passage.bookIndex || item.chapter !== passage.chapter || item.verse !== passage.verse,
+          )
+        : [...list, passage],
+    )
+  }
+
+  function clearPress() {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+    pressOrigin.current = null
+  }
+
+  async function saveChosen() {
+    setSavingChosen(true)
+    try {
+      for (const passage of chosen) {
+        if (verseForPassage(saved, passage)) continue
+        const text = slices
+          .find((slice) => slice.bookIndex === passage.bookIndex && slice.chapter === passage.chapter)
+          ?.verses[passage.verse - 1]?.trim()
+        if (!text) continue
+        await onSaveVerse(
+          {
+            reference: formatPassage(language, passage),
+            text,
+            note: '',
+            categoryIds: [],
+            passage,
+          },
+          undefined,
+          { kind: 'keep' },
+        )
+      }
+      setChosen([])
+    } finally {
+      setSavingChosen(false)
+    }
+  }
+
   return (
     <article className="reader">
       <div className="reader-tools">
@@ -392,11 +450,12 @@ export function ChapterReader({
                   listen.passage.chapter === current.chapter &&
                   listen.passage.verse === current.verse
                 const already = verseForPassage(saved, current)
+                const isPicked = sameChosen(current)
                 return (
                   <div
                     key={number}
                     id={verseDomId(slice.bookIndex, slice.chapter, number)}
-                    className={['verse-block', isOpen ? 'selected' : '', speaking ? 'speaking' : '']
+                    className={['verse-block', isOpen ? 'selected' : '', speaking ? 'speaking' : '', isPicked ? 'is-picked' : '']
                       .filter(Boolean)
                       .join(' ')}
                   >
@@ -407,10 +466,34 @@ export function ChapterReader({
                       aria-expanded={isOpen}
                       aria-controls={isOpen ? 'verse-sheet' : undefined}
                       aria-current={speaking ? 'true' : undefined}
+                      aria-pressed={chosen.length > 0 ? isPicked : undefined}
+                      onPointerDown={(event) => {
+                        pressOrigin.current = { x: event.clientX, y: event.clientY }
+                        suppressClick.current = false
+                        pressTimer.current = window.setTimeout(() => {
+                          suppressClick.current = true
+                          toggleChosen(current)
+                          clearPress()
+                        }, 450)
+                      }}
+                      onPointerMove={(event) => {
+                        if (!pressOrigin.current) return
+                        const dx = Math.abs(event.clientX - pressOrigin.current.x)
+                        const dy = Math.abs(event.clientY - pressOrigin.current.y)
+                        if (dx > 8 || dy > 8) clearPress()
+                      }}
+                      onPointerUp={clearPress}
+                      onPointerCancel={clearPress}
                       onClick={() => {
-                        document.getElementById(verseDomId(slice.bookIndex, slice.chapter, number))?.scrollIntoView({
-                          block: 'start',
-                        })
+                        if (suppressClick.current) {
+                          suppressClick.current = false
+                          return
+                        }
+                        if (chosen.length > 0) {
+                          toggleChosen(current)
+                          return
+                        }
+                        setExplain(false)
                         setPicked(current)
                         setSheetOpen(true)
                       }}
@@ -436,9 +519,37 @@ export function ChapterReader({
         </p>
       ) : null}
       {endReached ? <p className="scripture-end">{t('scriptureEnd')}</p> : null}
+      {chosen.length > 0 ? (
+        <div className="select-bar" role="toolbar" aria-label={t('versesSelected', { count: chosen.length })}>
+          <p className="select-count">{t('versesSelected', { count: chosen.length })}</p>
+          <div className="select-actions">
+            <button type="button" className="button button-small" disabled={savingChosen} onClick={() => void saveChosen()}>
+              {t('save')}
+            </button>
+            <button
+              type="button"
+              className="button button-ghost button-small"
+              onClick={() => {
+                const passage = chosen[chosen.length - 1]
+                if (!passage) return
+                setExplain(true)
+                setPicked(passage)
+                setSheetOpen(true)
+                setChosen([])
+              }}
+            >
+              {t('explainVerse')}
+            </button>
+            <button type="button" className="text-button" onClick={() => setChosen([])}>
+              {t('clearSelection')}
+            </button>
+          </div>
+        </div>
+      ) : null}
       {sheetOpen && picked && sheetText ? (
         <VerseSheet
-          key={`${picked.bookIndex}-${picked.chapter}-${picked.verse}`}
+          key={`${picked.bookIndex}-${picked.chapter}-${picked.verse}:${explain ? 'study' : 'menu'}`}
+          initialTool={explain ? 'study' : null}
           passage={picked}
           text={sheetText}
           saved={saved}
@@ -448,7 +559,10 @@ export function ChapterReader({
             if (pickedText === undefined) return
             listen.start('verse', picked, pickedText)
           }}
-          onClose={() => setSheetOpen(false)}
+          onClose={() => {
+            setSheetOpen(false)
+            setExplain(false)
+          }}
           onOpenPassage={onOpenPassage}
           onSaveVerse={onSaveVerse}
           onCreateCategory={onCreateCategory}

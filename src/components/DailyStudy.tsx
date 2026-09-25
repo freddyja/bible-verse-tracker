@@ -26,6 +26,38 @@ function todaySourceKey(source: TodaySource | null): MessageKey {
   return 'studyTodaySources'
 }
 
+function IconMeaning() {
+  return (
+    <svg className="study-acc-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M15.2 15.2 19 19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconApplication() {
+  return (
+    <svg className="study-acc-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+function IconReflection() {
+  return (
+    <svg className="study-acc-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6 5.5h8.2c.9 0 1.8.4 2.3 1.1.5-.7 1.4-1.1 2.3-1.1H21V18h-2.2c-.8 0-1.6.3-2.2.8-.6-.5-1.4-.8-2.2-.8H6V5.5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 type DailyStudyProps = {
   bookIndex: number
   chapter: number
@@ -43,10 +75,11 @@ export function DailyStudy({ bookIndex, chapter, verse }: DailyStudyProps) {
       {language !== 'en' ? <p className="field-note">{t('meaningEnglish')}</p> : null}
       <details className="study-accordion">
         <summary>
+          <IconMeaning />
           <span className="study-acc-label">{t('dailyMeaning')}</span>
-          <span className="study-acc-hint">{t('dailyMeaningHint')}</span>
         </summary>
         <div className="study-acc-body">
+          <p className="field-note">{t('dailyMeaningHint')}</p>
           {study.contextText ? (
             <>
               {study.contextRange && study.contextRange.end > study.contextRange.start ? (
@@ -67,10 +100,11 @@ export function DailyStudy({ bookIndex, chapter, verse }: DailyStudyProps) {
       </details>
       <details className="study-accordion">
         <summary>
+          <IconApplication />
           <span className="study-acc-label">{t('dailyApplication')}</span>
-          <span className="study-acc-hint">{t('dailyApplicationHint')}</span>
         </summary>
         <div className="study-acc-body">
+          <p className="field-note">{t('dailyApplicationHint')}</p>
           {study.todayNote ? <Paragraphs text={study.todayNote} /> : <p className="field-note">{t('studyTodayEmpty')}</p>}
           <footer className="meaning-about">
             <p className="meaning-about-label">{t('meaningAbout')}</p>
@@ -80,10 +114,11 @@ export function DailyStudy({ bookIndex, chapter, verse }: DailyStudyProps) {
       </details>
       <details className="study-accordion">
         <summary>
+          <IconReflection />
           <span className="study-acc-label">{t('dailyReflection')}</span>
-          <span className="study-acc-hint">{t('dailyReflectionHint')}</span>
         </summary>
         <div className="study-acc-body">
+          <p className="field-note">{t('dailyReflectionHint')}</p>
           {study.thenNote ? (
             <>
               <p className="meaning-range">{t('studyBookNote')}</p>

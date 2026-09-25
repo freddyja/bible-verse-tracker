@@ -1,5 +1,7 @@
+import type { MessageKey } from '../i18n/messages'
+import { BOOKS } from '../scripture/books'
 import { useLanguage } from '../i18n/useLanguage'
-import { formatPlanSpan, type PlanDay } from '../scripture/readingPlan'
+import { formatPlanSpan, planBookLines, planTitle, type PlanDay } from '../scripture/readingPlan'
 import type { StoredPlan } from '../hooks/useReadingPlan'
 
 type PlanProgressProps = {
@@ -14,10 +16,19 @@ type PlanProgressProps = {
 export function PlanProgress({ plan, days, completedCount, currentDay, onToggle, onRead }: PlanProgressProps) {
   const { language, t } = useLanguage()
   const percent = Math.round((completedCount / plan.pace) * 100)
+  const paceLabel: MessageKey = plan.pace === 90 ? 'planPace90' : plan.pace === 180 ? 'planPace180' : 'planPace365'
+  const lines = currentDay ? planBookLines(language, currentDay) : []
 
   return (
     <section className="plan-progress">
-      <p className="plan-count">{t('planFraction', { done: completedCount, pace: plan.pace })}</p>
+      <p className="plan-section-label">{t('planOverall')}</p>
+      <div className="plan-overall-row">
+        <p className="plan-count">
+          <span>{completedCount}</span>
+          <small> / {t(paceLabel)}</small>
+        </p>
+        <p className="plan-percent">{percent}%</p>
+      </div>
       <div
         className="plan-meter"
         role="progressbar"
@@ -28,36 +39,59 @@ export function PlanProgress({ plan, days, completedCount, currentDay, onToggle,
       >
         <span style={{ width: `${percent}%` }} />
       </div>
-      <p className="field-note">{t('planCheckHint')}</p>
       {currentDay ? (
         <article className="gold-card plan-today">
-          <p className="votd-kicker">{t('planToday')}</p>
-          <h2 className="plan-day">{t('planDayOf', { day: currentDay.day, pace: plan.pace })}</h2>
-          <p className="plan-range">{formatPlanSpan(language, currentDay)}</p>
-          <button type="button" className="button" onClick={() => onRead(currentDay)}>
+          <div className="plan-today-kicker">
+            <span>{t('planDayProgress', { day: currentDay.day })}</span>
+            <span className="plan-mini-meter" aria-hidden="true">
+              <span style={{ width: `${percent}%` }} />
+            </span>
+          </div>
+          <h2 className="plan-day">{planTitle(language, currentDay)}</h2>
+          <ul className="plan-lines">
+            {lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <button type="button" className="button button-block" onClick={() => onRead(currentDay)}>
             {t('planRead')}
           </button>
         </article>
       ) : (
         <p className="gold-card plan-done">{t('planDone')}</p>
       )}
-      <ul className="plan-check">
+      <p className="plan-section-label">{t('planListTitle', { pace: plan.pace })}</p>
+      <ul className="plan-days">
         {days.map((day) => {
           const checked = plan.completed.includes(day.day)
-          const current = currentDay?.day === day.day
+          const book = BOOKS[day.start.bookIndex]?.names[language] ?? ''
           return (
-            <li key={day.day} className={current ? 'plan-check-row is-current' : 'plan-check-row'}>
-              <label>
-                <input type="checkbox" checked={checked} onChange={() => onToggle(day.day)} />
-                <span>
-                  <span className="plan-check-day">{t('planDayOf', { day: day.day, pace: plan.pace })}</span>
+            <li key={day.day} className={currentDay?.day === day.day ? 'plan-day-card is-current' : 'plan-day-card'}>
+              <button
+                type="button"
+                className="plan-day-check"
+                aria-pressed={checked}
+                aria-label={t('planDayOf', { day: day.day, pace: plan.pace })}
+                onClick={() => onToggle(day.day)}
+              >
+                <span className={checked ? 'check-orb is-on' : 'check-orb'}>{checked ? '✓' : ''}</span>
+              </button>
+              <button type="button" className="plan-day-open" onClick={() => onRead(day)}>
+                <span className="plan-day-copy">
+                  <span className="plan-check-day">
+                    {t('planDayShort', { day: day.day })} · {book}
+                  </span>
                   <span className="plan-check-range">{formatPlanSpan(language, day)}</span>
                 </span>
-              </label>
+                <span className="plan-chevron" aria-hidden="true">
+                  ›
+                </span>
+              </button>
             </li>
           )
         })}
       </ul>
+      <p className="field-note">{t('planCheckHint')}</p>
     </section>
   )
 }

@@ -52,6 +52,28 @@ export function planForPace(pace: PlanPace): readonly PlanDay[] {
   return days
 }
 
+/** One line per book inside a day’s reading, such as “1 Kings 15–22”. */
+export function planBookLines(language: Language, day: PlanDay): string[] {
+  const lines: string[] = []
+  for (let bookIndex = day.start.bookIndex; bookIndex <= day.end.bookIndex; bookIndex += 1) {
+    const book = BOOKS[bookIndex]
+    if (!book) continue
+    const startChapter = bookIndex === day.start.bookIndex ? day.start.chapter : 1
+    const endChapter = bookIndex === day.end.bookIndex ? day.end.chapter : book.chapters
+    const name = book.names[language]
+    lines.push(startChapter === endChapter ? `${name} ${startChapter}` : `${name} ${startChapter}–${endChapter}`)
+  }
+  return lines
+}
+
+/** The books for a day, such as “1 Kings – 2 Kings” or “Genesis”. */
+export function planTitle(language: Language, day: PlanDay): string {
+  const start = BOOKS[day.start.bookIndex]?.names[language] ?? ''
+  const end = BOOKS[day.end.bookIndex]?.names[language] ?? ''
+  if (!start || day.start.bookIndex === day.end.bookIndex) return start
+  return `${start} – ${end}`
+}
+
 export function formatPlanSpan(language: Language, day: PlanDay): string {
   const startBook = BOOKS[day.start.bookIndex]
   const endBook = BOOKS[day.end.bookIndex]

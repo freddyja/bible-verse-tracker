@@ -10,6 +10,35 @@ import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
 import { ScriptureText } from './ScriptureText'
 
+function BookmarkIcon() {
+  return (
+    <svg className="votd-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.2L6 20V5.5a1 1 0 0 1 1-1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg className="votd-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 4.5v10M8.5 8 12 4.5 15.5 8M6 13.5v5h12v-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 const READER_NAME = 'Freddy'
 const PAST_PAGE = 12
 const PAST_LIMIT = 90
@@ -120,6 +149,23 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
     }
   }, [pastOpen, pastCount, versionId])
 
+  const dateLine = new Intl.DateTimeFormat(language, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(now)
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+
+  async function shareVerse() {
+    if (!text || !navigator.share) return
+    try {
+      await navigator.share({ title: reference, text: `${text}\n\n${reference}` })
+    } catch {
+      // The share sheet was dismissed.
+    }
+  }
+
   const today = new Date()
   const pastDays = Array.from({ length: pastCount }, (_, index) => {
     const offset = index + 1
@@ -131,24 +177,32 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
   return (
     <section className="votd">
       <p className="votd-greeting">{t(greetingKey(now), { name: READER_NAME })}</p>
+      <p className="votd-date">{dateLine}</p>
       <article className="votd-card gold-card">
         <button
           type="button"
           className="votd-open"
           onClick={() => onOpen(passage.bookIndex, passage.chapter, passage.verse)}
         >
-          <span className="votd-kicker">{t('verseOfTheDay')}</span>
           <span className="votd-ref">
-            {reference} {abbr}
+            {reference}
+            {abbr ? <span className="votd-abbr">{abbr}</span> : null}
           </span>
           <span className="votd-text" style={{ fontSize: verseSize }}>
             <ScriptureText bookIndex={passage.bookIndex} chapter={passage.chapter} verse={passage.verse} text={text} />
           </span>
         </button>
         <div className="votd-actions">
-          <button type="button" className="button" disabled={saving || !text} onClick={() => void keepVerse()}>
+          <button type="button" className="votd-action" disabled={saving || !text} onClick={() => void keepVerse()}>
+            <BookmarkIcon />
             {already ? t('savedBadge') : t('save')}
           </button>
+          {canShare ? (
+            <button type="button" className="votd-action" disabled={!text} onClick={() => void shareVerse()}>
+              <ShareIcon />
+              {t('shareVerse')}
+            </button>
+          ) : null}
         </div>
         {saveNotice ? <p className="form-error">{saveNotice}</p> : null}
       </article>
