@@ -644,7 +644,7 @@ function PurposeForm() {
         <span>{t('growPurposeStatement')}</span>
         <textarea value={statement} maxLength={800} rows={4} onChange={(event) => setStatement(event.target.value)} />
       </label>
-      <button type="submit" className="button button-block" disabled={!ready || !statement.trim()}>
+      <button type="submit" className="button button-block" disabled={!ready}>
         {t('growPurposeSave')}
       </button>
       {saved ? <p className="grow-note">{t('growHabitSaved')}</p> : null}
