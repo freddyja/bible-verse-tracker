@@ -4,6 +4,7 @@ import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
 import { DailyHome } from './components/DailyHome'
 import { GrowHome, type GrowNested } from './components/GrowHome'
+import { LanguagePicker } from './components/LanguagePicker'
 import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
@@ -305,6 +306,7 @@ export default function App() {
               <>
                 <p className="credit">{t('designedBy')}</p>
                 <p className="tagline">{t('tagline')}</p>
+                <LanguagePicker />
               </>
             ) : null}
           </div>
