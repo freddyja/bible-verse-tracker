@@ -4,10 +4,12 @@ import { verseForPassage } from '../data/matchVerse'
 import type { Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import type { Language, MessageKey } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
+import { useDisplayName } from '../hooks/useDisplayName'
 import { loadVerse } from '../scripture/api'
-import { dailyVerse, daysAgo, greetingKey } from '../scripture/daily'
+import { dailyVerse, daysAgo, greetingKey, namedGreetingKey } from '../scripture/daily'
 import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
+import { GreetingNamePrompt } from './GreetingNamePrompt'
 import { ScriptureText } from './ScriptureText'
 
 function BookmarkIcon() {
@@ -65,6 +67,7 @@ function saveError(caught: unknown, t: (key: MessageKey) => string): string {
 
 export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: VerseOfTheDayProps) {
   const { language, versionId, t } = useLanguage()
+  const displayName = useDisplayName()
   const now = new Date()
   const passage = dailyVerse(now)
   const abbr = versionById(versionId)?.abbr ?? ''
@@ -175,7 +178,10 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
 
   return (
     <section className="votd">
-      <p className="votd-greeting">{t(greetingKey(now))}</p>
+      {displayName.chosen ? null : <GreetingNamePrompt />}
+      <p className="votd-greeting">
+        {displayName.name ? t(namedGreetingKey(now), { name: displayName.name }) : t(greetingKey(now))}
+      </p>
       <p className="votd-date">{dateLine}</p>
       <article className="votd-card gold-card">
         <button

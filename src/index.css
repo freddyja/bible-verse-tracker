@@ -614,6 +614,23 @@ main {
   margin-top: 1rem;
 }
 
+.greeting-name-field {
+  margin-top: 0.9rem;
+}
+
+.greeting-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.greeting-name-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .lang {
   display: flex;
   flex-direction: column;

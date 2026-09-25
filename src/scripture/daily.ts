@@ -91,3 +91,13 @@ export function greetingKey(date = new Date()): 'greetingMorning' | 'greetingAft
   if (hour < 17) return 'greetingAfternoon'
   return 'greetingEvening'
 }
+
+const namedGreeting = {
+  greetingMorning: 'greetingMorningNamed',
+  greetingAfternoon: 'greetingAfternoonNamed',
+  greetingEvening: 'greetingEveningNamed',
+} as const
+
+export function namedGreetingKey(date = new Date()) {
+  return namedGreeting[greetingKey(date)]
+}
