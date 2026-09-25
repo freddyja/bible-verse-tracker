@@ -1,4 +1,5 @@
 import { LanguagePicker } from './LanguagePicker'
+import { GreetingNameField } from './GreetingNameField'
 import { RedLetterToggle } from './RedLetterToggle'
 import { VersionPicker } from './VersionPicker'
 import { useLanguage } from '../i18n/useLanguage'
@@ -14,6 +15,7 @@ export function SettingsPanel({ hasPlan, onReadingOptions, onPlan }: SettingsPan
   return (
     <div className="settings-panel">
       <LanguagePicker hint />
+      <GreetingNameField />
       <VersionPicker hint />
       <RedLetterToggle hint />
       <div className="settings-links">

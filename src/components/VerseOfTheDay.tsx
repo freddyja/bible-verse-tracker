@@ -4,10 +4,12 @@ import { verseForPassage } from '../data/matchVerse'
 import type { Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import type { Language, MessageKey } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
+import { useDisplayName } from '../hooks/useDisplayName'
 import { loadVerse } from '../scripture/api'
-import { dailyVerse, daysAgo, greetingKey } from '../scripture/daily'
+import { dailyPhoto, dailyVerse, daysAgo, greetingKey, namedGreetingKey } from '../scripture/daily'
 import { formatPassage } from '../scripture/passages'
 import { versionById } from '../scripture/versions'
+import { GreetingNamePrompt } from './GreetingNamePrompt'
 import { ScriptureText } from './ScriptureText'
 
 function BookmarkIcon() {
@@ -39,7 +41,6 @@ function ShareIcon() {
   )
 }
 
-const READER_NAME = 'Freddy'
 const PAST_PAGE = 12
 const PAST_LIMIT = 90
 
@@ -66,6 +67,7 @@ function saveError(caught: unknown, t: (key: MessageKey) => string): string {
 
 export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: VerseOfTheDayProps) {
   const { language, versionId, t } = useLanguage()
+  const displayName = useDisplayName()
   const now = new Date()
   const passage = dailyVerse(now)
   const abbr = versionById(versionId)?.abbr ?? ''
@@ -149,6 +151,7 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
     }
   }, [pastOpen, pastCount, versionId])
 
+  const photo = `${import.meta.env.BASE_URL}votd/${dailyPhoto(now)}`
   const dateLine = new Intl.DateTimeFormat(language, {
     weekday: 'long',
     month: 'long',
@@ -176,9 +179,12 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
 
   return (
     <section className="votd">
-      <p className="votd-greeting">{t(greetingKey(now), { name: READER_NAME })}</p>
+      {displayName.chosen ? null : <GreetingNamePrompt />}
+      <p className="votd-greeting">
+        {displayName.name ? t(namedGreetingKey(now), { name: displayName.name }) : t(greetingKey(now))}
+      </p>
       <p className="votd-date">{dateLine}</p>
-      <article className="votd-card gold-card">
+      <article className="votd-card" style={{ backgroundImage: `url("${photo}")` }}>
         <button
           type="button"
           className="votd-open"
