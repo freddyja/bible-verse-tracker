@@ -3,6 +3,7 @@ import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
 import { DailyHome } from './components/DailyHome'
+import { GrowHome } from './components/GrowHome'
 import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
@@ -74,6 +75,7 @@ export default function App() {
   const reading = useReadingPlan()
   const { language, setVersion, versionId, t } = useLanguage()
   const [tab, setTab] = useState<TabId>('daily')
+  const [growKey, setGrowKey] = useState(0)
   const [panel, setPanel] = useState<Panel>(null)
   const [panelFrom, setPanelFrom] = useState<Panel>(null)
   const [read, setRead] = useState<ReadPlace>({ kind: 'home' })
@@ -108,6 +110,7 @@ export default function App() {
   else if (tab === 'read' && read.kind === 'home') title = t('navRead')
   else if (tab === 'read' && read.kind === 'book') title = bookName
   else if (tab === 'read' && read.kind === 'chapter') title = `${bookName} ${read.chapter}`
+  else if (tab === 'grow') title = t('navGrow')
   else if (tab === 'saved') title = t('navSaved')
 
   useEffect(() => {
@@ -160,6 +163,7 @@ export default function App() {
     setPanelFrom(null)
     setView({ kind: 'tabs' })
     if (next === 'read' && tab === 'read' && read.kind !== 'home') setRead({ kind: 'home' })
+    if (next === 'grow' && tab === 'grow') setGrowKey((current) => current + 1)
     setTab(next)
   }
 
@@ -184,6 +188,7 @@ export default function App() {
   const showTabBar = view.kind === 'tabs'
   const onDaily = view.kind === 'tabs' && panel === null && tab === 'daily'
   const onReadSurface = view.kind === 'tabs' && panel === null && tab === 'read'
+  const onGrow = view.kind === 'tabs' && panel === null && tab === 'grow'
   const showGear = view.kind === 'tabs' && panel !== 'settings'
 
   let backLabel = ''
@@ -191,6 +196,7 @@ export default function App() {
   else if (panel) {
     if (tab === 'daily') backLabel = t('backDaily')
     else if (tab === 'saved') backLabel = t('backSaved')
+    else if (tab === 'grow') backLabel = t('backGrow')
     else backLabel = t('backRead')
   } else if (view.kind === 'categories') {
     backLabel = tab === 'saved' ? t('backSaved') : tab === 'daily' ? t('backDaily') : t('backRead')
@@ -331,6 +337,20 @@ export default function App() {
             currentDay={reading.currentDay}
             onToggle={reading.toggleDay}
             onRead={readPlanDay}
+          />
+        </main>
+      ) : null}
+
+      {onGrow ? (
+        <main>
+          <GrowHome
+            key={growKey}
+            versionId={versionId}
+            onOpenPassage={(nextBook, chapter, verse) => {
+              listen.stop()
+              setTab('read')
+              setRead(openAt(nextBook, chapter, verse))
+            }}
           />
         </main>
       ) : null}

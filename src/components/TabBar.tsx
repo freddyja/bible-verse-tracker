@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
 
-export type TabId = 'daily' | 'read' | 'saved'
+export type TabId = 'daily' | 'read' | 'grow' | 'saved'
 
 function IconDaily() {
   return (
@@ -33,6 +33,34 @@ function IconRead() {
   )
 }
 
+function IconGrow() {
+  return (
+    <svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.5V11"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 15.2c0-3.2-2.4-5.2-6.2-6.2 1.6 3.4 3.4 5.2 6.2 6.2z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 13.2c0-3.4 2.8-6 7-7.2-1.4 3.6-3.6 5.6-7 7.2z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function IconSaved() {
   return (
     <svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -47,9 +75,10 @@ function IconSaved() {
   )
 }
 
-const TABS: { id: TabId; label: 'navDaily' | 'navRead' | 'navSaved'; icon: () => ReactNode }[] = [
+const TABS: { id: TabId; label: 'navDaily' | 'navRead' | 'navGrow' | 'navSaved'; icon: () => ReactNode }[] = [
   { id: 'daily', label: 'navDaily', icon: IconDaily },
   { id: 'read', label: 'navRead', icon: IconRead },
+  { id: 'grow', label: 'navGrow', icon: IconGrow },
   { id: 'saved', label: 'navSaved', icon: IconSaved },
 ]
 
