@@ -2,7 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { verseForPassage } from '../data/matchVerse'
 import type { Category, Verse, VerseDraft, VoiceNoteUpdate } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
+import { TABLET_QUERY, useMediaQuery } from '../hooks/useMediaQuery'
 import { ListenBar } from './ListenBar'
+import { ReadChrome } from './ReadChrome'
 import { ScriptureText } from './ScriptureText'
 import { BookArt } from './BookArt'
 import { VerseSheet } from './VerseSheet'
@@ -30,6 +32,7 @@ type ChapterReaderProps = {
   onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onShowChapters: () => void
+  onJump: (bookIndex: number, chapter: number) => void
   onVisible: (bookIndex: number, chapter: number) => void
   listen: ListenController
 }
@@ -56,9 +59,11 @@ export function ChapterReader({
   onSaveVerse,
   onCreateCategory,
   onShowChapters,
+  onJump,
   onVisible,
   listen,
 }: ChapterReaderProps) {
+  const tablet = useMediaQuery(TABLET_QUERY)
   const { language, versionId, t } = useLanguage()
   const [slices, setSlices] = useState<Slice[]>([])
   const [failed, setFailed] = useState(false)
@@ -373,8 +378,49 @@ export function ChapterReader({
     }
   }
 
+  const studySheet =
+    sheetOpen && picked && sheetText ? (
+      <VerseSheet
+        key={`${picked.bookIndex}-${picked.chapter}-${picked.verse}:${explain ? 'study' : 'menu'}`}
+        variant={tablet ? 'pane' : 'sheet'}
+        initialTool={explain ? 'study' : null}
+        passage={picked}
+        text={sheetText}
+        saved={saved}
+        categories={categories}
+        listenSupported={listen.supported}
+        onListen={() => {
+          if (pickedText === undefined) return
+          listen.start('verse', picked, pickedText)
+        }}
+        onClose={() => {
+          setSheetOpen(false)
+          setExplain(false)
+        }}
+        onOpenPassage={onOpenPassage}
+        onSaveVerse={onSaveVerse}
+        onCreateCategory={onCreateCategory}
+        onRecordingChange={(next) => {
+          if (next) listen.stop()
+        }}
+      />
+    ) : null
+
   return (
-    <article className="reader">
+    <article className={tablet ? 'reader reader-tablet' : 'reader'}>
+      {tablet ? (
+        <ReadChrome
+          bookIndex={focused.bookIndex}
+          chapter={focused.chapter}
+          onChangeBook={(nextBook) => onJump(nextBook, 1)}
+          onChangeChapter={(nextChapter) => onJump(focused.bookIndex, nextChapter)}
+          onStep={(direction) => {
+            const next = chapterStep(focused.bookIndex, focused.chapter, direction)
+            if (next) onJump(next.bookIndex, next.chapter)
+          }}
+        />
+      ) : null}
+      <div className="reader-column">
       <div className="reader-tools">
         <p className="tap-hint">{t('scrollHint')}</p>
         <button type="button" className="text-button" onClick={onShowChapters}>
@@ -462,7 +508,7 @@ export function ChapterReader({
                     <button
                       type="button"
                       className="verse-line"
-                      aria-haspopup="dialog"
+                      aria-haspopup={tablet ? undefined : 'dialog'}
                       aria-expanded={isOpen}
                       aria-controls={isOpen ? 'verse-sheet' : undefined}
                       aria-current={speaking ? 'true' : undefined}
@@ -546,30 +592,17 @@ export function ChapterReader({
           </div>
         </div>
       ) : null}
-      {sheetOpen && picked && sheetText ? (
-        <VerseSheet
-          key={`${picked.bookIndex}-${picked.chapter}-${picked.verse}:${explain ? 'study' : 'menu'}`}
-          initialTool={explain ? 'study' : null}
-          passage={picked}
-          text={sheetText}
-          saved={saved}
-          categories={categories}
-          listenSupported={listen.supported}
-          onListen={() => {
-            if (pickedText === undefined) return
-            listen.start('verse', picked, pickedText)
-          }}
-          onClose={() => {
-            setSheetOpen(false)
-            setExplain(false)
-          }}
-          onOpenPassage={onOpenPassage}
-          onSaveVerse={onSaveVerse}
-          onCreateCategory={onCreateCategory}
-          onRecordingChange={(next) => {
-            if (next) listen.stop()
-          }}
-        />
+      {tablet ? null : studySheet}
+      </div>
+      {tablet ? (
+        <aside className="study-rail" aria-label={t('studyPaneLabel')}>
+          {studySheet ?? (
+            <div className="study-rail-empty">
+              <p className="study-rail-kicker">{t('studyPaneLabel')}</p>
+              <p>{t('studyPaneEmpty')}</p>
+            </div>
+          )}
+        </aside>
       ) : null}
     </article>
   )
