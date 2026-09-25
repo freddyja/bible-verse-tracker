@@ -70,6 +70,9 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
   const { language, versionId, t } = useLanguage()
   const displayName = useDisplayName()
   const now = new Date()
+  const greeting = displayName.name
+    ? t(namedGreetingKey(now), { name: displayName.name })
+    : t(greetingKey(now))
   const passage = dailyVerse(now)
   const abbr = versionById(versionId)?.abbr ?? ''
   const reference = formatPassage(language, passage)
@@ -193,7 +196,7 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
     <section className="votd">
       {displayName.chosen ? null : <GreetingNamePrompt />}
       <p className="votd-greeting">
-        {displayName.name ? t(namedGreetingKey(now), { name: displayName.name }) : t(greetingKey(now))}
+        {greeting} <span className="votd-blessing">{t('greetingBlessing')}</span>
       </p>
       <p className="votd-date">{dateLine}</p>
       <article className="votd-card" style={{ backgroundImage: `url("${photo}")` }}>

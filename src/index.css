@@ -945,6 +945,10 @@ main {
   line-height: 1.15;
 }
 
+.votd-blessing {
+  white-space: nowrap;
+}
+
 .votd-card {
   position: relative;
   isolation: isolate;
