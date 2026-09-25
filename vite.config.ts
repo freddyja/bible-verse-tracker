@@ -20,8 +20,8 @@ export default defineConfig(({ command }) => {
         'icons/icon-512.png',
       ],
       manifest: {
-        name: 'Bible Verse Tracker',
-        short_name: 'Scripture',
+        name: 'The Living Word',
+        short_name: 'The Living Word',
         description: 'A study Bible to read, with private notes that stay on this device.',
         theme_color: '#f4f6f8',
         background_color: '#f4f6f8',

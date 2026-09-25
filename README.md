@@ -1,4 +1,4 @@
-# Bible Verse Tracker
+# The Living Word
 
 A study Bible Freddy can read on his phone, with a private place for the verses that stay with him. Scripture is bundled in the app. Personal notes, categories, and voice recordings stay on the device.
 
