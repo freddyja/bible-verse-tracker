@@ -39,7 +39,6 @@ function ShareIcon() {
   )
 }
 
-const READER_NAME = 'Freddy'
 const PAST_PAGE = 12
 const PAST_LIMIT = 90
 
@@ -176,7 +175,7 @@ export function VerseOfTheDay({ verses, onOpen, onOpenSaved, onSaveVerse }: Vers
 
   return (
     <section className="votd">
-      <p className="votd-greeting">{t(greetingKey(now), { name: READER_NAME })}</p>
+      <p className="votd-greeting">{t(greetingKey(now))}</p>
       <p className="votd-date">{dateLine}</p>
       <article className="votd-card gold-card">
         <button
