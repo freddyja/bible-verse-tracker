@@ -273,6 +273,8 @@ export default function App() {
       <header
         className={[
           'mast',
+          onDaily ? 'mast-home' : '',
+          onReadSurface && read.kind === 'home' ? 'mast-read' : '',
           onReadSurface && read.kind === 'chapter' ? 'mast-chapter' : '',
           showBack ? 'mast-nested' : '',
         ]
@@ -289,7 +291,7 @@ export default function App() {
             ) : null}
             {onDaily ? (
               <div className="home-brand">
-                <p className="brand home-brand-name">{t('brandName')}</p>
+                <h1 className="brand home-brand-name">{t('brandName')}</h1>
                 <p className="credit">{t('designedBy')}</p>
               </div>
             ) : null}
@@ -305,7 +307,7 @@ export default function App() {
                   <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
                 </nav>
               </h1>
-            ) : (
+            ) : onDaily ? null : (
               <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
             )}
             {onDaily ? (
