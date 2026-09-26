@@ -7,7 +7,7 @@
  * Voice audio is a separate IndexedDB record keyed by verse id, not part of
  * the verse object, so the verse stays a plain record.
  */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export type Category = {
   id: string

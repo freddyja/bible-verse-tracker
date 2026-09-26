@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { filterVerses } from '../data/filter'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
+import { FRUITS, fruitLabel } from '../grow/fruit'
 import { searchScripture, searchTopics, type ScriptureHit, type TopicGroup } from '../scripture/api'
 import { BOOKS, NEW_TESTAMENT_INDEX, type Book, type Testament } from '../scripture/books'
 import { CANON_SECTIONS, type SectionIcon } from '../scripture/sections'
@@ -70,7 +71,7 @@ export function ReadHome({
   const direct = trimmed ? parseReference(trimmed) : null
   const bookMatch = trimmed && !direct ? matchBook(trimmed) : null
   const saved = trimmed ? filterVerses(verses, trimmed, null).slice(0, 8) : []
-  const searchKey = trimmed && !direct && bookMatch === null ? `${mode}:${versionId}:${trimmed}` : ''
+  const searchKey = trimmed && !direct && bookMatch === null ? `${mode}:${versionId}:${language}:${trimmed}` : ''
   const payload = loaded?.key === searchKey ? loaded : null
   const hits = payload?.hits ?? []
   const groups = payload?.groups ?? []
@@ -82,7 +83,7 @@ export function ReadHome({
     const timer = window.setTimeout(() => {
       const run =
         mode === 'topics'
-          ? searchTopics(versionId, trimmed).then((next) => ({ hits: [] as ScriptureHit[], groups: next }))
+          ? searchTopics(versionId, trimmed, language).then((next) => ({ hits: [] as ScriptureHit[], groups: next }))
           : searchScripture(versionId, trimmed).then((next) => ({ hits: next, groups: [] as TopicGroup[] }))
       run
         .then((next) => {
@@ -96,7 +97,7 @@ export function ReadHome({
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [searchKey, versionId, trimmed, mode])
+  }, [searchKey, versionId, language, trimmed, mode])
 
   useEffect(() => {
     if (topicsToken === 0) return
@@ -171,6 +172,24 @@ export function ReadHome({
       </div>
       <p className="field-note">{mode === 'topics' ? t('searchModeTopicsHint') : t('searchModeWordHint')}</p>
 
+      {mode === 'topics' && !trimmed ? (
+        <section className="fruit-themes" aria-labelledby="fruit-themes-title">
+          <h2 id="fruit-themes-title" className="grow-kicker fruit-kicker">
+            {t('growFruit')}
+          </h2>
+          <p className="field-note">{t('fruitThemesLead')}</p>
+          <ul className="fruit-chips">
+            {FRUITS.map((fruit) => (
+              <li key={fruit.id}>
+                <button type="button" className="fruit-chip" onClick={() => setQuery(fruitLabel(language, fruit))}>
+                  {fruitLabel(language, fruit)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {trimmed ? (
         <div className="search-results">
           {direct ? (
@@ -206,9 +225,12 @@ export function ReadHome({
           ) : null}
           {groups.length > 0 ? (
             <>
-              {groups.map((group) => (
-                <section key={group.name}>
-                  <h2 className="related-heading">{titleCaseTopic(group.name)}</h2>
+              {groups.map((group, index) => (
+                <section key={group.fruit ? `fruit-${group.name}` : group.name}>
+                  {group.fruit && !groups[index - 1]?.fruit ? (
+                    <p className="grow-kicker fruit-kicker">{t('growFruit')}</p>
+                  ) : null}
+                  <h2 className="related-heading">{group.fruit ? group.name : titleCaseTopic(group.name)}</h2>
                   <ul className="related-list">
                     {group.hits.map((hit) => (
                       <li key={`${group.name}-${hit.bookIndex}-${hit.chapter}-${hit.verse}`}>
@@ -231,7 +253,7 @@ export function ReadHome({
                   </ul>
                 </section>
               ))}
-              <p className="field-note">{t('topicsSource')}</p>
+              {groups.some((group) => !group.fruit) ? <p className="field-note">{t('topicsSource')}</p> : null}
             </>
           ) : null}
           {hits.length > 0 ? (

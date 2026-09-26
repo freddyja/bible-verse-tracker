@@ -2635,6 +2635,129 @@ main {
   list-style: none;
 }
 
+.fruit-kicker::before {
+  content: '◆';
+  margin-right: 0.4rem;
+  font-size: 0.55rem;
+}
+
+.fruit-section {
+  margin-bottom: 0.35rem;
+}
+
+.fruit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fruit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 6.6rem;
+  margin: 0;
+  padding: 0.8rem 0.75rem 0.75rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(228, 197, 122, 0.18), transparent 58%),
+    rgba(8, 10, 14, 0.62);
+  color: inherit;
+  text-align: left;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(228, 197, 122, 0.2);
+}
+
+.fruit-card strong {
+  font-family: var(--font-verse);
+  font-size: 1.02rem;
+  font-weight: 650;
+  line-height: 1.2;
+  color: #f3e6c4;
+}
+
+.fruit-glyph {
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  color: var(--gold);
+}
+
+.fruit-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fruit-verses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.35rem 0 0.85rem;
+}
+
+.fruit-verse {
+  padding: 0.85rem 0.9rem 0.95rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 16px;
+  background: rgba(8, 10, 14, 0.45);
+}
+
+.fruit-verse .grow-verse {
+  margin-top: 0;
+}
+
+.fruit-verse .shelf-save {
+  margin-top: 0.85rem;
+}
+
+.fruit-practice {
+  margin: 0.35rem 0 0.4rem;
+  padding: 0;
+  list-style: none;
+}
+
+.fruit-practice li {
+  margin: 0 0 0.55rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.fruit-themes {
+  margin: 0.15rem 0 0.4rem;
+}
+
+.fruit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fruit-chip {
+  margin: 0;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.5);
+  color: #f3e6c4;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
 .explore {
   margin: 1.2rem 0 1.35rem;
 }
@@ -3031,6 +3154,10 @@ main {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
+  }
+
+  .fruit-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .grow-switch {
