@@ -16,6 +16,7 @@ import {
   cancelSpeech,
   effectiveGender,
   genderAvailability,
+  subscribeVoices,
 } from '../speech/voices'
 
 const JOHN_INDEX = BOOKS.findIndex((book) => book.id === 'jhn')
@@ -45,24 +46,13 @@ function useSpeechVoices(): { voices: SpeechSynthesisVoice[]; settled: boolean }
 
   useEffect(() => {
     if (!canSpeak()) return
-    const synth = window.speechSynthesis
-    const update = () => {
-      try {
-        const next = synth.getVoices()
-        setVoices(next)
-        if (next.length > 0) setSettled(true)
-      } catch {
-        setVoices([])
-        setSettled(true)
-      }
-    }
-    update()
-    synth.addEventListener?.('voiceschanged', update)
-    const retry = window.setTimeout(update, 250)
+    const stop = subscribeVoices((next) => {
+      setVoices(next)
+      if (next.length > 0) setSettled(true)
+    })
     const settle = window.setTimeout(() => setSettled(true), 500)
     return () => {
-      synth.removeEventListener?.('voiceschanged', update)
-      window.clearTimeout(retry)
+      stop()
       window.clearTimeout(settle)
     }
   }, [])
