@@ -17,6 +17,8 @@
   --font-ui: 'Source Sans 3', 'Segoe UI', sans-serif;
   --font-verse: 'Literata', 'Iowan Old Style', Palatino, Georgia, serif;
   --radius: 18px;
+  /* One clearance for every screen that sits above the fixed tab bar. */
+  --tab-clearance: calc(5.6rem + env(safe-area-inset-bottom));
 }
 
 * {
@@ -27,6 +29,10 @@ html,
 body,
 #root {
   min-height: 100%;
+}
+
+html:has(.app-tabs) {
+  scroll-padding-bottom: var(--tab-clearance);
 }
 
 body {
@@ -93,7 +99,7 @@ button {
 }
 
 .app-tabs {
-  padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  padding-bottom: var(--tab-clearance);
 }
 
 .mast {
