@@ -15,8 +15,6 @@ import {
   applyVoice,
   canSpeak,
   cancelSpeech,
-  effectiveGender,
-  genderAvailability,
   ignoredSpeechError,
   speakWhenReady,
 } from '../speech/voices'
@@ -42,37 +40,6 @@ const STYLES: { id: VoiceStyle; label: 'voiceStyleCalm' | 'voiceStyleClear' | 'v
   { id: 'warm', label: 'voiceStyleWarm' },
 ]
 
-function useSpeechVoices(): { voices: SpeechSynthesisVoice[]; settled: boolean } {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [settled, setSettled] = useState(() => !canSpeak())
-
-  useEffect(() => {
-    if (!canSpeak()) return
-    const synth = window.speechSynthesis
-    const update = () => {
-      try {
-        const next = synth.getVoices()
-        setVoices(next)
-        if (next.length > 0) setSettled(true)
-      } catch {
-        setVoices([])
-        setSettled(true)
-      }
-    }
-    update()
-    synth.addEventListener?.('voiceschanged', update)
-    const retry = window.setTimeout(update, 250)
-    const settle = window.setTimeout(() => setSettled(true), 500)
-    return () => {
-      synth.removeEventListener?.('voiceschanged', update)
-      window.clearTimeout(retry)
-      window.clearTimeout(settle)
-    }
-  }, [])
-
-  return { voices, settled }
-}
-
 async function sampleText(versionId: string, language: Language): Promise<string> {
   if (JOHN_INDEX < 0) return FALLBACK[language]
   try {
@@ -87,7 +54,6 @@ async function sampleText(versionId: string, language: Language): Promise<string
 export function VoiceSettings() {
   const { language, versionId, t } = useLanguage()
   const prefs = useVoicePrefs()
-  const { voices, settled } = useSpeechVoices()
   const headingId = useId()
   const genderLabelId = useId()
   const styleLabelId = useId()
@@ -102,9 +68,6 @@ export function VoiceSettings() {
     setFailed(false)
   }
   const supported = canSpeak()
-  const availability = genderAvailability(voices, language, settled)
-  const shownGender = effectiveGender(prefs.gender, voices, language, settled)
-  const genderLimited = availability.ready && (!availability.male || !availability.female)
 
   useEffect(() => {
     return () => {
@@ -112,12 +75,6 @@ export function VoiceSettings() {
       cancelSpeech()
     }
   }, [language, versionId])
-
-  function genderDisabled(gender: VoiceGender): boolean {
-    if (gender === 'default') return false
-    if (!availability.ready) return false
-    return !availability[gender]
-  }
 
   function finishPreview(token: number, ok: boolean) {
     if (previewToken.current !== token) return
@@ -223,7 +180,6 @@ export function VoiceSettings() {
   }
 
   function chooseGender(gender: VoiceGender) {
-    if (genderDisabled(gender)) return
     setVoiceGender(gender)
     playSample()
   }
@@ -244,23 +200,19 @@ export function VoiceSettings() {
           {t('voiceGender')}
         </span>
         <div className="lang-options">
-          {GENDERS.map((option) => {
-            const disabled = genderDisabled(option.id)
-            return (
-              <button
-                key={option.id}
-                type="button"
-                className="lang-option"
-                aria-pressed={shownGender === option.id}
-                disabled={disabled}
-                onClick={() => chooseGender(option.id)}
-              >
-                {t(option.label)}
-              </button>
-            )
-          })}
+          {GENDERS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="lang-option"
+              aria-pressed={prefs.gender === option.id}
+              onClick={() => chooseGender(option.id)}
+            >
+              {t(option.label)}
+            </button>
+          ))}
         </div>
-        {genderLimited ? <p className="setting-help">{t('voiceGenderLimited')}</p> : null}
+        <p className="setting-help">{t('voiceGenderLimited')}</p>
       </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">

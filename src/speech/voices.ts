@@ -14,20 +14,11 @@ const STYLE: Record<VoiceStyle, { rate: number; pitch: number }> = {
   warm: { rate: 0.9, pitch: 1.08 },
 }
 
-/**
- * Added to the style pitch when no gendered voice can be assigned.
- * Web Speech pitch is 0–2. A lower pitch reads as male; a higher pitch as female.
- */
-const GENDER_PITCH_DELTA: Record<VoiceGender, number> = {
-  male: -0.35,
-  female: 0.32,
-  default: 0,
-}
-
-function clampPitch(pitch: number): number {
-  if (pitch < 0) return 0
-  if (pitch > 2) return 2
-  return pitch
+/** Used when this phone has no voice tagged for the saved gender. */
+const GENDER_PITCH: Record<VoiceGender, number> = {
+  male: 0.86,
+  female: 1.14,
+  default: 1,
 }
 
 /**
@@ -47,24 +38,18 @@ export function utteranceLanguage(language: Language): string {
   return utteranceLang[language]
 }
 
-export function speechBusy(): boolean {
-  if (!canSpeak()) return false
-  try {
-    const synth = window.speechSynthesis
-    return Boolean(synth.speaking || synth.pending)
-  } catch {
-    return false
-  }
-}
-
 /**
  * Stop current speech. Returns false when there is nothing to stop.
- * Canceling an idle engine makes Chrome drop the next speak.
+ * An idle cancel() makes some phones fire voiceschanged in a loop and
+ * ignore later taps, including the language buttons in Settings.
+ * Canceling also makes Chrome drop a speak queued in the same turn.
  */
 export function cancelSpeech(): boolean {
-  if (!speechBusy()) return false
+  if (!canSpeak()) return false
+  const synth = window.speechSynthesis
   try {
-    window.speechSynthesis.cancel()
+    if (!synth.speaking && !synth.pending) return false
+    synth.cancel()
     return true
   } catch {
     // The engine can refuse a cancel before the first utterance.
@@ -124,6 +109,42 @@ export function speakWhenReady(
   window.setTimeout(step, 0)
 }
 
+/**
+ * Read on-device voices without letting voiceschanged call back into getVoices().
+ * Phones often emit that event from getVoices() itself.
+ */
+export function subscribeVoices(onChange: (voices: SpeechSynthesisVoice[]) => void): () => void {
+  if (!canSpeak()) {
+    onChange([])
+    return () => {}
+  }
+  const synth = window.speechSynthesis
+  let reading = false
+  let lastKey = ''
+  const emit = () => {
+    if (reading) return
+    reading = true
+    let next: SpeechSynthesisVoice[] = []
+    try {
+      next = synth.getVoices()
+    } catch {
+      next = []
+    }
+    reading = false
+    const key = next.map((voice) => `${voice.voiceURI}\0${voice.lang}\0${voice.name}`).join('\n')
+    if (key === lastKey) return
+    lastKey = key
+    onChange(next)
+  }
+  emit()
+  synth.addEventListener?.('voiceschanged', emit)
+  const retry = window.setTimeout(emit, 250)
+  return () => {
+    synth.removeEventListener?.('voiceschanged', emit)
+    window.clearTimeout(retry)
+  }
+}
+
 function scoreVoice(voice: SpeechSynthesisVoice, language: Language): number {
   const lang = (voice?.lang || '').toLowerCase()
   if (!lang.startsWith(language)) return -1
@@ -150,44 +171,6 @@ export function classifyGender(voice: SpeechSynthesisVoice): Exclude<VoiceGender
   if (FEMALE_NAMES.test(haystack)) return 'female'
   if (MALE_NAMES.test(haystack)) return 'male'
   return 'unknown'
-}
-
-export type GenderAvailability = {
-  /** False until the browser has reported at least one voice. */
-  ready: boolean
-  male: boolean
-  female: boolean
-}
-
-export function genderAvailability(
-  voices: SpeechSynthesisVoice[],
-  language: Language,
-  settled = false,
-): GenderAvailability {
-  if (voices.length === 0) return { ready: settled, male: false, female: false }
-  let male = false
-  let female = false
-  for (const voice of voices) {
-    if (scoreVoice(voice, language) < 0) continue
-    const gender = classifyGender(voice)
-    if (gender === 'male') male = true
-    if (gender === 'female') female = true
-  }
-  return { ready: true, male, female }
-}
-
-export function effectiveGender(
-  gender: VoiceGender,
-  voices: SpeechSynthesisVoice[],
-  language: Language,
-  settled = false,
-): VoiceGender {
-  if (gender === 'default') return 'default'
-  const available = genderAvailability(voices, language, settled)
-  if (!available.ready) return gender
-  if (gender === 'male' && !available.male) return 'default'
-  if (gender === 'female' && !available.female) return 'default'
-  return gender
 }
 
 function ranked(voices: SpeechSynthesisVoice[], language: Language, gender: VoiceGender) {
@@ -228,9 +211,8 @@ export function selectVoice(
   language: Language,
   prefs: VoicePrefs,
 ): SpeechSynthesisVoice | undefined {
-  const gender = effectiveGender(prefs.gender, voices, language)
-  let pool = ranked(voices, language, gender)
-  if (pool.length === 0 && gender !== 'default') pool = ranked(voices, language, 'default')
+  let pool = ranked(voices, language, prefs.gender)
+  if (pool.length === 0 && prefs.gender !== 'default') pool = ranked(voices, language, 'default')
   if (pool.length === 0) return undefined
   return pickStyled(pool, prefs.style)
 }
@@ -264,6 +246,13 @@ function clearVoice(utterance: SpeechSynthesisUtterance) {
   }
 }
 
+function pitchFor(prefs: VoicePrefs, matched: boolean): number {
+  const base = (STYLE[prefs.style] ?? STYLE.clear).pitch
+  if (matched || prefs.gender === 'default') return base
+  const scale = GENDER_PITCH[prefs.gender] ?? 1
+  return Math.min(2, Math.max(0, base * scale))
+}
+
 function applyPitchFallback(utterance: SpeechSynthesisUtterance, language: Language, prefs: VoicePrefs) {
   const prosody = STYLE[prefs.style] ?? STYLE.clear
   clearVoice(utterance)
@@ -274,7 +263,7 @@ function applyPitchFallback(utterance: SpeechSynthesisUtterance, language: Langu
   }
   try {
     utterance.rate = prosody.rate
-    utterance.pitch = clampPitch(prosody.pitch + GENDER_PITCH_DELTA[prefs.gender])
+    utterance.pitch = pitchFor(prefs, false)
   } catch {
     // Rate and pitch are best-effort.
   }
@@ -314,10 +303,10 @@ export function applyVoice(
   }
 
   try {
+    utterance.pitch = pitchFor(prefs, true)
     // Set the voice last. On some engines, writing lang after voice clears it.
     if (voice.lang) utterance.lang = voice.lang
     utterance.voice = voice
-    utterance.pitch = prosody.pitch
   } catch {
     applyPitchFallback(utterance, language, prefs)
   }
