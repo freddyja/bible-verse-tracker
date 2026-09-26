@@ -16,7 +16,9 @@ import { LexiconNote } from './LexiconPanel'
 import { MeaningNote } from './MeaningNote'
 import { ParallelPassages } from './ParallelPassages'
 import { RelatedVerses } from './RelatedVerses'
+import { DictationField } from './DictationField'
 import { VoiceNoteControl } from './VoiceNoteControl'
+import { stopDictation } from '../speech/dictation'
 
 type VerseFormProps = {
   verse: Verse | null
@@ -69,6 +71,7 @@ export function VerseForm({
   const [voiceTouched, setVoiceTouched] = useState(false)
   const [voiceReady, setVoiceReady] = useState(verse === null)
   const [recording, setRecording] = useState(false)
+  const [dictating, setDictating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -93,8 +96,12 @@ export function VerseForm({
     onSave,
     onCreateCategory,
     onRecordingChange: (next: boolean) => {
-      if (next) listen.stop()
+      if (next) {
+        listen.stop()
+        stopDictation({ discard: true })
+      }
     },
+    onDictateStart: () => listen.stop(),
     onKept: onDone,
   }
   useEffect(() => {
@@ -157,6 +164,7 @@ export function VerseForm({
       setError(t('textRequired'))
       return
     }
+    stopDictation()
     if (recording) {
       setError(t('stopThenSave'))
       return
@@ -218,16 +226,19 @@ export function VerseForm({
         />
       </label>
 
-      <label className="field">
-        <span className="label">{t('verse')}</span>
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder={t('versePlaceholder')}
-          rows={6}
-          required
-        />
-      </label>
+      <DictationField
+        label={t('verse')}
+        value={text}
+        onChange={setText}
+        placeholder={t('versePlaceholder')}
+        rows={6}
+        required
+        disabled={busy || recording}
+        onListeningChange={(next) => {
+          setDictating(next)
+          if (next) listen.stop()
+        }}
+      />
 
       <ListenBar
         supported={listen.supported}
@@ -238,8 +249,12 @@ export function VerseForm({
         canContinue={parseReference(reference) !== null}
         note={t('listenSeparate')}
         notice={listen.refused ? t('listenRefused') : undefined}
-        onVerse={() => listen.speakText(text)}
+        onVerse={() => {
+          stopDictation()
+          listen.speakText(text)
+        }}
         onChapter={() => {
+          stopDictation()
           const parsed = parseReference(reference)
           if (!parsed) return
           listen.start(
@@ -249,6 +264,7 @@ export function VerseForm({
           )
         }}
         onContinue={() => {
+          stopDictation()
           const parsed = parseReference(reference)
           if (!parsed) return
           listen.start(
@@ -307,30 +323,38 @@ export function VerseForm({
         </button>
       ) : null}
 
-      <label className="field">
-        <span className="label">
-          {t('why')} <span className="hint">{t('optional')}</span>
-        </span>
-        <textarea
-          className="note-input"
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder={t('notePlaceholder')}
-          rows={3}
-        />
-      </label>
+      <DictationField
+        label={
+          <>
+            {t('why')} <span className="hint">{t('optional')}</span>
+          </>
+        }
+        textareaClassName="note-input"
+        value={note}
+        onChange={setNote}
+        placeholder={t('notePlaceholder')}
+        rows={3}
+        disabled={busy || recording}
+        onListeningChange={(next) => {
+          setDictating(next)
+          if (next) listen.stop()
+        }}
+      />
 
       {voiceReady ? (
         <VoiceNoteControl
           blob={voiceBlob}
-          disabled={busy}
+          disabled={busy || dictating}
           onChange={(next) => {
             setVoiceBlob(next)
             setVoiceTouched(true)
           }}
-          onRecordingChange={(recording) => {
-            setRecording(recording)
-            if (recording) listen.stop()
+          onRecordingChange={(next) => {
+            setRecording(next)
+            if (next) {
+              listen.stop()
+              stopDictation({ discard: true })
+            }
           }}
         />
       ) : (

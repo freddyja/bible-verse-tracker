@@ -401,6 +401,36 @@ main {
   font-style: italic;
 }
 
+.dictate-field {
+  gap: 0.45rem;
+}
+
+.dictate-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.dictate-label-row .label {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.dictate-label-row .button {
+  flex: none;
+}
+
+.dictate-field .field-note {
+  margin: 0;
+}
+
+.dictate-status {
+  color: var(--clay);
+  font-weight: 600;
+}
+
 .chips {
   display: flex;
   gap: 0.45rem;

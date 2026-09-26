@@ -405,6 +405,14 @@ const en = {
   voicePreviewHelp: 'John 3:16 in the version you are reading.',
   voiceGenderLimited: 'This phone uses a matching voice when it has one. Otherwise it adjusts the pitch.',
   voicePreviewFailed: 'This phone did not start the sample.',
+  dictate: 'Dictate',
+  dictateListening: 'Listening',
+  dictateStop: 'Stop dictating',
+  dictateUnavailable:
+    'Dictate needs a browser with speech recognition, such as Chrome on a computer or Android. Safari on iPhone often doesn’t include it, including from the Home Screen. The voice-note recorder still works.',
+  dictateMicDenied:
+    'The microphone couldn’t be used. Allow microphone access to dictate, or type instead. The voice-note recorder still works.',
+  dictateFailed: 'Dictation didn’t start. Try again. The voice-note recorder still works.',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -815,6 +823,14 @@ const es: Record<MessageKey, string> = {
   voicePreviewHelp: 'Juan 3:16, en la versión que estás leyendo.',
   voiceGenderLimited: 'Si este teléfono tiene una voz que coincide, la usa. Si no, ajusta el tono.',
   voicePreviewFailed: 'Este teléfono no pudo reproducir la muestra.',
+  dictate: 'Dictar',
+  dictateListening: 'Escuchando',
+  dictateStop: 'Dejar de dictar',
+  dictateUnavailable:
+    'Dictar necesita un navegador con reconocimiento de voz, como Chrome en una computadora o en Android. En el iPhone, Safari muchas veces no lo trae, ni cuando la app está en la pantalla de inicio. La grabadora de la nota de voz sigue funcionando.',
+  dictateMicDenied:
+    'No se pudo usar el micrófono. Permite el micrófono para dictar, o escribe. La grabadora de la nota de voz sigue funcionando.',
+  dictateFailed: 'No se pudo dictar. Inténtalo de nuevo. La grabadora de la nota de voz sigue funcionando.',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -1225,6 +1241,14 @@ const pt: Record<MessageKey, string> = {
   voicePreviewHelp: 'João 3:16, na versão que você está lendo.',
   voiceGenderLimited: 'Este telefone usa uma voz correspondente quando tem uma. Se não, ajusta o tom.',
   voicePreviewFailed: 'Este telefone não iniciou a amostra.',
+  dictate: 'Ditar',
+  dictateListening: 'Ouvindo',
+  dictateStop: 'Parar de ditar',
+  dictateUnavailable:
+    'Ditar precisa de um navegador com reconhecimento de fala, como o Chrome no computador ou no Android. No iPhone, o Safari muitas vezes não inclui isso, nem quando o app está na Tela de Início. O gravador da nota de voz continua funcionando.',
+  dictateMicDenied:
+    'Não foi possível usar o microfone. Permita o microfone para ditar, ou escreva. O gravador da nota de voz continua funcionando.',
+  dictateFailed: 'Não foi possível ditar. Tente de novo. O gravador da nota de voz continua funcionando.',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }

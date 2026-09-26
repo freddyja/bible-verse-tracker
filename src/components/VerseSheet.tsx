@@ -26,6 +26,7 @@ type VerseSheetProps = {
   onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onRecordingChange?: (recording: boolean) => void
+  onDictateStart?: () => void
   initialTool?: Tool | null
   variant?: 'sheet' | 'pane'
 }
@@ -49,6 +50,7 @@ export function VerseSheet({
   onSaveVerse,
   onCreateCategory,
   onRecordingChange,
+  onDictateStart,
   initialTool = null,
   variant = 'sheet',
 }: VerseSheetProps) {
@@ -383,6 +385,7 @@ export function VerseSheet({
               onSave={onSaveVerse}
               onCreateCategory={onCreateCategory}
               onRecordingChange={onRecordingChange}
+              onDictateStart={onDictateStart}
             />
           </section>
         ) : null}

@@ -12,5 +12,6 @@ export function keepPassage(keep: ShelfKeep, passage: PassageRef, text: string) 
     onSave: keep.onSave,
     onCreateCategory: keep.onCreateCategory,
     onRecordingChange: keep.onRecordingChange,
+    onDictateStart: keep.onDictateStart,
   }
 }

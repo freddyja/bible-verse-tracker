@@ -416,6 +416,7 @@ export function ChapterReader({
         onRecordingChange={(next) => {
           if (next) listen.stop()
         }}
+        onDictateStart={() => listen.stop()}
       />
     ) : null
 

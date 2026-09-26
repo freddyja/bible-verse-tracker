@@ -8,7 +8,9 @@ import type { Category, Passage, Verse, VerseDraft, VoiceNoteUpdate } from '../d
 import { useLanguage } from '../i18n/useLanguage'
 import type { MessageKey } from '../i18n/messages'
 import { formatPassage, parseReference } from '../scripture/passages'
+import { DictationField } from './DictationField'
 import { VoiceNoteControl } from './VoiceNoteControl'
+import { stopDictation } from '../speech/dictation'
 
 export type ShelfDraft = {
   note: string
@@ -28,6 +30,7 @@ type ShelfSaveProps = {
   onSave: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onCreateCategory: (name: string) => Promise<Category>
   onRecordingChange?: (recording: boolean) => void
+  onDictateStart?: () => void
   onKept?: () => void
   domId?: string
 }
@@ -46,6 +49,7 @@ export function ShelfSave({
   onSave,
   onCreateCategory,
   onRecordingChange,
+  onDictateStart,
   onKept,
   domId,
 }: ShelfSaveProps) {
@@ -60,6 +64,7 @@ export function ShelfSave({
   const [voiceTouched, setVoiceTouched] = useState(draft?.voiceDirty ?? false)
   const [voiceReady, setVoiceReady] = useState(draft ? draft.voiceReady : saved === null)
   const [recording, setRecording] = useState(false)
+  const [dictating, setDictating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [kept, setKept] = useState(false)
@@ -121,6 +126,7 @@ export function ShelfSave({
       setError(t('textRequired'))
       return
     }
+    stopDictation()
     if (recording) {
       setError(t('stopThenSave'))
       return
@@ -158,21 +164,29 @@ export function ShelfSave({
     <form className="shelf-save" id={domId} onSubmit={(event) => void handleSubmit(event)}>
       <p className="related-ref">{reference}</p>
       <h3 className="shelf-title">{saved ? t('yourNote') : t('saveThisVerse')}</h3>
-      <label className="field">
-        <span className="label">
-          {t('why')} <span className="hint">{t('optional')}</span>
-        </span>
-        <textarea
-          className="note-input"
-          value={note}
-          onChange={(event) => {
-            setNote(event.target.value)
+      <DictationField
+        label={
+          <>
+            {t('why')} <span className="hint">{t('optional')}</span>
+          </>
+        }
+        textareaClassName="note-input"
+        value={note}
+        onChange={(next) => {
+          setNote(next)
+          setKept(false)
+        }}
+        placeholder={t('notePlaceholder')}
+        rows={3}
+        disabled={busy || recording}
+        onListeningChange={(next) => {
+          setDictating(next)
+          if (next) {
             setKept(false)
-          }}
-          placeholder={t('notePlaceholder')}
-          rows={3}
-        />
-      </label>
+            onDictateStart?.()
+          }
+        }}
+      />
       <fieldset className="field">
         <legend className="label">{t('categoriesLegend')}</legend>
         {categories.length === 0 ? (
@@ -215,7 +229,7 @@ export function ShelfSave({
       {voiceReady ? (
         <VoiceNoteControl
           blob={voiceBlob}
-          disabled={busy}
+          disabled={busy || dictating}
           onChange={(next) => {
             setVoiceBlob(next)
             setVoiceTouched(true)
@@ -224,7 +238,10 @@ export function ShelfSave({
           onRecordingChange={(next) => {
             setRecording(next)
             onRecordingChange?.(next)
-            if (next) setKept(false)
+            if (next) {
+              setKept(false)
+              stopDictation({ discard: true })
+            }
           }}
         />
       ) : (
@@ -253,6 +270,7 @@ export type ShelfKeep = {
   onSave: ShelfSaveProps['onSave']
   onCreateCategory: ShelfSaveProps['onCreateCategory']
   onRecordingChange?: (recording: boolean) => void
+  onDictateStart?: () => void
   onKept?: () => void
 }
 
@@ -270,6 +288,7 @@ export function StudyKeep({ reference, keep }: { reference: string; keep: ShelfK
       onSave={keep.onSave}
       onCreateCategory={keep.onCreateCategory}
       onRecordingChange={keep.onRecordingChange}
+      onDictateStart={keep.onDictateStart}
       onKept={keep.onKept}
     />
   )
