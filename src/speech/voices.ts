@@ -16,11 +16,12 @@ const STYLE: Record<VoiceStyle, { rate: number; pitch: number }> = {
 
 /**
  * Scale applied only when no matching male or female voice can be assigned.
- * Clear's base pitch is 1, so Male fallback speaks at 0.5 — deep enough to
- * sound male on a shared system voice. Female stays well above the style pitch.
+ * Clear's base pitch is 1, so Male fallback speaks at 0.45. That stays inside
+ * 0.45–0.55 and is low enough to sound male even when the phone's only voice
+ * is Samantha. Female stays well above the style pitch.
  */
 const GENDER_PITCH: Record<VoiceGender, number> = {
-  male: 0.5,
+  male: 0.45,
   female: 1.4,
   default: 1,
 }
@@ -38,17 +39,20 @@ function clampPitch(pitch: number): number {
 const FEMALE_NAMES =
   /\b(samantha|victoria|karen|moira|tessa|fiona|veena|zira|hazel|serena|allison|ava|susan|zoe|nicky|joelle|noelle|salli|kimberly|joanna|kendra|sara|sarah|michelle|ashley|amber|ana|elizabeth|cora|nancy|emma|jane|kathy|paulina|monica|mónica|luciana|francisca|fernanda|amelie|amélie|milena|helena|aria|jenny|sonia|libby|grandma|princess|shelley)\b/i
 /**
- * US male names include Microsoft David/Mark/Guy/Davis, Apple Aaron/Evan/Nathan,
- * and Alex (older macOS — the name does not say Male). UK names stay in the
- * list so they are still male, but English Male will not assign them.
+ * US male names include Microsoft David/Mark/Guy and the iOS voices Alex, Fred,
+ * and Aaron. UK names stay in the list so they are still male, but English Male
+ * will not assign them.
  */
 const MALE_NAMES =
   /\b(alex|daniel|fred|oliver|rishi|david|mark|george|aaron|evan|nathan|tom|arthur|jorge|felipe|diego|carlos|ricardo|guy|davis|ryan|christopher|eric|roger|steffan|stefan|brandon|jason|tony|andrew|brian|jacob|matthew)\b/i
-/** Clearer American male names outrank Alex, Fred, and Tom. */
+/** Microsoft David/Mark/Guy and other named US male voices. */
 const STRONG_US_MALE =
   /\b(david|mark|guy|davis|aaron|evan|nathan|ryan|christopher|eric|roger|steffan|stefan|brandon|jason|tony|andrew|brian|jacob|matthew)\b/i
-const NOVELTY_NAMES =
-  /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|junior|organ|ralph|reed|rocko|sandy|superstar|trinoids|whisper|zarvox|eddy|flo|grandpa|eloquence)\b/i
+/**
+ * Voices iOS Safari and the home-screen app actually expose for US English:
+ * Alex (older), Fred, and Aaron, including Spoken Content entries marked Male.
+ */
+const IOS_US_MALE = /\b(alex|fred|aaron|evan|nathan)\b/i
 
 export function canSpeak(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
@@ -257,6 +261,17 @@ function isGoogleUsEnglish(label: string): boolean {
 }
 
 /**
+ * Android Chrome / PWA exposes Google TTS as en-us-x-sfg (often "…-local").
+ * A female tag on that same code stays female. Other en-us-x codes count only
+ * when the name or URI also says Male.
+ */
+function isAndroidUsMale(label: string): boolean {
+  if (hasToken(label, 'female') || /\b(woman|girl)\b/.test(label)) return false
+  if (/en-us-x-sfg\b/.test(label)) return true
+  return /en-us-x-[a-z0-9]+\b/.test(label) && (hasToken(label, 'male') || /\b(man|boy)\b/.test(label))
+}
+
+/**
  * Gender of Google en-US Neural2 / WaveNet / Standard voices, which are letters
  * rather than names. The map is en-US only — en-AU-Neural2-A is female.
  */
@@ -332,6 +347,7 @@ export function classifyGender(voice: SpeechSynthesisVoice): Exclude<VoiceGender
   const coded = usCodedGender(haystack)
   if (coded) return coded
   if (isGoogleUsEnglish(haystack)) return 'male'
+  if (isAndroidUsMale(haystack)) return 'male'
   if (FEMALE_NAMES.test(haystack)) return 'female'
   if (MALE_NAMES.test(haystack)) return 'male'
   return 'unknown'
@@ -374,38 +390,27 @@ function localRank(voice: SpeechSynthesisVoice): number {
 }
 
 /**
- * English Male order:
- * 1. Local en-US voices that clearly read as male (explicit "Male", Microsoft
- *    David/Mark/Guy, Apple Aaron/Evan/Nathan, "Google US English", en-US-Neural2).
- * 2. The same clear male voices when they are remote — still ahead of a lighter
- *    local voice.
- * 3. Alex, Fred, and Tom. Alex on older macOS does not say Male and sounds mixed,
- *    so it is used only when no clearer US male voice is installed.
- * UK and other non-US voices are not candidates.
+ * English Male on a phone, local voices first:
+ * iOS (Safari / PWA): Alex, Fred, Aaron, or any en-US voice marked Male.
+ * Android (Chrome / PWA): en-us-x-sfg, Google US English Male, "en-US" + Male,
+ * and Microsoft David/Mark when that phone has them.
+ * A local en-US male always outranks a remote one. UK voices are not candidates.
  */
 function englishMaleRank(voice: SpeechSynthesisVoice): number {
   const label = voiceLabel(voice)
   const saysMale = hasToken(label, 'male') || /\b(man|boy)\b/.test(label)
-  const clear =
-    saysMale || isGoogleUsEnglish(label) || STRONG_US_MALE.test(label) || usCodedGender(label) === 'male'
-  let rank = 0
-  if (clear) rank += voice.localService ? 200 : 100
-  else if (/\b(alex|fred|tom)\b/.test(label)) rank += voice.localService ? 40 : 20
-  if (saysMale) rank += 30
-  if (isGoogleUsEnglish(label)) rank += 20
-  if (STRONG_US_MALE.test(label)) rank += 20
+  let rank = voice.localService ? 300 : 100
+  if (saysMale) rank += 40
+  if (isAndroidUsMale(label)) rank += 35
+  if (isGoogleUsEnglish(label)) rank += 30
+  if (STRONG_US_MALE.test(label)) rank += 25
+  if (IOS_US_MALE.test(label)) rank += 20
   if (usCodedGender(label) === 'male') rank += 15
-  if (/\balex\b/.test(label)) rank += 4
-  if (/\b(fred|tom)\b/.test(label)) rank += 2
   return rank
 }
 
 function compareEnglishMale(a: SpeechSynthesisVoice, b: SpeechSynthesisVoice): number {
   return englishMaleRank(b) - englishMaleRank(a) || localRank(b) - localRank(a) || (a.name || '').localeCompare(b.name || '')
-}
-
-function isNoveltyVoice(voice: SpeechSynthesisVoice): boolean {
-  return NOVELTY_NAMES.test(voiceLabel(voice))
 }
 
 type VoiceChoice = {
@@ -415,18 +420,15 @@ type VoiceChoice = {
 }
 
 /**
- * English Male assigns a clearly male en-US voice when one exists.
- * A neutral en-US voice is used only with a deep pitch, and only instead of a
- * female or en-GB voice. Otherwise nothing is assigned.
+ * English Male assigns a local en-US male voice when the phone has one
+ * (iOS Alex/Fred/Aaron, Android en-us-x-sfg / Google US English Male / David).
+ * Samantha, Nicky, and UK Daniel are never assigned. With no US male voice,
+ * nothing is assigned and the pitch fallback speaks instead.
  */
 function chooseEnglishMale(voices: SpeechSynthesisVoice[]): VoiceChoice {
-  const candidates = voices.filter((voice) => isUsEnglishVoice(voice) && classifyGender(voice) !== 'female')
-  const males = candidates.filter((voice) => classifyGender(voice) === 'male')
+  const males = voices.filter((voice) => isUsEnglishVoice(voice) && classifyGender(voice) === 'male')
   males.sort(compareEnglishMale)
   if (males[0]) return { voice: males[0], deepen: false }
-  const neutrals = candidates.filter((voice) => classifyGender(voice) === 'unknown' && !isNoveltyVoice(voice))
-  neutrals.sort((a, b) => localRank(b) - localRank(a) || (a.name || '').localeCompare(b.name || ''))
-  if (neutrals[0]) return { voice: neutrals[0], deepen: true }
   return { deepen: true }
 }
 
@@ -496,8 +498,13 @@ function pitchFor(prefs: VoicePrefs, matched: boolean): number {
   if (matched || prefs.gender === 'default') return base
   const scaled = base * (GENDER_PITCH[prefs.gender] ?? 1)
   // Keep the two fallbacks from meeting in the middle of the 0–2 range.
-  // Male Clear is 0.5. Calm and Warm stay at or below that.
-  if (prefs.gender === 'male') return clampPitch(Math.min(scaled, GENDER_PITCH.male))
+  // Male stays in 0.45–0.55 so a Samantha-only phone still sounds clearly deeper.
+  if (prefs.gender === 'male') {
+    const pitched = clampPitch(scaled)
+    if (pitched < 0.45) return 0.45
+    if (pitched > 0.55) return 0.55
+    return pitched
+  }
   if (prefs.gender === 'female') return clampPitch(Math.max(scaled, 1.25))
   return clampPitch(scaled)
 }
