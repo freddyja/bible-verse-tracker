@@ -6,8 +6,9 @@ import type { Copy } from './content'
 /**
  * Nine fruits of Galatians 5:22–23.
  * English names are the usual list (love through self-control).
- * Spanish names follow Reina-Valera: amor, gozo, paz, paciencia, benignidad,
- * bondad, fe, mansedumbre, templanza.
+ * Spanish UI names follow Reina-Valera, except faithfulness, shown as Fidelidad
+ * (Reina-Valera says fe, which is faith): amor, gozo, paz, paciencia, benignidad,
+ * bondad, fidelidad, mansedumbre, templanza.
  * Portuguese names follow Bíblia Livre: amor, alegria, paz, paciência,
  * benignidade, bondade, fidelidade, mansidão, domínio próprio.
  * The verse words themselves are loaded from the free text he is reading.

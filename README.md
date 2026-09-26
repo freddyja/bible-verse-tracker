@@ -67,7 +67,7 @@ Words of Jesus are shown in red, in the manner of a red-letter Bible. The spans 
 
 The first visit follows the phone’s language when that language is English, Spanish, or Portuguese. Any other phone language opens in English. English, Español, and Português in the header, under the label Language, remember the choice on that phone. Each install keeps its own choice, along with its own notes. Nothing is tied to an account.
 
-Buttons, empty states, and the starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. The nine fruits are starter categories too: Love through Self-control in English, Amor, Gozo, Paz, Paciencia, Benignidad, Bondad, Fe, Mansedumbre, and Templanza in Spanish, and Amor, Alegria, Paz, Paciência, Benignidade, Bondade, Fidelidade, Mansidão, and Domínio próprio in Portuguese, until someone renames them. A phone that already had categories keeps those categories. The fruits are added once. Deleting or renaming one does not bring the original back. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. The line under the home title stays “Designed by Freddy Jara-Almonte.” The line under the title is the Bible version he selected for that language.
+Buttons, empty states, and the starter categories follow that language. Comfort, Courage, Marriage, and Leadership appear as Consuelo, Valentía, Matrimonio, and Liderazgo in Spanish, and as Consolo, Coragem, Casamento, and Liderança in Portuguese, until someone renames them. The nine fruits are starter categories too: Love through Self-control in English, Amor, Gozo, Paz, Paciencia, Benignidad, Bondad, Fidelidad, Mansedumbre, and Templanza in Spanish, and Amor, Alegria, Paz, Paciência, Benignidade, Bondade, Fidelidade, Mansidão, and Domínio próprio in Portuguese, until someone renames them. A phone that already had categories keeps those categories. The fruits are added once. Deleting or renaming one does not bring the original back. A renamed category, a category someone added, a verse, and a personal note stay exactly as typed. In Spanish, the line under the home title reads “Diseñado por Freddy Jara-Almonte.” In English and Portuguese it stays “Designed by Freddy Jara-Almonte.” The line under the title is the Bible version he selected for that language.
 
 ## Keep
 
@@ -75,7 +75,7 @@ Saved verses can hold a personal note, one or more categories he defines, and an
 
 Record / Stop / Play keeps the voice note in this browser. If the microphone is not available, the written note still saves.
 
-The line under the home title always reads “Designed by Freddy Jara-Almonte.”
+The line under the home title reads “Diseñado por Freddy Jara-Almonte.” in Spanish, and “Designed by Freddy Jara-Almonte.” in English and Portuguese.
 
 ## Demo
 
