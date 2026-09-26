@@ -80,6 +80,10 @@ export function ChapterReader({
   const suppressClick = useRef(false)
   const pressOrigin = useRef<{ x: number; y: number } | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
+  const watchScripture = listen.watch
+  useEffect(() => {
+    watchScripture({ bookIndex: focused.bookIndex, chapter: focused.chapter })
+  }, [watchScripture, focused.bookIndex, focused.chapter])
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
   const loadingRef = useRef(false)
@@ -401,7 +405,7 @@ export function ChapterReader({
         text={sheetText}
         saved={saved}
         categories={categories}
-        listenSupported={listen.supported}
+        listenSupported={listen.supported || (listen.recorded.kind === 'ready' && !listen.preferPhone)}
         onListen={() => {
           if (pickedText === undefined) return
           listen.start('verse', picked, pickedText)
@@ -444,13 +448,11 @@ export function ChapterReader({
       <p className="tap-hint">{t('tapHint')}</p>
       {failed ? null : (
         <ListenBar
-          supported={listen.supported}
-          status={listen.status}
+          listen={listen}
           statusText={spokenLabel}
           canVerse={picked !== null && pickedText !== undefined}
           canChapter={chapterStart !== null && chapterText !== undefined}
           canContinue={chapterStart !== null && chapterText !== undefined}
-          notice={listen.refused ? t('listenRefused') : undefined}
           onVerse={() => {
             if (!picked || pickedText === undefined) return
             listen.start('verse', picked, pickedText)
@@ -463,9 +465,6 @@ export function ChapterReader({
             if (!chapterStart || chapterText === undefined) return
             listen.start('continue', chapterStart, chapterText)
           }}
-          onPause={listen.pause}
-          onResume={listen.resume}
-          onStop={listen.stop}
         />
       )}
       {failed ? <p className="empty">{t('chapterFailed')}</p> : null}

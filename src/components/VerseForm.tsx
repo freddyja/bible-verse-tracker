@@ -104,6 +104,18 @@ export function VerseForm({
     onDictateStart: () => listen.stop(),
     onKept: onDone,
   }
+  const watchedPassage = parseReference(reference)
+  const watchBook = watchedPassage?.bookIndex ?? -1
+  const watchChapter = watchedPassage?.chapter ?? -1
+  const watchScripture = listen.watch
+  useEffect(() => {
+    if (watchBook < 0 || watchChapter < 0) {
+      watchScripture(null)
+      return
+    }
+    watchScripture({ bookIndex: watchBook, chapter: watchChapter })
+  }, [watchScripture, watchBook, watchChapter])
+
   useEffect(() => {
     if (!verseId) return
     let cancelled = false
@@ -241,16 +253,22 @@ export function VerseForm({
       />
 
       <ListenBar
-        supported={listen.supported}
-        status={listen.status}
+        listen={listen}
         statusText={null}
         canVerse={text.trim().length > 0}
         canChapter={parseReference(reference) !== null}
         canContinue={parseReference(reference) !== null}
         note={t('listenSeparate')}
-        notice={listen.refused ? t('listenRefused') : undefined}
         onVerse={() => {
           stopDictation()
+          const parsed = parseReference(reference)
+          const canonical = parsed
+            ? peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse)?.trim()
+            : null
+          if (parsed && canonical && canonical === text.trim()) {
+            listen.start('verse', parsed, canonical)
+            return
+          }
           listen.speakText(text)
         }}
         onChapter={() => {
@@ -273,9 +291,6 @@ export function VerseForm({
             peekVerse(versionId, parsed.bookIndex, parsed.chapter, parsed.verse) ?? undefined,
           )
         }}
-        onPause={listen.pause}
-        onResume={listen.resume}
-        onStop={listen.stop}
       />
 
       <button

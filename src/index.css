@@ -1276,12 +1276,26 @@ main {
 }
 
 .listen-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   margin: 0;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-soft);
+}
+
+.listen-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: var(--clay-soft);
+  color: var(--ink);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
 }
 
 .listen-actions {
