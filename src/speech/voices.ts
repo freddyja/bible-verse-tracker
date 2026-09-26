@@ -75,8 +75,12 @@ export type GenderAvailability = {
   female: boolean
 }
 
-export function genderAvailability(voices: SpeechSynthesisVoice[], language: Language): GenderAvailability {
-  if (voices.length === 0) return { ready: false, male: false, female: false }
+export function genderAvailability(
+  voices: SpeechSynthesisVoice[],
+  language: Language,
+  settled = false,
+): GenderAvailability {
+  if (voices.length === 0) return { ready: settled, male: false, female: false }
   let male = false
   let female = false
   for (const voice of voices) {
@@ -92,9 +96,10 @@ export function effectiveGender(
   gender: VoiceGender,
   voices: SpeechSynthesisVoice[],
   language: Language,
+  settled = false,
 ): VoiceGender {
   if (gender === 'default') return 'default'
-  const available = genderAvailability(voices, language)
+  const available = genderAvailability(voices, language, settled)
   if (!available.ready) return gender
   if (gender === 'male' && !available.male) return 'default'
   if (gender === 'female' && !available.female) return 'default'

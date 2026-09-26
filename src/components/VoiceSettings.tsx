@@ -39,29 +39,35 @@ const STYLES: { id: VoiceStyle; label: 'voiceStyleCalm' | 'voiceStyleClear' | 'v
   { id: 'warm', label: 'voiceStyleWarm' },
 ]
 
-function useSpeechVoices(): SpeechSynthesisVoice[] {
+function useSpeechVoices(): { voices: SpeechSynthesisVoice[]; settled: boolean } {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [settled, setSettled] = useState(() => !canSpeak())
 
   useEffect(() => {
     if (!canSpeak()) return
     const synth = window.speechSynthesis
     const update = () => {
       try {
-        setVoices(synth.getVoices())
+        const next = synth.getVoices()
+        setVoices(next)
+        if (next.length > 0) setSettled(true)
       } catch {
         setVoices([])
+        setSettled(true)
       }
     }
     update()
     synth.addEventListener?.('voiceschanged', update)
     const retry = window.setTimeout(update, 250)
+    const settle = window.setTimeout(() => setSettled(true), 500)
     return () => {
       synth.removeEventListener?.('voiceschanged', update)
       window.clearTimeout(retry)
+      window.clearTimeout(settle)
     }
   }, [])
 
-  return voices
+  return { voices, settled }
 }
 
 async function sampleText(versionId: string, language: Language): Promise<string> {
@@ -82,7 +88,7 @@ function ignoredSpeechError(error: string): boolean {
 export function VoiceSettings() {
   const { language, versionId, t } = useLanguage()
   const prefs = useVoicePrefs()
-  const voices = useSpeechVoices()
+  const { voices, settled } = useSpeechVoices()
   const headingId = useId()
   const genderLabelId = useId()
   const styleLabelId = useId()
@@ -97,8 +103,8 @@ export function VoiceSettings() {
     setFailed(false)
   }
   const supported = canSpeak()
-  const availability = genderAvailability(voices, language)
-  const shownGender = effectiveGender(prefs.gender, voices, language)
+  const availability = genderAvailability(voices, language, settled)
+  const shownGender = effectiveGender(prefs.gender, voices, language, settled)
   const genderLimited = availability.ready && (!availability.male || !availability.female)
 
   useEffect(() => {
