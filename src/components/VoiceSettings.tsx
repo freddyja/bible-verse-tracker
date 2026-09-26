@@ -16,9 +16,9 @@ import {
   canSpeak,
   cancelSpeech,
   ignoredSpeechError,
+  maleVoiceLabel,
   speakWhenReady,
   subscribeVoices,
-  usesDeepMalePitch,
   whenVoicesReady,
 } from '../speech/voices'
 
@@ -82,7 +82,7 @@ export function VoiceSettings() {
     }
   }, [language, versionId])
 
-  const malePitchFallback = usesDeepMalePitch(installedVoices, language, prefs)
+  const maleStatus = maleVoiceLabel(installedVoices, language, prefs)
 
   function finishPreview(token: number, ok: boolean) {
     if (previewToken.current !== token) return
@@ -234,7 +234,11 @@ export function VoiceSettings() {
             </button>
           ))}
         </div>
-        <p className="setting-help">{malePitchFallback ? t('voiceMaleFallback') : t('voiceGenderLimited')}</p>
+        <p className="setting-help">{t('voiceGenderLimited')}</p>
+        {maleStatus.mode === 'voice' ? (
+          <p className="setting-help">{t('voiceUsing', { name: maleStatus.name })}</p>
+        ) : null}
+        {maleStatus.mode === 'pitch' ? <p className="setting-help">{t('voiceMaleFallback')}</p> : null}
       </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">
