@@ -403,7 +403,7 @@ const en = {
   voiceStyleWarm: 'Warm',
   voicePreview: 'Play sample',
   voicePreviewHelp: 'John 3:16 in the version you are reading.',
-  voiceGenderLimited: 'Male and female are offered when this phone has a matching voice. Style still changes the pace.',
+  voiceGenderLimited: 'This phone uses a matching voice when it has one. Otherwise it adjusts the pitch.',
   voicePreviewFailed: 'This phone did not start the sample.',
 } as const
 
@@ -813,7 +813,7 @@ const es: Record<MessageKey, string> = {
   voiceStyleWarm: 'Cálida',
   voicePreview: 'Reproducir muestra',
   voicePreviewHelp: 'Juan 3:16, en la versión que estás leyendo.',
-  voiceGenderLimited: 'Masculino y femenino aparecen cuando este teléfono tiene una voz que coincide. El estilo igual cambia el ritmo.',
+  voiceGenderLimited: 'Este teléfono usa una voz que coincide cuando la tiene. Si no, ajusta el tono.',
   voicePreviewFailed: 'Este teléfono no inició la muestra.',
 }
 
@@ -1223,7 +1223,7 @@ const pt: Record<MessageKey, string> = {
   voiceStyleWarm: 'Calorosa',
   voicePreview: 'Reproduzir amostra',
   voicePreviewHelp: 'João 3:16, na versão que você está lendo.',
-  voiceGenderLimited: 'Masculino e feminino aparecem quando este telefone tem uma voz correspondente. O estilo ainda muda o ritmo.',
+  voiceGenderLimited: 'Este telefone usa uma voz correspondente quando tem uma. Se não, ajusta o tom.',
   voicePreviewFailed: 'Este telefone não iniciou a amostra.',
 }
 

@@ -10,14 +10,7 @@ import {
   type VoiceGender,
   type VoiceStyle,
 } from '../speech/prefs'
-import {
-  applyVoice,
-  canSpeak,
-  cancelSpeech,
-  effectiveGender,
-  genderAvailability,
-  subscribeVoices,
-} from '../speech/voices'
+import { applyVoice, canSpeak, cancelSpeech } from '../speech/voices'
 
 const JOHN_INDEX = BOOKS.findIndex((book) => book.id === 'jhn')
 
@@ -40,26 +33,6 @@ const STYLES: { id: VoiceStyle; label: 'voiceStyleCalm' | 'voiceStyleClear' | 'v
   { id: 'warm', label: 'voiceStyleWarm' },
 ]
 
-function useSpeechVoices(): { voices: SpeechSynthesisVoice[]; settled: boolean } {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [settled, setSettled] = useState(() => !canSpeak())
-
-  useEffect(() => {
-    if (!canSpeak()) return
-    const stop = subscribeVoices((next) => {
-      setVoices(next)
-      if (next.length > 0) setSettled(true)
-    })
-    const settle = window.setTimeout(() => setSettled(true), 500)
-    return () => {
-      stop()
-      window.clearTimeout(settle)
-    }
-  }, [])
-
-  return { voices, settled }
-}
-
 async function sampleText(versionId: string, language: Language): Promise<string> {
   if (JOHN_INDEX < 0) return FALLBACK[language]
   try {
@@ -78,7 +51,6 @@ function ignoredSpeechError(error: string): boolean {
 export function VoiceSettings() {
   const { language, versionId, t } = useLanguage()
   const prefs = useVoicePrefs()
-  const { voices, settled } = useSpeechVoices()
   const headingId = useId()
   const genderLabelId = useId()
   const styleLabelId = useId()
@@ -93,9 +65,6 @@ export function VoiceSettings() {
     setFailed(false)
   }
   const supported = canSpeak()
-  const availability = genderAvailability(voices, language, settled)
-  const shownGender = effectiveGender(prefs.gender, voices, language, settled)
-  const genderLimited = availability.ready && (!availability.male || !availability.female)
 
   useEffect(() => {
     return () => {
@@ -110,14 +79,7 @@ export function VoiceSettings() {
     cancelSpeech()
   }
 
-  function genderDisabled(gender: VoiceGender): boolean {
-    if (gender === 'default') return false
-    if (!availability.ready) return false
-    return !availability[gender]
-  }
-
   function chooseGender(gender: VoiceGender) {
-    if (genderDisabled(gender)) return
     if (gender !== prefs.gender) haltPreview()
     setVoiceGender(gender)
   }
@@ -175,23 +137,19 @@ export function VoiceSettings() {
           {t('voiceGender')}
         </span>
         <div className="lang-options">
-          {GENDERS.map((option) => {
-            const disabled = genderDisabled(option.id)
-            return (
-              <button
-                key={option.id}
-                type="button"
-                className="lang-option"
-                aria-pressed={shownGender === option.id}
-                disabled={disabled}
-                onClick={() => chooseGender(option.id)}
-              >
-                {t(option.label)}
-              </button>
-            )
-          })}
+          {GENDERS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="lang-option"
+              aria-pressed={prefs.gender === option.id}
+              onClick={() => chooseGender(option.id)}
+            >
+              {t(option.label)}
+            </button>
+          ))}
         </div>
-        {genderLimited ? <p className="setting-help">{t('voiceGenderLimited')}</p> : null}
+        <p className="setting-help">{t('voiceGenderLimited')}</p>
       </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">
