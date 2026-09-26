@@ -219,6 +219,7 @@ export function useListen(
 
     let settled = false
     let started = false
+    let queuedAt = 0
     const stillCurrent = () => sessionRef.current?.generation === current.generation
     const retryPitch = () => {
       if (settled || !stillCurrent()) return
@@ -231,6 +232,14 @@ export function useListen(
     }
     utterance.onend = () => {
       if (settled) return
+      const elapsed = queuedAt ? Date.now() - queuedAt : 0
+      // Same failure as Settings preview: the chosen voice ends at once, with
+      // no audio. Verse and chapter then use the deeper pitch instead of
+      // skipping ahead on a voice the phone never spoke.
+      if (!pitchOnly && !started && queuedAt > 0 && elapsed < 400) {
+        retryPitch()
+        return
+      }
       settled = true
       const live = sessionRef.current
       if (!live || live.generation !== current.generation || live.status !== 'playing') return
@@ -258,7 +267,12 @@ export function useListen(
         if (!pitchOnly) retryPitch()
         else fail(current, true)
       },
-      { waitForCancel: delay },
+      {
+        waitForCancel: delay,
+        onQueued: () => {
+          queuedAt = Date.now()
+        },
+      },
     )
   }
 
@@ -353,6 +367,7 @@ export function useListen(
     try {
       const primer = new SpeechSynthesisUtterance(' ')
       primer.volume = 0
+      applyVoice(primer, languageRef.current, readVoicePrefs())
       window.speechSynthesis.speak(primer)
     } catch {
       // A phone that cannot speak still shows the words.

@@ -19,6 +19,7 @@ import {
   maleVoiceLabel,
   speakWhenReady,
   subscribeVoices,
+  voicePlatform,
   whenVoicesReady,
 } from '../speech/voices'
 
@@ -83,6 +84,7 @@ export function VoiceSettings() {
   }, [language, versionId])
 
   const maleStatus = maleVoiceLabel(installedVoices, language, prefs)
+  const platform = voicePlatform()
 
   function finishPreview(token: number, ok: boolean) {
     if (previewToken.current !== token) return
@@ -238,7 +240,13 @@ export function VoiceSettings() {
         {maleStatus.mode === 'voice' ? (
           <p className="setting-help">{t('voiceUsing', { name: maleStatus.name })}</p>
         ) : null}
-        {maleStatus.mode === 'pitch' ? <p className="setting-help">{t('voiceMaleFallback')}</p> : null}
+        {maleStatus.mode === 'pitch' ? (
+          <>
+            <p className="setting-help">{t('voiceMaleFallback')}</p>
+            {platform === 'ios' ? <p className="setting-help">{t('voiceMaleInstallIos')}</p> : null}
+            {platform === 'android' ? <p className="setting-help">{t('voiceMaleInstallAndroid')}</p> : null}
+          </>
+        ) : null}
       </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">
