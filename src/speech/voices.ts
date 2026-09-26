@@ -33,10 +33,50 @@ export function utteranceLanguage(language: Language): string {
 
 export function cancelSpeech(): void {
   if (!canSpeak()) return
+  const synth = window.speechSynthesis
   try {
-    window.speechSynthesis.cancel()
+    // An idle cancel() makes some phones fire voiceschanged in a loop and
+    // ignore later taps, including the language buttons in Settings.
+    if (!synth.speaking && !synth.pending) return
+    synth.cancel()
   } catch {
     // The engine can refuse a cancel before the first utterance.
+  }
+}
+
+/**
+ * Read on-device voices without letting voiceschanged call back into getVoices().
+ * Phones often emit that event from getVoices() itself.
+ */
+export function subscribeVoices(onChange: (voices: SpeechSynthesisVoice[]) => void): () => void {
+  if (!canSpeak()) {
+    onChange([])
+    return () => {}
+  }
+  const synth = window.speechSynthesis
+  let reading = false
+  let lastKey = ''
+  const emit = () => {
+    if (reading) return
+    reading = true
+    let next: SpeechSynthesisVoice[] = []
+    try {
+      next = synth.getVoices()
+    } catch {
+      next = []
+    }
+    reading = false
+    const key = next.map((voice) => `${voice.voiceURI}\0${voice.lang}\0${voice.name}`).join('\n')
+    if (key === lastKey) return
+    lastKey = key
+    onChange(next)
+  }
+  emit()
+  synth.addEventListener?.('voiceschanged', emit)
+  const retry = window.setTimeout(emit, 250)
+  return () => {
+    synth.removeEventListener?.('voiceschanged', emit)
+    window.clearTimeout(retry)
   }
 }
 
