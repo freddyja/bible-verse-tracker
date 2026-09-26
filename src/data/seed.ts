@@ -1,6 +1,36 @@
+import { FRUIT_CATEGORY_LABEL, FRUITS } from '../grow/fruit'
+import { messages } from '../i18n/messages'
+import { categoryNamesMatch } from './names'
 import type { Category, Verse } from './types'
 
 const seededAt = Date.UTC(2026, 0, 1)
+
+/** English canonical names. The chip follows the language until someone renames it. */
+export const FRUIT_CATEGORIES: Category[] = FRUITS.map((fruit, index) => ({
+  id: fruit.categoryId,
+  name: messages.en[fruit.labelKey],
+  createdAt: seededAt,
+  updatedAt: seededAt + index,
+}))
+
+/**
+ * Fruit categories still missing on this phone.
+ * A category he already named for that fruit, in any language, is left alone.
+ * Deleting one does not bring it back: this runs once, when the library moves to schema 3.
+ */
+export function fruitCategoriesToAdd(existing: readonly Pick<Category, 'id' | 'name'>[]): Category[] {
+  return FRUIT_CATEGORIES.filter((category) => {
+    if (existing.some((item) => item.id === category.id)) return false
+    const key = FRUIT_CATEGORY_LABEL[category.id]
+    return !existing.some((item) => {
+      if (categoryNamesMatch(item.name, category.name)) return true
+      if (!key) return false
+      return (['en', 'es', 'pt'] as const).some((language) =>
+        categoryNamesMatch(item.name, messages[language][key]),
+      )
+    })
+  })
+}
 
 export const SEED_CATEGORIES: Category[] = [
   {
@@ -27,6 +57,7 @@ export const SEED_CATEGORIES: Category[] = [
     createdAt: seededAt,
     updatedAt: seededAt,
   },
+  ...FRUIT_CATEGORIES,
 ]
 
 /**

@@ -1,3 +1,4 @@
+import { FRUIT_CATEGORY_LABEL } from '../grow/fruit'
 import { messages, type MessageKey } from '../i18n/messages'
 import { categoryNamesMatch, normalizeCategoryName } from './names'
 import { SEED_CATEGORIES } from './seed'
@@ -8,6 +9,7 @@ const STARTER_LABEL: Record<string, MessageKey> = {
   'cat-courage': 'catCourage',
   'cat-marriage': 'catMarriage',
   'cat-leadership': 'catLeadership',
+  ...FRUIT_CATEGORY_LABEL,
 }
 
 const languages = ['en', 'es', 'pt'] as const

@@ -2,7 +2,7 @@ import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import { LibraryError } from './errors'
 import { categoryNamesMatch, normalizeCategoryName } from './names'
-import { SEED_CATEGORIES, SEED_VERSES } from './seed'
+import { SEED_CATEGORIES, SEED_VERSES, fruitCategoriesToAdd } from './seed'
 import type { Category, LibraryMeta, LibrarySnapshot, Verse, VerseDraft, VoiceNoteRecord } from './types'
 import { SCHEMA_VERSION } from './types'
 
@@ -74,6 +74,10 @@ async function ensureSeeded(database: IDBPDatabase<VerseTrackerDB>): Promise<voi
       schemaVersion: SCHEMA_VERSION,
       seeded: true,
     })
+  } else if ((meta.schemaVersion ?? 0) < 3) {
+    const existing = await categoryStore.getAll()
+    for (const category of fruitCategoriesToAdd(existing)) await categoryStore.put(category)
+    await metaStore.put({ ...meta, schemaVersion: SCHEMA_VERSION })
   } else if (meta.schemaVersion !== SCHEMA_VERSION) {
     await metaStore.put({ ...meta, schemaVersion: SCHEMA_VERSION })
   }

@@ -404,6 +404,13 @@ export default function App() {
           <GrowHome
             key={growKey}
             versionId={versionId}
+            shelf={{
+              verses: library.verses,
+              categories: library.categories,
+              ready: library.status === 'ready',
+              onSaveVerse: library.saveVerse,
+              onCreateCategory: library.createCategory,
+            }}
             onNestedChange={onGrowNested}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()

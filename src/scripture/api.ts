@@ -9,6 +9,8 @@ import {
 } from './lexicon'
 import { pickMeaning, type MeaningHit } from './meaning'
 import { pickContext, pickToday, type ContextHit, type TodayHit } from './studyNotes'
+import { fruitEnglishKeys, fruitLabel, fruitRefs, fruitsMatchingQuery } from '../grow/fruit'
+import type { Language } from '../i18n/messages'
 import { fold, type PassageRef } from './passages'
 import { parseTopicIndex, selectTopicGroups, type TopicIndexEntry } from './topics'
 import { versionById } from './versions'
@@ -21,6 +23,8 @@ export type ScriptureHit = PassageRef & { text: string; endVerse?: number }
 export type TopicGroup = {
   name: string
   hits: ScriptureHit[]
+  /** A Fruit of the Spirit theme. The name is already in the reader’s language. */
+  fruit?: boolean
 }
 
 const books = new Map<string, string[][]>()
@@ -294,13 +298,38 @@ async function loadTopicIndex(): Promise<TopicIndexEntry[]> {
   return topicIndex
 }
 
-export async function searchTopics(versionId: string, query: string): Promise<TopicGroup[]> {
+function themeKey(name: string): string {
+  return fold(name)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export async function searchTopics(versionId: string, query: string, language: Language): Promise<TopicGroup[]> {
   const index = await loadTopicIndex()
-  const selected = selectTopicGroups(index, query)
+  const fruits = fruitsMatchingQuery(query)
+  const covered = new Set<string>()
   const groups: TopicGroup[] = []
+
+  for (const fruit of fruits) {
+    const hits: ScriptureHit[] = []
+    for (const ref of fruitRefs(fruit)) {
+      const text = await loadVerse(versionId, ref.bookIndex, ref.chapter, ref.verse)
+      if (!text) continue
+      hits.push({ bookIndex: ref.bookIndex, chapter: ref.chapter, verse: ref.verse, text })
+      covered.add(`${ref.bookIndex}:${ref.chapter}:${ref.verse}`)
+    }
+    if (hits.length === 0) continue
+    groups.push({ name: fruitLabel(language, fruit), hits, fruit: true })
+  }
+
+  const hidden = fruitEnglishKeys(fruits)
+  const selected = selectTopicGroups(index, query).filter((topic) => !hidden.has(themeKey(topic.name)))
   for (const topic of selected) {
     const loaded = await Promise.all(
       topic.refs.map(async (ref) => {
+        const key = `${ref.bookIndex}:${ref.chapter}:${ref.verse}`
+        if (covered.has(key)) return null
         const text = await loadVerse(versionId, ref.bookIndex, ref.chapter, ref.verse)
         if (!text) return null
         const hit: ScriptureHit = {
@@ -315,6 +344,7 @@ export async function searchTopics(versionId: string, query: string): Promise<To
     )
     const hits = loaded.filter((hit): hit is ScriptureHit => hit !== null)
     if (hits.length === 0) continue
+    for (const hit of hits) covered.add(`${hit.bookIndex}:${hit.chapter}:${hit.verse}`)
     groups.push({ name: topic.name, hits })
   }
   return groups

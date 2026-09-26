@@ -9,6 +9,8 @@ import {
   pickCopy,
   type Cornerstone,
 } from '../grow/content'
+import { FruitBoard, FruitDetail, type FruitShelf } from './FruitPath'
+import { fruitById, fruitLabel, FRUITS } from '../grow/fruit'
 import { useGrow } from '../hooks/useGrow'
 import type { Language, MessageKey } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
@@ -25,6 +27,7 @@ export type GrowNested = {
 
 type GrowHomeProps = {
   versionId: string
+  shelf: FruitShelf
   onOpenPassage: (bookIndex: number, chapter: number, verse: number) => void
   onNestedChange: (nested: GrowNested) => void
 }
@@ -45,6 +48,7 @@ type Place =
   | { kind: 'purpose' }
   | { kind: 'goals' }
   | { kind: 'habits' }
+  | { kind: 'fruit'; id: string }
 
 function Glyph({ name }: { name: string }) {
   const common = {
@@ -154,10 +158,11 @@ function placeTitle(place: Place, language: Language, t: (key: MessageKey) => st
   if (place.kind === 'purpose') return t('growPurposeTitle')
   if (place.kind === 'goals') return t('growGoals')
   if (place.kind === 'habits') return t('growHabits')
+  if (place.kind === 'fruit') return fruitLabel(language, fruitById(place.id) ?? FRUITS[0])
   return t('navGrow')
 }
 
-export function GrowHome({ versionId, onOpenPassage, onNestedChange }: GrowHomeProps) {
+export function GrowHome({ versionId, shelf, onOpenPassage, onNestedChange }: GrowHomeProps) {
   const { language, t } = useLanguage()
   const grow = useGrow()
   const [segment, setSegment] = useState<Segment>('practice')
@@ -305,6 +310,10 @@ export function GrowHome({ versionId, onOpenPassage, onNestedChange }: GrowHomeP
     )
   }
 
+  if (place.kind === 'fruit') {
+    return <FruitDetail fruitId={place.id} versionId={versionId} shelf={shelf} onOpenPassage={onOpenPassage} />
+  }
+
   return (
     <div className="grow">
       <div className="grow-switch" role="tablist" aria-label={t('navGrow')}>
@@ -318,6 +327,7 @@ export function GrowHome({ versionId, onOpenPassage, onNestedChange }: GrowHomeP
 
       {segment === 'practice' ? (
         <>
+          <FruitBoard onOpen={(id) => setPlace({ kind: 'fruit', id })} />
           <p className="grow-kicker">{t('growLive')}</p>
           <p className="grow-lead">{t('growLiveLead')}</p>
           <ul className="grow-list">
