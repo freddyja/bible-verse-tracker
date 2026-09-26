@@ -468,8 +468,8 @@ export function maleVoiceLabel(
   language: Language,
   prefs: VoicePrefs,
 ): MaleVoiceLabel {
-  if (language !== 'en' || prefs.gender !== 'male' || voices.length === 0) return { mode: 'hidden' }
-  const choice = chooseEnglishMale(voices)
+  if (prefs.gender !== 'male' || voices.length === 0) return { mode: 'hidden' }
+  const choice = language === 'en' ? chooseEnglishMale(voices) : voiceChoice(voices, language, prefs)
   if (!choice.deepen && choice.voice) return { mode: 'voice', name: voiceDisplayName(choice.voice) }
   return { mode: 'pitch' }
 }
