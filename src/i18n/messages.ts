@@ -404,7 +404,11 @@ const en = {
   voicePreview: 'Play sample',
   voicePreviewHelp: 'John 3:16 in the version you are reading.',
   voiceGenderLimited: 'This phone uses a matching voice when it has one. Otherwise it adjusts the pitch.',
-  voiceMaleFallback: 'Deeper pitch (no male voice installed).',
+  voiceMaleFallback: 'Deeper, slower speech (no male voice installed).',
+  voiceMaleInstallIos:
+    'On iPhone, open Settings → Accessibility → Spoken Content → Voices → English and download Aaron, Alex, or Fred. Then choose Male again.',
+  voiceMaleInstallAndroid:
+    'On Android, open the system Text-to-speech settings and install an English male voice (for example a voice whose name includes Male).',
   voiceUsing: 'Using {name}.',
   voicePreviewFailed: 'This phone did not start the sample.',
   dictate: 'Dictate',
@@ -824,7 +828,11 @@ const es: Record<MessageKey, string> = {
   voicePreview: 'Reproducir muestra',
   voicePreviewHelp: 'Juan 3:16, en la versión que estás leyendo.',
   voiceGenderLimited: 'Si este teléfono tiene una voz que coincide, la usa. Si no, ajusta el tono.',
-  voiceMaleFallback: 'Tono más grave (no hay voz masculina instalada).',
+  voiceMaleFallback: 'Voz más grave y más lenta (no hay voz masculina instalada).',
+  voiceMaleInstallIos:
+    'En el iPhone, abre Ajustes → Accesibilidad → Contenido hablado → Voces → Inglés y descarga Aaron, Alex o Fred. Después elige Masculino de nuevo.',
+  voiceMaleInstallAndroid:
+    'En Android, abre los ajustes de Texto a voz del sistema e instala una voz masculina en inglés (por ejemplo, una cuyo nombre incluya Male).',
   voiceUsing: 'Usando {name}.',
   voicePreviewFailed: 'Este teléfono no pudo reproducir la muestra.',
   dictate: 'Dictar',
@@ -1244,7 +1252,11 @@ const pt: Record<MessageKey, string> = {
   voicePreview: 'Reproduzir amostra',
   voicePreviewHelp: 'João 3:16, na versão que você está lendo.',
   voiceGenderLimited: 'Este telefone usa uma voz correspondente quando tem uma. Se não, ajusta o tom.',
-  voiceMaleFallback: 'Tom mais grave (não há voz masculina instalada).',
+  voiceMaleFallback: 'Fala mais grave e mais lenta (não há voz masculina instalada).',
+  voiceMaleInstallIos:
+    'No iPhone, abra Ajustes → Acessibilidade → Conteúdo falado → Vozes → Inglês e baixe Aaron, Alex ou Fred. Depois escolha Masculino de novo.',
+  voiceMaleInstallAndroid:
+    'No Android, abra os ajustes de Texto para fala do sistema e instale uma voz masculina em inglês (por exemplo, uma cujo nome inclua Male).',
   voiceUsing: 'Usando {name}.',
   voicePreviewFailed: 'Este telefone não iniciou a amostra.',
   dictate: 'Ditar',

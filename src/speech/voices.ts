@@ -15,18 +15,21 @@ const STYLE: Record<VoiceStyle, { rate: number; pitch: number }> = {
 }
 
 /**
- * Scale applied only when no matching male or female voice can be assigned.
- * Clear's base pitch is 1, so Male fallback speaks at 0.32 — under the 0.45
- * ceiling, and clearly below Female (about 1.4 on Clear). Calm and Warm keep
- * their style multipliers on top of this scale.
+ * Female fallback stays high. Male fallback does not use a scale: iOS Safari
+ * speaks every pitch at or below 0.5 as the same sound, and a value under that
+ * floor is often ignored so the verse stays at pitch 1 (Samantha, unchanged).
+ * Android and desktop will honor a pitch under that floor.
  */
-const GENDER_PITCH: Record<VoiceGender, number> = {
-  male: 0.32,
-  female: 1.4,
-  default: 1,
-}
-/** Male fallback must not rise above this, even on the warmer style. */
-const MALE_FALLBACK_CEILING = 0.45
+const FEMALE_PITCH_SCALE = 1.4
+const FEMALE_PITCH_FLOOR = 1.25
+const IOS_PITCH_FLOOR = 0.5
+const OTHER_MALE_FALLBACK_PITCH = 0.35
+/**
+ * Slower speech reads as lower. iOS will not go below pitch 0.5, so rate
+ * carries the rest of the difference. Stay above 0.5 so Safari does not keep
+ * an earlier, faster rate.
+ */
+const MALE_FALLBACK_RATE_SCALE = 0.7
 
 function clampPitch(pitch: number): number {
   if (pitch < 0) return 0
@@ -39,14 +42,14 @@ function clampPitch(pitch: number): number {
  * standard field, so unknown names stay available only as System default.
  */
 const FEMALE_NAMES =
-  /\b(samantha|victoria|karen|moira|tessa|fiona|veena|zira|hazel|serena|allison|ava|susan|zoe|nicky|joelle|noelle|salli|kimberly|joanna|kendra|sara|sarah|michelle|ashley|amber|ana|elizabeth|cora|nancy|emma|jane|kathy|paulina|monica|mónica|luciana|francisca|fernanda|amelie|amélie|milena|helena|aria|jenny|sonia|libby|grandma|princess|shelley)\b/i
+  /\b(samantha|victoria|karen|moira|tessa|fiona|veena|zira|hazel|serena|allison|ava|susan|zoe|nicky|joelle|noelle|salli|kimberly|joanna|kendra|sara|sarah|michelle|ashley|amber|ana|elizabeth|cora|nancy|emma|jane|kathy|paulina|monica|mónica|luciana|francisca|fernanda|joana|amelie|amélie|milena|helena|aria|jenny|sonia|libby|grandma|princess|shelley)\b/i
 /**
  * US male names include Microsoft David/Mark/Guy and the iOS voices Alex, Fred,
- * and Aaron. UK names stay in the list so they are still male, but English Male
- * will not assign them.
+ * and Aaron. Spanish and Portuguese names stay in the list so those languages
+ * can use them. English Male still refuses anything that is not en-US.
  */
 const MALE_NAMES =
-  /\b(alex|daniel|fred|oliver|rishi|david|mark|george|aaron|evan|nathan|tom|arthur|jorge|felipe|diego|carlos|ricardo|guy|davis|ryan|christopher|eric|roger|steffan|stefan|brandon|jason|tony|andrew|brian|jacob|matthew)\b/i
+  /\b(alex|daniel|fred|oliver|rishi|david|mark|george|aaron|evan|nathan|tom|reed|arthur|jorge|juan|felipe|joaquim|diego|carlos|ricardo|guy|davis|ryan|christopher|eric|roger|steffan|stefan|brandon|jason|tony|andrew|brian|jacob|matthew)\b/i
 /** Microsoft David/Mark/Guy and other named US male voices. */
 const STRONG_US_MALE =
   /\b(david|mark|guy|davis|aaron|evan|nathan|ryan|christopher|eric|roger|steffan|stefan|brandon|jason|tony|andrew|brian|jacob|matthew)\b/i
@@ -54,7 +57,7 @@ const STRONG_US_MALE =
  * Voices iOS Safari and the home-screen app actually expose for US English:
  * Alex (older), Fred, and Aaron, including Spoken Content entries marked Male.
  */
-const IOS_US_MALE = /\b(alex|fred|aaron|evan|nathan)\b/i
+const IOS_US_MALE = /\b(alex|fred|aaron|evan|nathan|reed|tom)\b/i
 
 export function canSpeak(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
@@ -171,12 +174,14 @@ export function subscribeVoices(onChange: (voices: SpeechSynthesisVoice[]) => vo
   }
 }
 
-const VOICES_WAIT_MS = 400
+const VOICES_WAIT_MS = 1200
+const VOICES_POLL_MS = 80
 
 /**
  * Run once the engine has reported voices. The first getVoices() call is often
- * empty, and speaking before that list arrives uses whatever default the phone
- * has — frequently a female or UK voice.
+ * empty. iOS Safari often never fires voiceschanged, so this also polls.
+ * Speaking before that list arrives uses whatever default the phone has —
+ * frequently Samantha or another female voice, with no chance to pick Aaron.
  */
 export function whenVoicesReady(isCurrent: () => boolean, run: () => void): void {
   if (!canSpeak()) {
@@ -184,27 +189,36 @@ export function whenVoicesReady(isCurrent: () => boolean, run: () => void): void
     return
   }
   const synth = window.speechSynthesis
-  let existing: SpeechSynthesisVoice[] = []
-  try {
-    existing = synth.getVoices()
-  } catch {
-    existing = []
+  const read = (): SpeechSynthesisVoice[] => {
+    try {
+      return synth.getVoices()
+    } catch {
+      return []
+    }
   }
-  if (existing.length > 0) {
+  if (read().length > 0) {
     if (isCurrent()) run()
     return
   }
   let finished = false
   let timer = 0
+  let poll = 0
   const finish = () => {
     if (finished) return
     finished = true
-    synth.removeEventListener?.('voiceschanged', finish)
+    synth.removeEventListener?.('voiceschanged', onVoices)
     window.clearTimeout(timer)
+    window.clearInterval(poll)
     if (!isCurrent()) return
     run()
   }
-  synth.addEventListener?.('voiceschanged', finish)
+  const onVoices = () => {
+    if (read().length > 0) finish()
+  }
+  synth.addEventListener?.('voiceschanged', onVoices)
+  poll = window.setInterval(() => {
+    if (read().length > 0) finish()
+  }, VOICES_POLL_MS)
   timer = window.setTimeout(finish, VOICES_WAIT_MS)
 }
 
@@ -259,31 +273,72 @@ function isUsEnglishVoice(voice: SpeechSynthesisVoice): boolean {
   return false
 }
 
-/** Chrome's "Google US English" is the American male voice. The Female variant is not. */
+/**
+ * "Google US English" names a locale, not a gender. On desktop Chrome the
+ * network voice is male. On Android the same label is usually the female
+ * default, so it must not win Male there.
+ */
 function isGoogleUsEnglish(label: string): boolean {
   if (hasToken(label, 'female') || /\b(woman|girl)\b/.test(label)) return false
   if (!/\bgoogle\b/.test(label)) return false
   return /\bus english\b/.test(label) || /\bu\.s\. english\b/.test(label) || /\bamerican english\b/.test(label)
 }
 
-/**
- * Android Chrome exposes Google TTS codes such as en-us-x-sfg#male and
- * en-us-x-sfg#female. Only the male code counts. The female twin of the same
- * code, and a code with no gender, are not treated as male.
- */
-function isAndroidUsMale(label: string): boolean {
-  if (hasToken(label, 'female') || /\b(woman|girl)\b/.test(label)) return false
-  if (!/en-us-x-[a-z0-9]+\b/.test(label)) return false
-  return hasToken(label, 'male') || /\b(man|boy)\b/.test(label)
+export type VoicePlatform = 'ios' | 'android' | 'other'
+
+export function voicePlatform(): VoicePlatform {
+  if (typeof navigator === 'undefined') return 'other'
+  const ua = navigator.userAgent || ''
+  const platform = navigator.platform || ''
+  if (/Android/i.test(ua)) return 'android'
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios'
+  // iPadOS 13+ reports itself as a Mac.
+  if (platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1) return 'ios'
+  return 'other'
 }
 
-/** Samantha, Nicky, Karen, and any female or UK English voice cannot be Male. */
+/**
+ * Google TTS codes that do not say "male". Heard as male on Android 11:
+ * en-us-x-iom, en-us-x-iol, en-us-x-tpd. Codes that say #male also count.
+ * en-us-x-tpf / sfg / iob are female and are refused below.
+ */
+function isAndroidUsMale(label: string): boolean {
+  if (hasToken(label, 'female') || /\b(woman|girl)\b/.test(label) || /#female\b/.test(label)) return false
+  if (/en-us-x-(?:iom|iol|tpd)\b/.test(label)) return true
+  if (!/en-us-x-[a-z0-9]+\b/.test(label)) return false
+  return hasToken(label, 'male') || /#male\b/.test(label) || /\b(man|boy)\b/.test(label)
+}
+
+/** Female Android codes, including sfg without an explicit #male twin. */
+function isAndroidUsFemaleCode(label: string): boolean {
+  if (hasToken(label, 'male') || /#male\b/.test(label)) return false
+  if (hasToken(label, 'female') || /#female\b/.test(label)) return /en-us/.test(label)
+  return /en-us-x-(?:tpf|tpc|sfg|iob|sfb)\b/.test(label)
+}
+
+/**
+ * Desktop Chrome's "Google US English" is male. The same label on a phone is
+ * the female default, so iOS and Android never treat it as male.
+ */
+function isDesktopGoogleUsMale(voice: SpeechSynthesisVoice): boolean {
+  if (voicePlatform() !== 'other') return false
+  const label = voiceLabel(voice)
+  if (isAndroidUsFemaleCode(label)) return false
+  return isGoogleUsEnglish(label)
+}
+
+/**
+ * Samantha, Nicky, Karen, Android female codes, unlabeled Google US English
+ * on a phone, and any UK English voice cannot be Male.
+ */
 function isBlockedEnglishMaleVoice(voice: SpeechSynthesisVoice): boolean {
   const label = voiceLabel(voice)
   if (hasToken(label, 'female') || /\b(woman|girl)\b/.test(label)) return true
   if (FEMALE_NAMES.test(label)) return true
   if (/\b(samantha|nicky|karen)\b/.test(label)) return true
   if (/\bgoogle\b/.test(label) && /\buk\b/.test(label) && /\benglish\b/.test(label)) return true
+  if (isAndroidUsFemaleCode(label)) return true
+  if (voicePlatform() !== 'other' && isGoogleUsEnglish(label) && !isAndroidUsMale(label)) return true
   if (isNonAmericanEnglish(voice) || !isUsEnglishVoice(voice)) return true
   return false
 }
@@ -363,8 +418,8 @@ export function classifyGender(voice: SpeechSynthesisVoice): Exclude<VoiceGender
   if (hasToken(haystack, 'male') || /\b(man|boy)\b/.test(haystack)) return 'male'
   const coded = usCodedGender(haystack)
   if (coded) return coded
-  if (isGoogleUsEnglish(haystack)) return 'male'
   if (isAndroidUsMale(haystack)) return 'male'
+  if (isDesktopGoogleUsMale(voice)) return 'male'
   if (FEMALE_NAMES.test(haystack)) return 'female'
   if (MALE_NAMES.test(haystack)) return 'male'
   return 'unknown'
@@ -437,9 +492,11 @@ type VoiceChoice = {
 
 /**
  * English Male assigns a clearly male en-US voice when the phone has one:
- * iOS Aaron / Alex / Fred, Android en-US male URI codes, Google US English Male,
- * Microsoft David / Mark. Samantha, Nicky, Karen, Google UK English Female,
- * and any female-tagged voice are refused. Otherwise nothing is assigned.
+ * iOS Aaron / Alex / Fred, Android en-us-x-iom / iol / tpd (and #male codes),
+ * Microsoft David / Mark. Desktop Chrome's Google US English still counts.
+ * Samantha, Nicky, Karen, Android female codes, Google UK English,
+ * and a phone's unlabeled Google US English are refused. Otherwise nothing
+ * is assigned and pitch carries gender.
  */
 function chooseEnglishMale(voices: SpeechSynthesisVoice[]): VoiceChoice {
   const males = voices.filter(
@@ -534,14 +591,24 @@ function clearVoice(utterance: SpeechSynthesisUtterance) {
   }
 }
 
+function maleFallbackPitch(): number {
+  return voicePlatform() === 'ios' ? IOS_PITCH_FLOOR : OTHER_MALE_FALLBACK_PITCH
+}
+
 function pitchFor(prefs: VoicePrefs, matched: boolean): number {
   const base = (STYLE[prefs.style] ?? STYLE.clear).pitch
   if (matched || prefs.gender === 'default') return base
-  const scaled = base * (GENDER_PITCH[prefs.gender] ?? 1)
-  // Female stays high. Male Clear is 0.32 and never rises above 0.45.
-  if (prefs.gender === 'male') return clampPitch(Math.min(scaled, MALE_FALLBACK_CEILING))
-  if (prefs.gender === 'female') return clampPitch(Math.max(scaled, 1.25))
-  return clampPitch(scaled)
+  // Female stays high. Male uses the lowest pitch this device will speak.
+  if (prefs.gender === 'male') return maleFallbackPitch()
+  if (prefs.gender === 'female') return clampPitch(Math.max(base * FEMALE_PITCH_SCALE, FEMALE_PITCH_FLOOR))
+  return clampPitch(base)
+}
+
+function rateFor(prefs: VoicePrefs, matched: boolean): number {
+  const base = (STYLE[prefs.style] ?? STYLE.clear).rate
+  if (matched || prefs.gender !== 'male') return base
+  const scaled = Math.round(base * MALE_FALLBACK_RATE_SCALE * 100) / 100
+  return Math.max(0.55, scaled)
 }
 
 function installedVoices(): SpeechSynthesisVoice[] {
@@ -560,7 +627,6 @@ function englishMaleVoiceAllowed(voice: SpeechSynthesisVoice): boolean {
 }
 
 function applyPitchFallback(utterance: SpeechSynthesisUtterance, language: Language, prefs: VoicePrefs) {
-  const prosody = STYLE[prefs.style] ?? STYLE.clear
   clearVoice(utterance)
   try {
     utterance.lang = utteranceLanguage(language)
@@ -568,11 +634,22 @@ function applyPitchFallback(utterance: SpeechSynthesisUtterance, language: Langu
     // The language set by the caller still applies.
   }
   try {
-    utterance.rate = prosody.rate
+    utterance.rate = rateFor(prefs, false)
     utterance.pitch = pitchFor(prefs, false)
   } catch {
     // Rate and pitch are best-effort.
   }
+}
+
+/** Keep the voice's own lang tag so Android does not drop it and speak the default. */
+function langForAssignedVoice(voice: SpeechSynthesisVoice, language: Language): string {
+  const raw = voice.lang || ''
+  const lang = normalizedLang(voice)
+  if (language === 'en') {
+    if (!lang || lang === 'en') return utteranceLanguage(language)
+    return raw
+  }
+  return raw || utteranceLanguage(language)
 }
 
 /**
@@ -622,10 +699,11 @@ export function applyVoice(
 
   const gendered = !choice.deepen && (prefs.gender === 'default' || classifyGender(voice) === prefs.gender)
   try {
-    // English stays en-US even if the chosen voice reports another locale.
     // Set lang before voice so the assignment is not cleared, then pitch last.
-    utterance.lang = language === 'en' ? utteranceLanguage(language) : voice.lang || utteranceLanguage(language)
+    // Use the voice's own lang string (en_US on Android) instead of forcing en-US.
+    utterance.lang = langForAssignedVoice(voice, language)
     utterance.voice = voice
+    utterance.rate = rateFor(prefs, gendered)
     utterance.pitch = pitchFor(prefs, gendered)
   } catch {
     applyPitchFallback(utterance, language, prefs)
