@@ -404,6 +404,7 @@ const en = {
   voicePreview: 'Play sample',
   voicePreviewHelp: 'John 3:16 in the version you are reading.',
   voiceGenderLimited: 'This phone uses a matching voice when it has one. Otherwise it adjusts the pitch.',
+  voiceMaleFallback: 'This phone has no American male voice, so the pitch is lowered.',
   voicePreviewFailed: 'This phone did not start the sample.',
 } as const
 
@@ -814,6 +815,7 @@ const es: Record<MessageKey, string> = {
   voicePreview: 'Reproducir muestra',
   voicePreviewHelp: 'Juan 3:16, en la versión que estás leyendo.',
   voiceGenderLimited: 'Este teléfono usa una voz que coincide cuando la tiene. Si no, ajusta el tono.',
+  voiceMaleFallback: 'Este teléfono no tiene una voz masculina de Estados Unidos, así que se baja el tono.',
   voicePreviewFailed: 'Este teléfono no inició la muestra.',
 }
 
@@ -1224,6 +1226,7 @@ const pt: Record<MessageKey, string> = {
   voicePreview: 'Reproduzir amostra',
   voicePreviewHelp: 'João 3:16, na versão que você está lendo.',
   voiceGenderLimited: 'Este telefone usa uma voz correspondente quando tem uma. Se não, ajusta o tom.',
+  voiceMaleFallback: 'Este telefone não tem uma voz masculina dos Estados Unidos, então o tom fica mais grave.',
   voicePreviewFailed: 'Este telefone não iniciou a amostra.',
 }
 
