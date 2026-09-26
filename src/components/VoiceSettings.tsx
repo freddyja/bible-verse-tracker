@@ -16,7 +16,10 @@ import {
   canSpeak,
   cancelSpeech,
   ignoredSpeechError,
+  maleVoiceLabel,
   speakWhenReady,
+  subscribeVoices,
+  whenVoicesReady,
 } from '../speech/voices'
 
 const JOHN_INDEX = BOOKS.findIndex((book) => book.id === 'jhn')
@@ -68,6 +71,9 @@ export function VoiceSettings() {
     setFailed(false)
   }
   const supported = canSpeak()
+  const [installedVoices, setInstalledVoices] = useState<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => subscribeVoices(setInstalledVoices), [])
 
   useEffect(() => {
     return () => {
@@ -76,6 +82,8 @@ export function VoiceSettings() {
     }
   }, [language, versionId])
 
+  const maleStatus = maleVoiceLabel(installedVoices, language, prefs)
+
   function finishPreview(token: number, ok: boolean) {
     if (previewToken.current !== token) return
     setPlaying(false)
@@ -83,6 +91,20 @@ export function VoiceSettings() {
   }
 
   function speakAttempt(
+    text: string,
+    token: number,
+    pitchOnly: boolean,
+    waitForCancel: boolean,
+    pitchRetries: number,
+  ) {
+    if (previewToken.current !== token) return
+    whenVoicesReady(
+      () => previewToken.current === token,
+      () => speakPrepared(text, token, pitchOnly, waitForCancel, pitchRetries),
+    )
+  }
+
+  function speakPrepared(
     text: string,
     token: number,
     pitchOnly: boolean,
@@ -213,6 +235,10 @@ export function VoiceSettings() {
           ))}
         </div>
         <p className="setting-help">{t('voiceGenderLimited')}</p>
+        {maleStatus.mode === 'voice' ? (
+          <p className="setting-help">{t('voiceUsing', { name: maleStatus.name })}</p>
+        ) : null}
+        {maleStatus.mode === 'pitch' ? <p className="setting-help">{t('voiceMaleFallback')}</p> : null}
       </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">
