@@ -106,9 +106,12 @@ export function ChapterReader({
   useEffect(() => {
     if (!tablet || !sheetOpen) return
     function onClick(event: MouseEvent) {
-      const target = event.target
-      if (!(target instanceof Element)) return
-      if (target.closest('.study-pane, .verse-line, .listen-bar, .read-chrome, .mast, .tab-bar, .select-bar')) return
+      // A tool button swaps the menu for its panel before this click finishes
+      // bubbling, so the pressed node is already detached. closest() on that
+      // node misses the pane; the event path still shows where the press began.
+      const stay = '.study-pane, .verse-line, .listen-bar, .read-chrome, .mast, .tab-bar, .select-bar'
+      const inside = event.composedPath().some((node) => node instanceof Element && node.closest(stay) !== null)
+      if (inside) return
       setSheetOpen(false)
       setExplain(false)
     }
