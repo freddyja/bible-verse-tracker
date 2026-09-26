@@ -15,6 +15,22 @@ const STYLE: Record<VoiceStyle, { rate: number; pitch: number }> = {
 }
 
 /**
+ * Added to the style pitch when no gendered voice can be assigned.
+ * Web Speech pitch is 0–2. A lower pitch reads as male; a higher pitch as female.
+ */
+const GENDER_PITCH_DELTA: Record<VoiceGender, number> = {
+  male: -0.35,
+  female: 0.32,
+  default: 0,
+}
+
+function clampPitch(pitch: number): number {
+  if (pitch < 0) return 0
+  if (pitch > 2) return 2
+  return pitch
+}
+
+/**
  * Names the Web Speech API uses for on-device voices. Gender is not a
  * standard field, so unknown names stay available only as System default.
  */
@@ -31,13 +47,81 @@ export function utteranceLanguage(language: Language): string {
   return utteranceLang[language]
 }
 
-export function cancelSpeech(): void {
-  if (!canSpeak()) return
+export function speechBusy(): boolean {
+  if (!canSpeak()) return false
+  try {
+    const synth = window.speechSynthesis
+    return Boolean(synth.speaking || synth.pending)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Stop current speech. Returns false when there is nothing to stop.
+ * Canceling an idle engine makes Chrome drop the next speak.
+ */
+export function cancelSpeech(): boolean {
+  if (!speechBusy()) return false
   try {
     window.speechSynthesis.cancel()
+    return true
   } catch {
     // The engine can refuse a cancel before the first utterance.
+    return false
   }
+}
+
+export function ignoredSpeechError(error: string | undefined): boolean {
+  return error === 'canceled' || error === 'interrupted' || error === 'cancelled'
+}
+
+const CANCEL_SETTLE_MS = 100
+const CANCEL_GIVE_UP_MS = 400
+
+/**
+ * Speak after a cancel from this turn has finished clearing the queue.
+ * Chrome applies cancel asynchronously and drops an utterance queued before that.
+ */
+export function speakWhenReady(
+  utterance: SpeechSynthesisUtterance,
+  isCurrent: () => boolean,
+  onSpeakError: () => void,
+  options?: { waitForCancel?: boolean; onQueued?: () => void },
+): void {
+  if (!canSpeak()) {
+    onSpeakError()
+    return
+  }
+  const synth = window.speechSynthesis
+  const settleMs = options?.waitForCancel ? CANCEL_SETTLE_MS : 0
+  const started = Date.now()
+  const step = () => {
+    if (!isCurrent()) return
+    let busy = false
+    try {
+      busy = Boolean(synth.speaking || synth.pending)
+    } catch {
+      busy = false
+    }
+    const age = Date.now() - started
+    if ((busy || age < settleMs) && age < CANCEL_GIVE_UP_MS) {
+      window.setTimeout(step, 20)
+      return
+    }
+    try {
+      if (synth.paused) synth.resume()
+    } catch {
+      // speak() below still runs when resume is refused.
+    }
+    try {
+      synth.speak(utterance)
+      options?.onQueued?.()
+    } catch {
+      onSpeakError()
+    }
+  }
+  window.setTimeout(step, 0)
 }
 
 function scoreVoice(voice: SpeechSynthesisVoice, language: Language): number {
@@ -160,19 +244,81 @@ export function pickVoice(language: Language, prefs: VoicePrefs = readVoicePrefs
   }
 }
 
-/** Apply the shared Voice preference to an utterance. Never throws. */
+export type VoiceApplyOptions = {
+  /** System voice with a gender pitch shift, skipping a matched voice that failed to speak. */
+  pitchOnly?: boolean
+}
+
+function isVoice(value: unknown): value is SpeechSynthesisVoice {
+  if (!value || typeof value !== 'object') return false
+  if (typeof SpeechSynthesisVoice !== 'undefined' && value instanceof SpeechSynthesisVoice) return true
+  const voice = value as SpeechSynthesisVoice
+  return typeof voice.name === 'string' && typeof voice.lang === 'string'
+}
+
+function clearVoice(utterance: SpeechSynthesisUtterance) {
+  try {
+    utterance.voice = null
+  } catch {
+    // An engine that rejects a cleared voice still speaks on its default.
+  }
+}
+
+function applyPitchFallback(utterance: SpeechSynthesisUtterance, language: Language, prefs: VoicePrefs) {
+  const prosody = STYLE[prefs.style] ?? STYLE.clear
+  clearVoice(utterance)
+  try {
+    utterance.lang = utteranceLanguage(language)
+  } catch {
+    // The language set by the caller still applies.
+  }
+  try {
+    utterance.rate = prosody.rate
+    utterance.pitch = clampPitch(prosody.pitch + GENDER_PITCH_DELTA[prefs.gender])
+  } catch {
+    // Rate and pitch are best-effort.
+  }
+}
+
+/**
+ * Apply the shared Voice preference to an utterance. Never throws.
+ * A male or female choice uses a matching voice when one is installed.
+ * Otherwise, and when assigning that voice throws, the system voice speaks
+ * with a gender pitch shift.
+ */
 export function applyVoice(
   utterance: SpeechSynthesisUtterance,
   language: Language,
   prefs: VoicePrefs = readVoicePrefs(),
+  options?: VoiceApplyOptions,
 ): void {
   const prosody = STYLE[prefs.style] ?? STYLE.clear
-  utterance.rate = prosody.rate
-  utterance.pitch = prosody.pitch
-  utterance.lang = utteranceLanguage(language)
+  try {
+    utterance.rate = prosody.rate
+    utterance.pitch = prosody.pitch
+    utterance.lang = utteranceLanguage(language)
+  } catch {
+    // The engine can still speak with its own defaults.
+  }
+
+  if (options?.pitchOnly) {
+    applyPitchFallback(utterance, language, prefs)
+    return
+  }
+
   const voice = pickVoice(language, prefs)
-  if (voice instanceof SpeechSynthesisVoice) {
-    utterance.voice = voice
+  const matched = isVoice(voice) && (prefs.gender === 'default' || classifyGender(voice) === prefs.gender)
+  if (!matched || !voice) {
+    applyPitchFallback(utterance, language, prefs)
+    return
+  }
+
+  try {
+    // Set the voice last. On some engines, writing lang after voice clears it.
     if (voice.lang) utterance.lang = voice.lang
+    utterance.voice = voice
+    utterance.pitch = prosody.pitch
+  } catch {
+    applyPitchFallback(utterance, language, prefs)
   }
 }

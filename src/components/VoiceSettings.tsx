@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { loadVerse } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import {
+  readVoicePrefs,
   setVoiceGender,
   setVoiceStyle,
   useVoicePrefs,
@@ -16,6 +17,8 @@ import {
   cancelSpeech,
   effectiveGender,
   genderAvailability,
+  ignoredSpeechError,
+  speakWhenReady,
 } from '../speech/voices'
 
 const JOHN_INDEX = BOOKS.findIndex((book) => book.id === 'jhn')
@@ -81,10 +84,6 @@ async function sampleText(versionId: string, language: Language): Promise<string
   return FALLBACK[language]
 }
 
-function ignoredSpeechError(error: string): boolean {
-  return error === 'canceled' || error === 'interrupted' || error === 'cancelled'
-}
-
 export function VoiceSettings() {
   const { language, versionId, t } = useLanguage()
   const prefs = useVoicePrefs()
@@ -114,64 +113,124 @@ export function VoiceSettings() {
     }
   }, [language, versionId])
 
-  function haltPreview() {
-    previewToken.current += 1
-    setPlaying(false)
-    cancelSpeech()
-  }
-
   function genderDisabled(gender: VoiceGender): boolean {
     if (gender === 'default') return false
     if (!availability.ready) return false
     return !availability[gender]
   }
 
-  function chooseGender(gender: VoiceGender) {
-    if (genderDisabled(gender)) return
-    if (gender !== prefs.gender) haltPreview()
-    setVoiceGender(gender)
+  function finishPreview(token: number, ok: boolean) {
+    if (previewToken.current !== token) return
+    setPlaying(false)
+    if (!ok) setFailed(true)
   }
 
-  function chooseStyle(style: VoiceStyle) {
-    if (style !== prefs.style) haltPreview()
-    setVoiceStyle(style)
+  function speakAttempt(
+    text: string,
+    token: number,
+    pitchOnly: boolean,
+    waitForCancel: boolean,
+    pitchRetries: number,
+  ) {
+    if (previewToken.current !== token) return
+    let utterance: SpeechSynthesisUtterance
+    try {
+      utterance = new SpeechSynthesisUtterance(text)
+      applyVoice(utterance, language, readVoicePrefs(), { pitchOnly })
+    } catch {
+      if (!pitchOnly) {
+        speakAttempt(text, token, true, true, pitchRetries)
+        return
+      }
+      finishPreview(token, false)
+      return
+    }
+
+    let started = false
+    let settled = false
+    let queuedAt = 0
+    const fallback = (nextPitchRetries: number) => {
+      if (settled || previewToken.current !== token) return
+      settled = true
+      const interrupted = cancelSpeech()
+      window.setTimeout(() => {
+        speakAttempt(text, token, true, interrupted, nextPitchRetries)
+      }, 0)
+    }
+
+    utterance.onstart = () => {
+      started = true
+    }
+    utterance.onend = () => {
+      if (settled || previewToken.current !== token) return
+      const elapsed = queuedAt ? Date.now() - queuedAt : 0
+      // Some male voices end at once, with no audio and no error. A real
+      // reading of this sentence cannot finish that quickly.
+      if (!pitchOnly && !started && elapsed < 250 && text.length > 40) {
+        fallback(0)
+        return
+      }
+      settled = true
+      finishPreview(token, true)
+    }
+    utterance.onerror = (event) => {
+      if (settled || previewToken.current !== token) return
+      const ignored = ignoredSpeechError(event.error)
+      // A chosen voice that never starts, or that the engine rejects, speaks
+      // again on the default voice. A cancel after audio started is the user
+      // moving on, so it does not count as a failure.
+      if (!pitchOnly && (!ignored || !started)) {
+        fallback(0)
+        return
+      }
+      if (pitchOnly && ignored && !started && pitchRetries < 1) {
+        fallback(pitchRetries + 1)
+        return
+      }
+      settled = true
+      finishPreview(token, ignored && started)
+    }
+
+    speakWhenReady(
+      utterance,
+      () => previewToken.current === token && !settled,
+      () => {
+        if (previewToken.current !== token || settled) return
+        if (!pitchOnly || pitchRetries < 1) fallback(pitchOnly ? pitchRetries + 1 : 0)
+        else finishPreview(token, false)
+      },
+      {
+        waitForCancel,
+        onQueued: () => {
+          queuedAt = Date.now()
+        },
+      },
+    )
   }
 
   function playSample() {
     if (!supported) return
+    // One token and at most one cancel for this tap. Bumping the token and
+    // canceling in a separate halt step lets Chrome drop the sample that follows.
     const token = ++previewToken.current
     setFailed(false)
     setPlaying(true)
-    cancelSpeech()
+    const interrupted = cancelSpeech()
     void sampleText(versionId, language).then((text) => {
       if (previewToken.current !== token) return
-      let utterance: SpeechSynthesisUtterance
-      try {
-        utterance = new SpeechSynthesisUtterance(text)
-        applyVoice(utterance, language)
-      } catch {
-        setPlaying(false)
-        setFailed(true)
-        return
-      }
-      let settled = false
-      const finish = (ok: boolean) => {
-        if (settled || previewToken.current !== token) return
-        settled = true
-        setPlaying(false)
-        if (!ok) setFailed(true)
-      }
-      utterance.onend = () => finish(true)
-      utterance.onerror = (event) => finish(ignoredSpeechError(event.error))
-      window.setTimeout(() => {
-        if (previewToken.current !== token) return
-        try {
-          window.speechSynthesis.speak(utterance)
-        } catch {
-          finish(false)
-        }
-      }, 50)
+      speakAttempt(text, token, false, interrupted, 0)
     })
+  }
+
+  function chooseGender(gender: VoiceGender) {
+    if (genderDisabled(gender)) return
+    setVoiceGender(gender)
+    playSample()
+  }
+
+  function chooseStyle(style: VoiceStyle) {
+    setVoiceStyle(style)
+    playSample()
   }
 
   return (
