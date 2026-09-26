@@ -14,6 +14,13 @@ const STYLE: Record<VoiceStyle, { rate: number; pitch: number }> = {
   warm: { rate: 0.9, pitch: 1.08 },
 }
 
+/** Used when this phone has no voice tagged for the saved gender. */
+const GENDER_PITCH: Record<VoiceGender, number> = {
+  male: 0.86,
+  female: 1.14,
+  default: 1,
+}
+
 /**
  * Names the Web Speech API uses for on-device voices. Gender is not a
  * standard field, so unknown names stay available only as System default.
@@ -108,44 +115,6 @@ export function classifyGender(voice: SpeechSynthesisVoice): Exclude<VoiceGender
   return 'unknown'
 }
 
-export type GenderAvailability = {
-  /** False until the browser has reported at least one voice. */
-  ready: boolean
-  male: boolean
-  female: boolean
-}
-
-export function genderAvailability(
-  voices: SpeechSynthesisVoice[],
-  language: Language,
-  settled = false,
-): GenderAvailability {
-  if (voices.length === 0) return { ready: settled, male: false, female: false }
-  let male = false
-  let female = false
-  for (const voice of voices) {
-    if (scoreVoice(voice, language) < 0) continue
-    const gender = classifyGender(voice)
-    if (gender === 'male') male = true
-    if (gender === 'female') female = true
-  }
-  return { ready: true, male, female }
-}
-
-export function effectiveGender(
-  gender: VoiceGender,
-  voices: SpeechSynthesisVoice[],
-  language: Language,
-  settled = false,
-): VoiceGender {
-  if (gender === 'default') return 'default'
-  const available = genderAvailability(voices, language, settled)
-  if (!available.ready) return gender
-  if (gender === 'male' && !available.male) return 'default'
-  if (gender === 'female' && !available.female) return 'default'
-  return gender
-}
-
 function ranked(voices: SpeechSynthesisVoice[], language: Language, gender: VoiceGender) {
   const rows: { voice: SpeechSynthesisVoice; score: number }[] = []
   for (const voice of voices) {
@@ -184,9 +153,8 @@ export function selectVoice(
   language: Language,
   prefs: VoicePrefs,
 ): SpeechSynthesisVoice | undefined {
-  const gender = effectiveGender(prefs.gender, voices, language)
-  let pool = ranked(voices, language, gender)
-  if (pool.length === 0 && gender !== 'default') pool = ranked(voices, language, 'default')
+  let pool = ranked(voices, language, prefs.gender)
+  if (pool.length === 0 && prefs.gender !== 'default') pool = ranked(voices, language, 'default')
   if (pool.length === 0) return undefined
   return pickStyled(pool, prefs.style)
 }
@@ -200,6 +168,13 @@ export function pickVoice(language: Language, prefs: VoicePrefs = readVoicePrefs
   }
 }
 
+function pitchFor(prefs: VoicePrefs, voice: SpeechSynthesisVoice | undefined): number {
+  const base = (STYLE[prefs.style] ?? STYLE.clear).pitch
+  if (prefs.gender === 'default') return base
+  if (voice && classifyGender(voice) === prefs.gender) return base
+  return Math.min(2, Math.max(0, base * GENDER_PITCH[prefs.gender]))
+}
+
 /** Apply the shared Voice preference to an utterance. Never throws. */
 export function applyVoice(
   utterance: SpeechSynthesisUtterance,
@@ -208,9 +183,9 @@ export function applyVoice(
 ): void {
   const prosody = STYLE[prefs.style] ?? STYLE.clear
   utterance.rate = prosody.rate
-  utterance.pitch = prosody.pitch
   utterance.lang = utteranceLanguage(language)
   const voice = pickVoice(language, prefs)
+  utterance.pitch = pitchFor(prefs, voice)
   if (voice instanceof SpeechSynthesisVoice) {
     utterance.voice = voice
     if (voice.lang) utterance.lang = voice.lang
