@@ -4,7 +4,8 @@ import { loadBook, loadVerse, peekVerse } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import type { PassageRef } from '../scripture/passages'
 import { passageAfter, passageAfterSync, type ListenMode } from './passageQueue'
-import { applyVoice, canSpeak } from './voices'
+import { readVoicePrefs } from './prefs'
+import { applyVoice, canSpeak, cancelSpeech, ignoredSpeechError, speakWhenReady } from './voices'
 
 type Status = 'idle' | 'playing' | 'paused'
 
@@ -27,10 +28,6 @@ export type ListenController = {
   pause: () => void
   resume: () => void
   stop: () => void
-}
-
-function ignoredSpeechError(error: string): boolean {
-  return error === 'canceled' || error === 'interrupted' || error === 'cancelled'
 }
 
 export function useListen(
@@ -94,14 +91,36 @@ export function useListen(
     return (current.freeText ?? current.spokenText ?? cached)?.trim() || null
   }
 
-  function utter(current: Session, text: string, delay: boolean) {
+  function utter(current: Session, text: string, delay: boolean, pitchOnly = false) {
     if (sessionRef.current?.generation !== current.generation) return
     const withText: Session = { ...current, spokenText: text, status: 'playing' }
     commit(withText)
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    applyVoice(utterance, languageRef.current)
+    let utterance: SpeechSynthesisUtterance
+    try {
+      utterance = new SpeechSynthesisUtterance(text)
+      applyVoice(utterance, languageRef.current, readVoicePrefs(), { pitchOnly })
+    } catch {
+      if (!pitchOnly) {
+        utter(current, text, true, true)
+        return
+      }
+      fail(current, true)
+      return
+    }
+
     let settled = false
+    let started = false
+    const stillCurrent = () => sessionRef.current?.generation === current.generation
+    const retryPitch = () => {
+      if (settled || !stillCurrent()) return
+      settled = true
+      utter(current, text, true, true)
+    }
+
+    utterance.onstart = () => {
+      started = true
+    }
     utterance.onend = () => {
       if (settled) return
       settled = true
@@ -111,31 +130,28 @@ export function useListen(
     }
     utterance.onerror = (event) => {
       if (settled) return
-      settled = true
       const live = sessionRef.current
       if (!live || live.generation !== current.generation) return
+      if (!pitchOnly && (!ignoredSpeechError(event.error) || !started)) {
+        retryPitch()
+        return
+      }
+      settled = true
       if (ignoredSpeechError(event.error)) return
       fail(live, true)
     }
 
-    const run = () => {
-      if (sessionRef.current?.generation !== current.generation) return
-      try {
-        window.speechSynthesis.speak(utterance)
-      } catch {
-        fail(current, true)
-      }
-    }
-    if (delay) {
-      try {
-        window.speechSynthesis.cancel()
-      } catch {
-        // The engine can refuse a cancel before the first utterance.
-      }
-      window.setTimeout(run, 50)
-    } else {
-      run()
-    }
+    if (delay) cancelSpeech()
+    speakWhenReady(
+      utterance,
+      () => stillCurrent() && !settled && sessionRef.current?.status === 'playing',
+      () => {
+        if (!stillCurrent()) return
+        if (!pitchOnly) retryPitch()
+        else fail(current, true)
+      },
+      { waitForCancel: delay },
+    )
   }
 
   function speakNow(current: Session, delay: boolean) {
@@ -240,11 +256,7 @@ export function useListen(
     if (!canSpeak()) return
     setRefused(false)
     generationRef.current += 1
-    try {
-      window.speechSynthesis.cancel()
-    } catch {
-      // Starting fresh still speaks the verse in this tap.
-    }
+    const interrupted = cancelSpeech()
     const spoken =
       text?.trim() ||
       peekVerse(versionRef.current, passage.bookIndex, passage.chapter, passage.verse)
@@ -260,7 +272,7 @@ export function useListen(
     commit(next)
     onMoveRef.current(passage)
     prefetchAhead(next)
-    speakNow(next, false)
+    speakNow(next, interrupted)
   }
 
   function speakText(text: string) {
@@ -269,11 +281,7 @@ export function useListen(
     if (!trimmed) return
     setRefused(false)
     generationRef.current += 1
-    try {
-      window.speechSynthesis.cancel()
-    } catch {
-      // The typed verse is spoken in this tap.
-    }
+    const interrupted = cancelSpeech()
     const next: Session = {
       generation: generationRef.current,
       mode: 'verse',
@@ -283,7 +291,7 @@ export function useListen(
       spokenText: trimmed,
     }
     commit(next)
-    speakNow(next, false)
+    speakNow(next, interrupted)
   }
 
   function pause() {
