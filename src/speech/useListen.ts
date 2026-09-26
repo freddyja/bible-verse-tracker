@@ -4,7 +4,7 @@ import { loadBook, loadVerse, peekVerse } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
 import type { PassageRef } from '../scripture/passages'
 import { passageAfter, passageAfterSync, type ListenMode } from './passageQueue'
-import { canSpeak, pickVoice, utteranceLanguage } from './voices'
+import { applyVoice, canSpeak } from './voices'
 
 type Status = 'idle' | 'playing' | 'paused'
 
@@ -100,10 +100,7 @@ export function useListen(
     commit(withText)
 
     const utterance = new SpeechSynthesisUtterance(text)
-    const voice = pickVoice(languageRef.current)
-    if (voice instanceof SpeechSynthesisVoice) utterance.voice = voice
-    utterance.lang = voice?.lang ?? utteranceLanguage(languageRef.current)
-    utterance.rate = 0.92
+    applyVoice(utterance, languageRef.current)
     let settled = false
     utterance.onend = () => {
       if (settled) return

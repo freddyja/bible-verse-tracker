@@ -3,6 +3,7 @@ import { GreetingNameField } from './GreetingNameField'
 import { InstallSettings } from './InstallOffer'
 import { RedLetterToggle } from './RedLetterToggle'
 import { VersionPicker } from './VersionPicker'
+import { VoiceSettings } from './VoiceSettings'
 import { useLanguage } from '../i18n/useLanguage'
 
 type SettingsPanelProps = {
@@ -19,6 +20,7 @@ export function SettingsPanel({ hasPlan, onReadingOptions, onPlan }: SettingsPan
       <GreetingNameField />
       <VersionPicker hint />
       <RedLetterToggle hint />
+      <VoiceSettings />
       <InstallSettings />
       <div className="settings-links">
         <button type="button" className="button button-block" onClick={onReadingOptions}>

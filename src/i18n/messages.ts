@@ -391,6 +391,20 @@ const en = {
   sectionPauline: 'Pauline Epistles',
   sectionGeneral: 'General Epistles',
   sectionRevelation: 'Revelation',
+  voiceSection: 'Voice',
+  voiceHelp: 'Used whenever Scripture is read aloud. Saved on this phone.',
+  voiceGender: 'Gender',
+  voiceGenderMale: 'Male',
+  voiceGenderFemale: 'Female',
+  voiceGenderDefault: 'System default',
+  voiceStyle: 'Style',
+  voiceStyleCalm: 'Calm',
+  voiceStyleClear: 'Clear',
+  voiceStyleWarm: 'Warm',
+  voicePreview: 'Play sample',
+  voicePreviewHelp: 'John 3:16 in the version you are reading.',
+  voiceGenderLimited: 'Male and female are offered when this phone has a matching voice. Style still changes the pace.',
+  voicePreviewFailed: 'This phone did not start the sample.',
 } as const
 
 export type MessageKey = keyof typeof en
@@ -787,6 +801,20 @@ const es: Record<MessageKey, string> = {
   sectionPauline: 'Epístolas paulinas',
   sectionGeneral: 'Epístolas generales',
   sectionRevelation: 'Apocalipsis',
+  voiceSection: 'Voz',
+  voiceHelp: 'Se usa cada vez que las Escrituras se leen en voz alta. Se guarda en este teléfono.',
+  voiceGender: 'Género',
+  voiceGenderMale: 'Masculino',
+  voiceGenderFemale: 'Femenino',
+  voiceGenderDefault: 'Predeterminado',
+  voiceStyle: 'Estilo',
+  voiceStyleCalm: 'Calma',
+  voiceStyleClear: 'Clara',
+  voiceStyleWarm: 'Cálida',
+  voicePreview: 'Reproducir muestra',
+  voicePreviewHelp: 'Juan 3:16, en la versión que estás leyendo.',
+  voiceGenderLimited: 'Masculino y femenino aparecen cuando este teléfono tiene una voz que coincide. El estilo igual cambia el ritmo.',
+  voicePreviewFailed: 'Este teléfono no inició la muestra.',
 }
 
 const pt: Record<MessageKey, string> = {
@@ -1183,6 +1211,20 @@ const pt: Record<MessageKey, string> = {
   sectionPauline: 'Epístolas paulinas',
   sectionGeneral: 'Epístolas gerais',
   sectionRevelation: 'Apocalipse',
+  voiceSection: 'Voz',
+  voiceHelp: 'Usada sempre que as Escrituras são lidas em voz alta. Fica salva neste telefone.',
+  voiceGender: 'Gênero',
+  voiceGenderMale: 'Masculino',
+  voiceGenderFemale: 'Feminino',
+  voiceGenderDefault: 'Padrão',
+  voiceStyle: 'Estilo',
+  voiceStyleCalm: 'Calma',
+  voiceStyleClear: 'Clara',
+  voiceStyleWarm: 'Calorosa',
+  voicePreview: 'Reproduzir amostra',
+  voicePreviewHelp: 'João 3:16, na versão que você está lendo.',
+  voiceGenderLimited: 'Masculino e feminino aparecem quando este telefone tem uma voz correspondente. O estilo ainda muda o ritmo.',
+  voicePreviewFailed: 'Este telefone não iniciou a amostra.',
 }
 
 export const messages: Record<Language, Record<MessageKey, string>> = { en, es, pt }
