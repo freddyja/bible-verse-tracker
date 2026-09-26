@@ -40,7 +40,7 @@ export const PRACTICES: readonly PracticeItem[] = [
     title: { en: 'A few quiet minutes', es: 'Unos minutos en silencio', pt: 'Alguns minutos em silêncio' },
     body: {
       en: 'Sit for a few minutes with nothing in your hands. You do not have to produce a feeling.',
-      es: 'Siéntate unos minutos sin nada en las manos. No tienes que producir un sentimiento.',
+      es: 'Siéntate unos minutos sin nada en las manos. No tienes que sentir algo en especial.',
       pt: 'Sente-se alguns minutos sem nada nas mãos. Você não precisa produzir um sentimento.',
     },
   },
@@ -85,34 +85,34 @@ export const PRACTICES: readonly PracticeItem[] = [
     title: { en: 'A psalm you know', es: 'Un salmo que ya conoces', pt: 'Um salmo que você já conhece' },
     body: {
       en: 'Read the first few lines of a psalm you already know. Stay with those lines.',
-      es: 'Lee las primeras líneas de un salmo que ya conoces. Quédate con esas líneas.',
+      es: 'Lee las primeras líneas de un salmo que ya conoces. Medita un momento en esas líneas.',
       pt: 'Leia as primeiras linhas de um salmo que você já conhece. Fique com essas linhas.',
     },
   },
   {
     id: 'forgive',
-    title: { en: 'A word that still sits', es: 'Una palabra que sigue ahí', pt: 'Uma palavra que ainda pesa' },
+    title: { en: 'A word that still sits', es: 'Una palabra que todavía pesa', pt: 'Uma palavra que ainda pesa' },
     body: {
       en: 'If a word from yesterday still sits between you and someone, ask forgiveness if you can.',
-      es: 'Si una palabra de ayer sigue entre tú y alguien, pide perdón si puedes.',
+      es: 'Si una palabra de ayer todavía pesa entre tú y alguien, pide perdón si puedes.',
       pt: 'Se uma palavra de ontem ainda está entre você e alguém, peça perdão se puder.',
     },
   },
   {
     id: 'evening',
-    title: { en: 'Give the evening back', es: 'Devuelve el atardecer', pt: 'Devolva o fim do dia' },
+    title: { en: 'Give the evening back', es: 'Entrega la tarde a Dios', pt: 'Devolva o fim do dia' },
     body: {
       en: 'Give the first few minutes of the evening back to God, without a list of achievements.',
-      es: 'Devuelve a Dios los primeros minutos de la tarde-noche, sin una lista de logros.',
+      es: 'Entrega a Dios los primeros minutos de la tarde, sin hacer una lista de lo que lograste.',
       pt: 'Devolva a Deus os primeiros minutos da noite, sem uma lista de conquistas.',
     },
   },
   {
     id: 'gift',
-    title: { en: 'Notice one ordinary gift', es: 'Nota un don ordinario', pt: 'Note um dom comum' },
+    title: { en: 'Notice one ordinary gift', es: 'Un don de cada día', pt: 'Note um dom comum' },
     body: {
       en: 'Thank God for one ordinary gift you would miss if it were gone: bread, light, a safe night.',
-      es: 'Da gracias a Dios por un don ordinario que extrañarías si faltara: el pan, la luz, una noche segura.',
+      es: 'Da gracias a Dios por un don sencillo que extrañarías si faltara: el pan, la luz, una noche segura.',
       pt: 'Agradeça a Deus por um dom comum de que você sentiria falta: o pão, a luz, uma noite segura.',
     },
   },
