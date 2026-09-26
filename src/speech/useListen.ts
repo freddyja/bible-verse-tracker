@@ -5,7 +5,7 @@ import { BOOKS } from '../scripture/books'
 import type { PassageRef } from '../scripture/passages'
 import { passageAfter, passageAfterSync, type ListenMode } from './passageQueue'
 import { readVoicePrefs } from './prefs'
-import { applyVoice, canSpeak, cancelSpeech, ignoredSpeechError, speakWhenReady } from './voices'
+import { applyVoice, canSpeak, cancelSpeech, ignoredSpeechError, speakWhenReady, whenVoicesReady } from './voices'
 
 type Status = 'idle' | 'playing' | 'paused'
 
@@ -95,6 +95,15 @@ export function useListen(
     if (sessionRef.current?.generation !== current.generation) return
     const withText: Session = { ...current, spokenText: text, status: 'playing' }
     commit(withText)
+
+    whenVoicesReady(
+      () => sessionRef.current?.generation === current.generation,
+      () => beginUtterance(current, text, delay, pitchOnly),
+    )
+  }
+
+  function beginUtterance(current: Session, text: string, delay: boolean, pitchOnly: boolean) {
+    if (sessionRef.current?.generation !== current.generation) return
 
     let utterance: SpeechSynthesisUtterance
     try {
