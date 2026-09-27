@@ -9,6 +9,7 @@ import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
 import { SettingsPanel } from './components/SettingsPanel'
+import { ShareAppButton } from './components/ShareAppButton'
 import { TabBar, type TabId } from './components/TabBar'
 import { VerseForm } from './components/VerseForm'
 import { VerseList } from './components/VerseList'
@@ -330,6 +331,7 @@ export default function App() {
                 {t('categories')}
               </button>
             ) : null}
+            {onDaily ? <ShareAppButton /> : null}
             {showGear ? (
               <button
                 type="button"
