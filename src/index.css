@@ -139,16 +139,40 @@ button {
   line-height: 1.15;
 }
 
-.home-brand {
-  margin: 0 0 0.85rem;
+.home-head {
+  width: 100%;
+  min-width: 0;
+  container: homehead / inline-size;
+}
+
+.home-title-row {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto auto;
+  column-gap: 0.28rem;
+  align-items: center;
 }
 
 .home-brand-name {
+  grid-column: 1;
+  grid-row: 1;
   margin: 0;
+  white-space: nowrap;
 }
 
-.home-brand .credit {
-  margin-top: 0.15rem;
+.share-app-slot {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-self: end;
+}
+
+.home-gear {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.home-head .credit {
+  margin: 0.45rem 0 0.85rem;
 }
 
 .setting-label {
@@ -1831,6 +1855,182 @@ main {
   border-radius: 999px;
   background: var(--card);
   color: var(--gold);
+}
+
+.share-app {
+  width: auto;
+  gap: 0.28rem;
+  height: 2.5rem;
+  padding: 0 0.55rem 0 0.4rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.share-app .gear-icon {
+  width: 1.08rem;
+  height: 1.08rem;
+  flex: none;
+}
+
+.share-app-label {
+  display: block;
+}
+
+/*
+  The title stays on one line. Horizontal icon + label sits beside Settings
+  while the row has room. Longer labels stack into a chip, and if that chip
+  still crowds the title, only Share moves under it.
+*/
+@container homehead (max-width: 26.4rem) {
+  .home-head-pt .share-app {
+    flex-direction: column;
+    gap: 0.02rem;
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.2rem 0.36rem 0.16rem;
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .home-head-pt .share-app .gear-icon {
+    width: 1.02rem;
+    height: 1.02rem;
+  }
+}
+
+@container homehead (max-width: 25rem) {
+  .home-head-es .share-app {
+    flex-direction: column;
+    gap: 0.02rem;
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.2rem 0.36rem 0.16rem;
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .home-head-es .share-app .gear-icon {
+    width: 1.02rem;
+    height: 1.02rem;
+  }
+}
+
+@container homehead (max-width: 22rem) {
+  .home-head-en .share-app {
+    flex-direction: column;
+    gap: 0.02rem;
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.2rem 0.36rem 0.16rem;
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .home-head-en .share-app .gear-icon {
+    width: 1.02rem;
+    height: 1.02rem;
+  }
+}
+
+@container homehead (max-width: 22.6rem) {
+  .home-head-pt .home-title-row {
+    grid-template-columns: minmax(max-content, 1fr) auto;
+    row-gap: 0.45rem;
+  }
+
+  .home-head-pt .home-gear {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .home-head-pt .share-app-slot {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .home-head-pt .share-app {
+    flex-direction: row;
+    gap: 0.28rem;
+    height: 2.5rem;
+    min-height: 0;
+    padding: 0 0.55rem 0 0.4rem;
+    font-size: 0.84rem;
+    line-height: 1;
+  }
+
+  .home-head-pt .share-app .gear-icon {
+    width: 1.08rem;
+    height: 1.08rem;
+  }
+}
+
+@container homehead (max-width: 21.7rem) {
+  .home-head-es .home-title-row {
+    grid-template-columns: minmax(max-content, 1fr) auto;
+    row-gap: 0.45rem;
+  }
+
+  .home-head-es .home-gear {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .home-head-es .share-app-slot {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .home-head-es .share-app {
+    flex-direction: row;
+    gap: 0.28rem;
+    height: 2.5rem;
+    min-height: 0;
+    padding: 0 0.55rem 0 0.4rem;
+    font-size: 0.84rem;
+    line-height: 1;
+  }
+
+  .home-head-es .share-app .gear-icon {
+    width: 1.08rem;
+    height: 1.08rem;
+  }
+}
+
+@container homehead (max-width: 20.35rem) {
+  .home-head-en .home-title-row {
+    grid-template-columns: minmax(max-content, 1fr) auto;
+    row-gap: 0.45rem;
+  }
+
+  .home-head-en .home-gear {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .home-head-en .share-app-slot {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .home-head-en .share-app {
+    flex-direction: row;
+    gap: 0.28rem;
+    height: 2.5rem;
+    min-height: 0;
+    padding: 0 0.55rem 0 0.4rem;
+    font-size: 0.84rem;
+    line-height: 1;
+  }
+
+  .home-head-en .share-app .gear-icon {
+    width: 1.08rem;
+    height: 1.08rem;
+  }
 }
 
 .gear-icon,
