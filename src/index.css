@@ -1839,6 +1839,25 @@ main {
   height: 1.35rem;
 }
 
+.share-toast {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  bottom: calc(5.2rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  margin: 0;
+  max-width: min(22rem, calc(100% - 2rem));
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: rgba(14, 20, 36, 0.94);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
 .tab-bar {
   position: fixed;
   z-index: 40;

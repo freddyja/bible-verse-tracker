@@ -233,9 +233,8 @@ export function useListen(
     utterance.onend = () => {
       if (settled) return
       const elapsed = queuedAt ? Date.now() - queuedAt : 0
-      // Same failure as Settings preview: the chosen voice ends at once, with
-      // no audio. Verse and chapter then use the deeper pitch instead of
-      // skipping ahead on a voice the phone never spoke.
+      // Same failure as Settings preview: speech ends at once, with no audio.
+      // Try once more on the system voice instead of skipping the verse.
       if (!pitchOnly && !started && queuedAt > 0 && elapsed < 400) {
         retryPitch()
         return

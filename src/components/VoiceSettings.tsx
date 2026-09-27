@@ -3,23 +3,13 @@ import type { Language } from '../i18n/messages'
 import { useLanguage } from '../i18n/useLanguage'
 import { loadVerse } from '../scripture/api'
 import { BOOKS } from '../scripture/books'
-import {
-  readVoicePrefs,
-  setVoiceGender,
-  setVoiceStyle,
-  useVoicePrefs,
-  type VoiceGender,
-  type VoiceStyle,
-} from '../speech/prefs'
+import { readVoicePrefs, setVoiceStyle, useVoicePrefs, type VoiceStyle } from '../speech/prefs'
 import {
   applyVoice,
   canSpeak,
   cancelSpeech,
   ignoredSpeechError,
-  maleVoiceLabel,
   speakWhenReady,
-  subscribeVoices,
-  voicePlatform,
   whenVoicesReady,
 } from '../speech/voices'
 
@@ -31,12 +21,6 @@ const FALLBACK: Record<Language, string> = {
   es: 'Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.',
   pt: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.',
 }
-
-const GENDERS: { id: VoiceGender; label: 'voiceGenderMale' | 'voiceGenderFemale' | 'voiceGenderDefault' }[] = [
-  { id: 'male', label: 'voiceGenderMale' },
-  { id: 'female', label: 'voiceGenderFemale' },
-  { id: 'default', label: 'voiceGenderDefault' },
-]
 
 const STYLES: { id: VoiceStyle; label: 'voiceStyleCalm' | 'voiceStyleClear' | 'voiceStyleWarm' }[] = [
   { id: 'calm', label: 'voiceStyleCalm' },
@@ -59,7 +43,6 @@ export function VoiceSettings() {
   const { language, versionId, t } = useLanguage()
   const prefs = useVoicePrefs()
   const headingId = useId()
-  const genderLabelId = useId()
   const styleLabelId = useId()
   const previewToken = useRef(0)
   const [playing, setPlaying] = useState(false)
@@ -72,9 +55,6 @@ export function VoiceSettings() {
     setFailed(false)
   }
   const supported = canSpeak()
-  const [installedVoices, setInstalledVoices] = useState<SpeechSynthesisVoice[]>([])
-
-  useEffect(() => subscribeVoices(setInstalledVoices), [])
 
   useEffect(() => {
     return () => {
@@ -82,9 +62,6 @@ export function VoiceSettings() {
       cancelSpeech()
     }
   }, [language, versionId])
-
-  const maleStatus = maleVoiceLabel(installedVoices, language, prefs)
-  const platform = voicePlatform()
 
   function finishPreview(token: number, ok: boolean) {
     if (previewToken.current !== token) return
@@ -145,8 +122,8 @@ export function VoiceSettings() {
     utterance.onend = () => {
       if (settled || previewToken.current !== token) return
       const elapsed = queuedAt ? Date.now() - queuedAt : 0
-      // Some male voices end at once, with no audio and no error. A real
-      // reading of this sentence cannot finish that quickly.
+      // A voice that ends at once, with no audio and no error, did not speak.
+      // A real reading of this sentence cannot finish that quickly.
       if (!pitchOnly && !started && elapsed < 250 && text.length > 40) {
         fallback(0)
         return
@@ -203,11 +180,6 @@ export function VoiceSettings() {
     })
   }
 
-  function chooseGender(gender: VoiceGender) {
-    setVoiceGender(gender)
-    playSample()
-  }
-
   function chooseStyle(style: VoiceStyle) {
     setVoiceStyle(style)
     playSample()
@@ -219,35 +191,6 @@ export function VoiceSettings() {
         {t('voiceSection')}
       </h2>
       <p className="setting-help">{t('voiceHelp')}</p>
-      <div className="lang voice-choice" role="group" aria-labelledby={genderLabelId}>
-        <span id={genderLabelId} className="setting-label">
-          {t('voiceGender')}
-        </span>
-        <div className="lang-options">
-          {GENDERS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className="lang-option"
-              aria-pressed={prefs.gender === option.id}
-              onClick={() => chooseGender(option.id)}
-            >
-              {t(option.label)}
-            </button>
-          ))}
-        </div>
-        <p className="setting-help">{t('voiceGenderLimited')}</p>
-        {maleStatus.mode === 'voice' ? (
-          <p className="setting-help">{t('voiceUsing', { name: maleStatus.name })}</p>
-        ) : null}
-        {maleStatus.mode === 'pitch' ? (
-          <>
-            <p className="setting-help">{t('voiceMaleFallback')}</p>
-            {platform === 'ios' ? <p className="setting-help">{t('voiceMaleInstallIos')}</p> : null}
-            {platform === 'android' ? <p className="setting-help">{t('voiceMaleInstallAndroid')}</p> : null}
-          </>
-        ) : null}
-      </div>
       <div className="lang voice-choice" role="group" aria-labelledby={styleLabelId}>
         <span id={styleLabelId} className="setting-label">
           {t('voiceStyle')}

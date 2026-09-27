@@ -2,30 +2,38 @@ import { useSyncExternalStore } from 'react'
 
 const STORAGE_KEY = 'bible-verse-tracker.voice'
 
-export type VoiceGender = 'male' | 'female' | 'default'
 export type VoiceStyle = 'calm' | 'clear' | 'warm'
 
 export type VoicePrefs = {
-  gender: VoiceGender
   style: VoiceStyle
 }
 
-const DEFAULT_PREFS: VoicePrefs = { gender: 'default', style: 'clear' }
-
-function parseGender(value: unknown): VoiceGender {
-  return value === 'male' || value === 'female' || value === 'default' ? value : 'default'
-}
+const DEFAULT_PREFS: VoicePrefs = { style: 'clear' }
 
 function parseStyle(value: unknown): VoiceStyle {
   return value === 'calm' || value === 'clear' || value === 'warm' ? value : 'clear'
 }
 
+/**
+ * Style is kept. An older Male or Female choice is dropped so it cannot
+ * change the voice again. Missing or broken data becomes Clear.
+ */
 function readStored(): VoicePrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...DEFAULT_PREFS }
-    const data = JSON.parse(raw) as { gender?: unknown; style?: unknown }
-    return { gender: parseGender(data.gender), style: parseStyle(data.style) }
+    const data = JSON.parse(raw) as { gender?: unknown; style?: unknown } | null
+    if (!data || typeof data !== 'object') return { ...DEFAULT_PREFS }
+    const style = parseStyle(data.style)
+    const next: VoicePrefs = { style }
+    if ('gender' in data || data.style !== style) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        // The style still applies until the page closes.
+      }
+    }
+    return next
   } catch {
     return { ...DEFAULT_PREFS }
   }
@@ -35,7 +43,7 @@ let memory = readStored()
 const listeners = new Set<() => void>()
 
 function commit(next: VoicePrefs) {
-  if (next.gender === memory.gender && next.style === memory.style) return
+  if (next.style === memory.style) return
   memory = next
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
@@ -56,10 +64,6 @@ function getSnapshot() {
 
 export function readVoicePrefs(): VoicePrefs {
   return memory
-}
-
-export function setVoiceGender(gender: VoiceGender) {
-  commit({ ...memory, gender: parseGender(gender) })
 }
 
 export function setVoiceStyle(style: VoiceStyle) {
