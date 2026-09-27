@@ -283,66 +283,77 @@ export default function App() {
           .join(' ')}
       >
         <div className="top">
-          <div className="title-block">
-            {showBack ? (
-              <button type="button" className="back" onClick={goBack}>
-                <BackIcon />
-                {t('navBack')}
-              </button>
-            ) : null}
-            {onDaily ? (
-              <div className="home-brand">
+          {onDaily ? (
+            <div className={`home-head home-head-${language}`}>
+              <div className="home-title-row">
                 <h1 className="brand home-brand-name">{t('brandName')}</h1>
-                <p className="credit">{t('designedBy')}</p>
-              </div>
-            ) : null}
-            {onReadSurface && (read.kind === 'book' || read.kind === 'chapter') ? (
-              <h1 className="brand">
-                <nav className="crumb" aria-label={t('readingCrumb')}>
-                  <button type="button" onClick={goBack}>
-                    {read.kind === 'chapter' ? bookName : t('navRead')}
+                <ShareAppButton />
+                {showGear ? (
+                  <button
+                    type="button"
+                    className="icon-button home-gear"
+                    aria-label={t('openSettings')}
+                    onClick={() => openPanel('settings')}
+                  >
+                    <GearIcon />
                   </button>
-                  <span className="crumb-sep" aria-hidden="true">
-                    ›
-                  </span>
-                  <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
-                </nav>
-              </h1>
-            ) : onDaily ? null : (
-              <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
-            )}
-            {onDaily ? (
-              <>
-                <p className="tagline">{t('tagline')}</p>
-                <LanguagePicker />
-              </>
-            ) : null}
-          </div>
-          <div className="top-actions">
-            {view.kind === 'tabs' && panel === null && tab === 'saved' ? (
-              <button
-                type="button"
-                className="button button-ghost"
-                onClick={() => {
-                  listen.stop()
-                  setView({ kind: 'categories' })
-                }}
-              >
-                {t('categories')}
-              </button>
-            ) : null}
-            {onDaily ? <ShareAppButton /> : null}
-            {showGear ? (
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={t('openSettings')}
-                onClick={() => openPanel('settings')}
-              >
-                <GearIcon />
-              </button>
-            ) : null}
-          </div>
+                ) : null}
+              </div>
+              <p className="credit">{t('designedBy')}</p>
+              <p className="tagline">{t('tagline')}</p>
+              <LanguagePicker />
+            </div>
+          ) : (
+            <>
+              <div className="title-block">
+                {showBack ? (
+                  <button type="button" className="back" onClick={goBack}>
+                    <BackIcon />
+                    {t('navBack')}
+                  </button>
+                ) : null}
+                {onReadSurface && (read.kind === 'book' || read.kind === 'chapter') ? (
+                  <h1 className="brand">
+                    <nav className="crumb" aria-label={t('readingCrumb')}>
+                      <button type="button" onClick={goBack}>
+                        {read.kind === 'chapter' ? bookName : t('navRead')}
+                      </button>
+                      <span className="crumb-sep" aria-hidden="true">
+                        ›
+                      </span>
+                      <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
+                    </nav>
+                  </h1>
+                ) : (
+                  <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
+                )}
+              </div>
+              <div className="top-actions">
+                {view.kind === 'tabs' && panel === null && tab === 'saved' ? (
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    onClick={() => {
+                      listen.stop()
+                      setView({ kind: 'categories' })
+                    }}
+                  >
+                    {t('categories')}
+                  </button>
+                ) : null}
+                {showGear ? (
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label={t('openSettings')}
+                    onClick={() => openPanel('settings')}
+                  >
+                    <GearIcon />
+                  </button>
+                ) : null}
+              </div>
+            </>
+          )}
         </div>
         {onReadSurface ? <VersionPicker /> : null}
         {onReadSurface && read.kind === 'chapter' ? <RedLetterToggle /> : null}

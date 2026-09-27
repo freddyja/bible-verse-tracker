@@ -90,21 +90,21 @@ export function ShareAppButton() {
   }
 
   return (
-    <>
+    <span className="share-app-slot">
       <button
         type="button"
-        className="icon-button"
-        aria-label={t('shareApp')}
+        className="icon-button share-app"
         title={t('shareApp')}
         onClick={() => void shareApp()}
       >
         <ShareIcon />
+        <span className="share-app-label">{t('shareAppLabel')}</span>
       </button>
       {notice ? (
         <p className="share-toast" role="status">
           {notice}
         </p>
       ) : null}
-    </>
+    </span>
   )
 }
