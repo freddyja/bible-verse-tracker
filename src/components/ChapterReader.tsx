@@ -80,10 +80,6 @@ export function ChapterReader({
   const suppressClick = useRef(false)
   const pressOrigin = useRef<{ x: number; y: number } | null>(null)
   const [focused, setFocused] = useState({ bookIndex: startBook, chapter: startChapter })
-  const watchScripture = listen.watch
-  useEffect(() => {
-    watchScripture({ bookIndex: focused.bookIndex, chapter: focused.chapter })
-  }, [watchScripture, focused.bookIndex, focused.chapter])
   const slicesRef = useRef(slices)
   const focusedRef = useRef(focused)
   const loadingRef = useRef(false)
@@ -408,7 +404,7 @@ export function ChapterReader({
         text={sheetText}
         saved={saved}
         categories={categories}
-        listenSupported={listen.supported || (listen.recorded.kind === 'ready' && !listen.preferPhone)}
+        listenSupported={listen.supported}
         onListen={() => {
           if (pickedText === undefined) return
           listen.start('verse', picked, pickedText)

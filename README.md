@@ -16,7 +16,7 @@ Grow sits on the bottom bar between Read and Saved. Practice opens with the Frui
 
 The home screen offers a verse for the calendar day. The same date always chooses the same passage. The words are the Bible version selected under the title, and the card shows that version’s abbreviation. Tapping the card opens the passage, where it can be saved. The photographs on the card were made for this app. They are original, and they rotate with the date. Past verses, under the card, lists earlier days on this phone. Each one is the passage that date would have shown. Nothing about those days is stored in an account.
 
-Listen plays a recorded reading when this copy has a Bible Brain key and Faith Comes By Hearing has a free public-domain recording for that chapter. King James is preferred. The bar shows Recorded, and Phone voice is still there. Personal notes, study text, and any chapter without a recording are read by the phone’s own voice: this verse, this chapter, or Read Out Loud, which continues through the books until he taps Stop. This chapter and Read Out Loud stay on the chapter. This verse is there as well, and again on the sheet for the verse he tapped. The verse being spoken is marked. English, Spanish, and Portuguese follow the language he chose, when the phone has that voice. A voice note is still his own recording, kept apart from this reading. NIV and ESV audio are not used.
+Listen reads with this phone’s own voice: this verse, this chapter, or Read Out Loud, which continues through the books until he taps Stop. This chapter and Read Out Loud stay on the chapter. This verse is there as well, and again on the sheet for the verse he tapped. The verse being spoken is marked. English, Spanish, and Portuguese follow the language he chose, when the phone has that voice. Settings keeps the system voice and offers Calm, Clear, and Warm, which change the pace and tone. A voice note is still his own recording, kept apart from this reading.
 
 The version under the title is the one he is reading. He can change it there. English, Spanish, and Portuguese each keep their own choice on that phone. Commercial translations are not bundled.
 
@@ -97,20 +97,6 @@ npm run preview
 
 The production build is an installable PWA. The manifest names the app, sets the light theme color, and points the start URL at `/bible-verse-tracker/` on GitHub Pages. A service worker caches the app shell and, after a book is opened, the Scripture files for that book. Settings has Install. On Chromium that button uses the browser’s install prompt, and Daily can offer it once. On iPhone and iPad, where that prompt does not exist, Settings says to tap Share, then Add to Home Screen. Friends can install it on their own phones. Each install keeps its own notes. The dev server does not register a service worker, so installability is checked from the production build.
 
-## Recorded Scripture (Bible Brain)
-
-Optional. Listen asks Faith Comes By Hearing’s Bible Brain API (`https://4.dbt.io`) whether a free public-domain recording exists for the chapter on screen. King James is preferred. Spanish looks for Reina-Valera 1909 or 1865. Portuguese looks for Bíblia Livre or another text marked public domain. NIV, ESV, and other commercial audio are not requested. If there is no key, no recording, or the phone is offline, Listen uses the phone’s voice. Settings and the Listen bar say so, in English, Spanish, and Portuguese.
-
-The request sends only the book and chapter. Personal notes, study notes, and words typed into a verse field are not sent. A verse field that no longer matches the bundled text is read by the phone, not by the recording.
-
-The build reads `VITE_BIBLE_BRAIN_KEY`. Leave it unset and `npm run build` still succeeds. Do not commit a key.
-
-For local work, copy `.env.example` to `.env` and set the key there. Restart `npm run dev` after changing it. `.env` is gitignored.
-
-GitHub Pages is a static site, so the key is included when the workflow builds the site. In the repository, add an Actions secret named `VITE_BIBLE_BRAIN_KEY` (Settings → Secrets and variables → Actions). The Pages workflow passes that secret into `npm run build`. If the secret is missing, the build still succeeds and the site uses the phone’s voice.
-
-The key is visible in the built JavaScript, because the browser calls Bible Brain directly. Request it from Faith Comes By Hearing for this app. Recordings are streamed from signed addresses the API returns. They are not stored in the app and they are not kept with notes on the phone.
-
 ## On this device
 
 Verses, written notes, categories, and voice recordings live only in this browser’s storage (IndexedDB). Nothing is uploaded. Refreshing, closing the app, or installing it does not clear them. The Bible text is part of the app, not an account or a paid Bible service.
@@ -125,7 +111,7 @@ https://quiet-firefly-4219.zerodeploy.app/
 
 That address is public HTTPS and works on a phone. Add it to the home screen from the browser menu. Notes stay on that phone.
 
-GitHub Pages is prepared for the same path as the other apps, https://freddyja.github.io/bible-verse-tracker/. The workflow in `.github/workflows/pages.yml` builds this branch and deploys when Pages is set to GitHub Actions in the repository settings. `npm run build` uses `/bible-verse-tracker/` for that host. `npm run dev` stays at the site root so local work is unchanged. The app builds with no API key. Recorded Scripture is optional and is described under Recorded Scripture (Bible Brain).
+GitHub Pages is prepared for the same path as the other apps, https://freddyja.github.io/bible-verse-tracker/. The workflow in `.github/workflows/pages.yml` builds this branch and deploys when Pages is set to GitHub Actions in the repository settings. `npm run build` uses `/bible-verse-tracker/` for that host. `npm run dev` stays at the site root so local work is unchanged.
 
 **Vercel:** import the repo, use the Vite preset, set the output directory to `dist`, and set `VITE_BASE_PATH=/` so asset paths match a root domain. `vercel.json` tells the CDN not to cache `sw.js` for long, so an updated shell can replace the old one, and it serves the manifest with the right content type. The app does not use client-side URL routes.
 

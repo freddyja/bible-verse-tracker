@@ -41,27 +41,11 @@ export function ListenBar({
 }: ListenBarProps) {
   const { t } = useLanguage()
   const active = listen.status !== 'idle'
-  const recordedReady = listen.recorded.kind === 'ready'
-  const usingRecorded =
-    recordedReady && !listen.preferPhone && (listen.status === 'idle' || listen.activeSource === 'recorded')
-  const controls = listen.supported || recordedReady
-  const recordedNote = recordedNoteText()
-
-  function recordedNoteText(): string | null {
-    if (listen.recorded.kind === 'off') return t('recordedNoKey')
-    if (listen.recorded.kind === 'absent' && listen.recorded.reason === 'none') return t('recordedMissing')
-    if (listen.recorded.kind === 'absent') return t('recordedOffline')
-    if (recordedReady && usingRecorded) return listen.recorded.kind === 'ready' ? listen.recorded.label : null
-    if (recordedReady && listen.preferPhone) return t('recordedPhone')
-    return null
-  }
+  const controls = listen.supported
 
   return (
     <div className="listen-bar" role="group" aria-label={t('listen')}>
-      <p className="listen-label">
-        {t('listen')}
-        {usingRecorded ? <span className="listen-badge">{t('recordedBadge')}</span> : null}
-      </p>
+      <p className="listen-label">{t('listen')}</p>
       {controls ? null : <p className="field-note">{t('listenUnavailable')}</p>}
       {controls && active ? (
         <div className="listen-actions">
@@ -95,20 +79,9 @@ export function ListenBar({
             <SpeakerIcon />
             {t('listenContinue')}
           </button>
-          {recordedReady && listen.supported && !listen.preferPhone ? (
-            <button type="button" className="text-button" onClick={listen.usePhoneVoice}>
-              {t('listenPhone')}
-            </button>
-          ) : null}
-          {recordedReady && listen.preferPhone ? (
-            <button type="button" className="text-button" onClick={listen.useRecordedVoice}>
-              {t('listenRecorded')}
-            </button>
-          ) : null}
         </div>
       ) : null}
       {listen.refused && !active ? <p className="field-note">{t('listenRefused')}</p> : null}
-      {recordedNote && !active ? <p className="field-note">{recordedNote}</p> : null}
       {note && !active ? <p className="field-note">{note}</p> : null}
     </div>
   )
