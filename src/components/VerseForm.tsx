@@ -104,18 +104,6 @@ export function VerseForm({
     onDictateStart: () => listen.stop(),
     onKept: onDone,
   }
-  const watchedPassage = parseReference(reference)
-  const watchBook = watchedPassage?.bookIndex ?? -1
-  const watchChapter = watchedPassage?.chapter ?? -1
-  const watchScripture = listen.watch
-  useEffect(() => {
-    if (watchBook < 0 || watchChapter < 0) {
-      watchScripture(null)
-      return
-    }
-    watchScripture({ bookIndex: watchBook, chapter: watchChapter })
-  }, [watchScripture, watchBook, watchChapter])
-
   useEffect(() => {
     if (!verseId) return
     let cancelled = false
