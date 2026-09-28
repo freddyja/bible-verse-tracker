@@ -3671,6 +3671,11 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 0.35rem 0 0.65rem;
+  background: linear-gradient(to bottom, rgba(7, 11, 22, 0.96) 72%, transparent);
 }
 
 .sermon-board {

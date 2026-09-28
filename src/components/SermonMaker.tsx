@@ -73,6 +73,7 @@ async function copyText(value: string): Promise<boolean> {
 
 export function SermonMaker() {
   const { t } = useLanguage()
+  const sheetRef = useRef<HTMLElement>(null)
   const boardRef = useRef<HTMLDivElement>(null)
   const [topic, setTopic] = useState('')
   const [audience, setAudience] = useState('')
@@ -126,7 +127,7 @@ export function SermonMaker() {
 
   useEffect(() => {
     if (!handout) return
-    boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    sheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [handout])
 
   useEffect(() => {
@@ -230,7 +231,7 @@ export function SermonMaker() {
       </button>
       {error ? <p className="field-note">{error}</p> : null}
       {handout ? (
-        <article className="sermon-sheet">
+        <article ref={sheetRef} className="sermon-sheet">
           <div className="sermon-actions">
             <button type="button" className="button" onClick={downloadHandout}>
               {t('sermonDownload')}
