@@ -9,6 +9,16 @@ export type SermonCopy = {
   questions: readonly [string, string]
 }
 
+/** Spoken alternatives for one language. The same index is used across fields. */
+export type SermonLines = {
+  punch: readonly string[]
+  context: readonly string[]
+  application: readonly string[]
+  challenge: readonly string[]
+  charge: readonly string[]
+  questions: readonly (readonly [string, string])[]
+}
+
 export type SermonOutline = {
   id: string
   keywords: readonly string[]
@@ -16,9 +26,9 @@ export type SermonOutline = {
   chapter: number
   verse: number
   endVerse: number
-  /** When true, {topic} in the copy is replaced with the class topic. */
+  /** When true, {topic} in the lines is replaced with the class topic. */
   slots?: boolean
-  copy: Record<SermonLang, SermonCopy>
+  lines: Record<SermonLang, SermonLines>
 }
 
 export type SermonBlock = {

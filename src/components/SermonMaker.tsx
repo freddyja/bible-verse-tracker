@@ -1,11 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
 import { buildHandout } from '../sermon/build'
 import { handoutDocx } from '../sermon/docx'
 import { handoutFileName, handoutText } from '../sermon/plain'
-import type { SermonHandout, SermonLang } from '../sermon/types'
+import type { SermonBlock, SermonHandout, SermonLang } from '../sermon/types'
 
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
+
+const COLUMN_NAME: Record<SermonLang, string> = {
+  en: 'English',
+  es: 'Español',
+  pt: 'Português',
+}
+
+type LegacyDocument = Document & {
+  webkitFullscreenElement?: Element | null
+  webkitExitFullscreen?: () => void
+}
+
+type LegacyElement = HTMLElement & {
+  webkitRequestFullscreen?: () => void
+}
+
+function activeFullscreen(): Element | null {
+  return document.fullscreenElement ?? (document as LegacyDocument).webkitFullscreenElement ?? null
+}
+
+function SermonColumn({ language, block }: { language: SermonLang; block: SermonBlock }) {
+  return (
+    <section className="sermon-block" lang={language}>
+      <p className="sermon-lang">{COLUMN_NAME[language]}</p>
+      <h2 className="sermon-ref">{block.reference}</h2>
+      <p className="sermon-quote">{block.quote}</p>
+      <p className="sermon-punch">{block.punch}</p>
+      <p>{block.context}</p>
+      <p>{block.application}</p>
+      <p className="sermon-challenge">{block.challenge}</p>
+      <p>{block.charge}</p>
+      <h3 className="sermon-questions-label">{block.questionsLabel}</h3>
+      <ol className="sermon-questions">
+        <li>{block.questions[0]}</li>
+        <li>{block.questions[1]}</li>
+      </ol>
+    </section>
+  )
+}
 
 async function copyText(value: string): Promise<boolean> {
   try {
@@ -34,12 +73,17 @@ async function copyText(value: string): Promise<boolean> {
 
 export function SermonMaker() {
   const { t } = useLanguage()
+  const sheetRef = useRef<HTMLElement>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
   const [topic, setTopic] = useState('')
   const [audience, setAudience] = useState('')
   const [handout, setHandout] = useState<SermonHandout | null>(null)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [fullscreenOn, setFullscreenOn] = useState(false)
+  const [fallback, setFallback] = useState(false)
+  const presenting = fullscreenOn || fallback
 
   async function generate() {
     const clean = topic.trim()
@@ -79,6 +123,72 @@ export function SermonMaker() {
       }
     }
     await copyHandout()
+  }
+
+  useEffect(() => {
+    if (!handout) return
+    sheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [handout])
+
+  useEffect(() => {
+    function sync() {
+      setFullscreenOn(activeFullscreen() === boardRef.current)
+    }
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('webkitfullscreenchange', sync)
+    return () => {
+      document.removeEventListener('fullscreenchange', sync)
+      document.removeEventListener('webkitfullscreenchange', sync)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!fallback) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setFallback(false)
+    }
+    document.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [fallback])
+
+  async function present() {
+    const node = boardRef.current
+    if (!node) return
+    if (fallback) {
+      setFallback(false)
+      return
+    }
+    if (activeFullscreen() === node) {
+      try {
+        screen.orientation?.unlock()
+      } catch {
+        // Unlock can throw when the browser never granted a lock.
+      }
+      if (document.exitFullscreen) await document.exitFullscreen()
+      else (document as LegacyDocument).webkitExitFullscreen?.()
+      return
+    }
+    const target = node as LegacyElement
+    try {
+      if (node.requestFullscreen) await node.requestFullscreen()
+      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen()
+      else {
+        setFallback(true)
+        return
+      }
+      try {
+        await screen.orientation?.lock('landscape')
+      } catch {
+        // A landscape lock needs a fullscreen gesture on some phones. The layout still turns with the device.
+      }
+    } catch {
+      setFallback(true)
+    }
   }
 
   function downloadHandout() {
@@ -121,26 +231,7 @@ export function SermonMaker() {
       </button>
       {error ? <p className="field-note">{error}</p> : null}
       {handout ? (
-        <article className="sermon-sheet">
-          {ORDER.map((language) => {
-            const block = handout.blocks[language]
-            return (
-              <section key={language} className="sermon-block" lang={language}>
-                <h2 className="sermon-ref">{block.reference}</h2>
-                <p className="sermon-quote">{block.quote}</p>
-                <p className="sermon-punch">{block.punch}</p>
-                <p>{block.context}</p>
-                <p>{block.application}</p>
-                <p>{block.challenge}</p>
-                <p>{block.charge}</p>
-                <h3 className="sermon-questions-label">{block.questionsLabel}</h3>
-                <ol className="sermon-questions">
-                  <li>{block.questions[0]}</li>
-                  <li>{block.questions[1]}</li>
-                </ol>
-              </section>
-            )
-          })}
+        <article ref={sheetRef} className="sermon-sheet">
           <div className="sermon-actions">
             <button type="button" className="button" onClick={downloadHandout}>
               {t('sermonDownload')}
@@ -151,6 +242,30 @@ export function SermonMaker() {
             <button type="button" className="button button-ghost" onClick={() => void shareHandout()}>
               {t('sermonShare')}
             </button>
+            <button
+              type="button"
+              className="button button-ghost"
+              aria-pressed={presenting}
+              onClick={() => void present()}
+            >
+              {presenting ? t('sermonClose') : t('sermonPresent')}
+            </button>
+          </div>
+          <div
+            ref={boardRef}
+            className={fallback ? 'sermon-board is-fallback' : 'sermon-board'}
+            role="region"
+            aria-label={t('sermonBoard')}
+          >
+            <div className="sermon-present-bar">
+              <button type="button" className="button button-ghost button-small" onClick={() => void present()}>
+                {t('sermonClose')}
+              </button>
+            </div>
+            <p className="sermon-rotate">{t('sermonRotate')}</p>
+            {ORDER.map((language) => (
+              <SermonColumn key={language} language={language} block={handout.blocks[language]} />
+            ))}
           </div>
           {notice ? (
             <p className="field-note" role="status">
