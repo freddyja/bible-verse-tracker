@@ -3707,6 +3707,148 @@ main {
   margin-top: 0.85rem;
 }
 
+.gospel-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+.gospel-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.gospel-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.gospel-kicker {
+  display: block;
+  margin: 0 0 0.2rem;
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gospel-user {
+  align-self: flex-end;
+  max-width: min(28rem, 92%);
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 16px 16px 6px 16px;
+  background: rgba(228, 197, 122, 0.14);
+}
+
+.gospel-answer {
+  margin: 0;
+  padding: 0.85rem 0.9rem 0.95rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.gospel-answer-care {
+  border-color: var(--gold-line);
+}
+
+.gospel-intro,
+.gospel-closing {
+  margin: 0;
+}
+
+.gospel-closing {
+  margin-top: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.gospel-verse {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.gospel-verse-text {
+  margin: 0;
+  font-family: var(--font-verse);
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.gospel-verse-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
+
+.gospel-verse-foot cite {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.gospel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.gospel-try {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.gospel-chip {
+  border: 1px solid var(--gold-line);
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+}
+
+.gospel-chip:disabled {
+  opacity: 0.55;
+}
+
+.gospel-clear-button {
+  align-self: flex-start;
+}
+
+.gospel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gospel-compose {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: sticky;
+  bottom: 0;
+  margin-top: 0.2rem;
+  padding: 0.7rem 0 calc(0.2rem + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(8, 12, 24, 0), #080c18 32%);
+}
+
+.gospel-compose input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.75rem 0.95rem;
+}
+
 .book-abbr {
   color: var(--gold);
   font-size: 0.98rem;

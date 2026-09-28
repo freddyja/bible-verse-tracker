@@ -3,6 +3,7 @@ import { useLanguage } from '../i18n/useLanguage'
 
 type ExploreGridProps = {
   onSermon: () => void
+  onGospel: () => void
   onRead: () => void
   onTopics: () => void
   onPlan: () => void
@@ -27,7 +28,7 @@ function TileIcon({ children }: { children: ReactNode }) {
   )
 }
 
-export function ExploreGrid({ onSermon, onRead, onTopics, onPlan, onGrow, onSaved, onListen }: ExploreGridProps) {
+export function ExploreGrid({ onSermon, onGospel, onRead, onTopics, onPlan, onGrow, onSaved, onListen }: ExploreGridProps) {
   const { t } = useLanguage()
   const tiles = [
     {
@@ -38,6 +39,17 @@ export function ExploreGrid({ onSermon, onRead, onTopics, onPlan, onGrow, onSave
         <TileIcon>
           <path d="M7 4.8h7.2L17.5 8v11.2H7z" {...stroke} />
           <path d="M14.2 4.8V8H17.5M9.2 11.2h6M9.2 14.2h6M9.2 17h3.6" {...stroke} />
+        </TileIcon>
+      ),
+    },
+    {
+      id: 'gospel',
+      label: t('gospelTile'),
+      onClick: onGospel,
+      icon: (
+        <TileIcon>
+          <path d="M5.5 7.2h13a1.6 1.6 0 0 1 1.6 1.6v6.1a1.6 1.6 0 0 1-1.6 1.6H11l-3.4 2.7v-2.7H5.5a1.6 1.6 0 0 1-1.6-1.6V8.8a1.6 1.6 0 0 1 1.6-1.6z" {...stroke} />
+          <path d="M8.2 11.2h7.6M8.2 13.6h4.8" {...stroke} />
         </TileIcon>
       ),
     },

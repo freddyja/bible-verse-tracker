@@ -3,6 +3,7 @@ import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
 import { DailyHome } from './components/DailyHome'
+import { GospelAsk } from './components/GospelAsk'
 import { GrowHome, type GrowNested } from './components/GrowHome'
 import { LanguagePicker } from './components/LanguagePicker'
 import { PlanProgress } from './components/PlanProgress'
@@ -46,6 +47,7 @@ type EditReturn = { kind: 'saved' } | { kind: 'daily' } | { kind: 'read' } | Cha
 type View =
   | { kind: 'tabs' }
   | { kind: 'sermon' }
+  | { kind: 'gospel' }
   | { kind: 'categories' }
   | {
       kind: 'edit'
@@ -130,6 +132,7 @@ export default function App() {
   else if (panel === 'options') title = t('readingOptions')
   else if (panel === 'plan') title = t('planProgressTitle')
   else if (view.kind === 'sermon') title = t('sermonTitle')
+  else if (view.kind === 'gospel') title = t('gospelTitle')
   else if (view.kind === 'categories') title = t('categoriesTitle')
   else if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
   else if (tab === 'daily') title = t('navDaily')
@@ -252,7 +255,7 @@ export default function App() {
       setPanelFrom(null)
       return
     }
-    if (view.kind === 'sermon') {
+    if (view.kind === 'sermon' || view.kind === 'gospel') {
       setTab('daily')
       setView({ kind: 'tabs' })
       return
@@ -462,6 +465,12 @@ export default function App() {
               setPanelFrom(null)
               setView({ kind: 'sermon' })
             }}
+            onOpenGospel={() => {
+              listen.stop()
+              setPanel(null)
+              setPanelFrom(null)
+              setView({ kind: 'gospel' })
+            }}
             onOpenRead={showReadingHome}
             onOpenTopics={() => {
               showReadingHome()
@@ -641,6 +650,19 @@ export default function App() {
       {view.kind === 'sermon' ? (
         <main>
           <SermonMaker />
+        </main>
+      ) : null}
+
+      {view.kind === 'gospel' ? (
+        <main>
+          <GospelAsk
+            onOpenPassage={(nextBook, chapter, verse) => {
+              listen.stop()
+              setTab('read')
+              setView({ kind: 'tabs' })
+              setRead(openAt(nextBook, chapter, verse))
+            }}
+          />
         </main>
       ) : null}
 

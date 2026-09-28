@@ -15,6 +15,7 @@
     "build:parallels": "node scripts/build-parallels.mjs",
     "build:topics": "node scripts/build-topics.mjs",
     "check:topics": "node --experimental-strip-types scripts/check-topics.mjs",
+    "check:gospel": "node --experimental-strip-types scripts/check-gospel.mjs",
     "build:meaning": "node scripts/build-meaning.mjs",
     "build:lexicon": "node scripts/build-lexicon.mjs",
     "build:study": "node scripts/build-study.mjs",
