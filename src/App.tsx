@@ -8,6 +8,7 @@ import { LanguagePicker } from './components/LanguagePicker'
 import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
+import { SermonMaker } from './components/SermonMaker'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ShareAppButton } from './components/ShareAppButton'
 import { TabBar, type TabId } from './components/TabBar'
@@ -44,6 +45,7 @@ type EditReturn = { kind: 'saved' } | { kind: 'daily' } | { kind: 'read' } | Cha
 
 type View =
   | { kind: 'tabs' }
+  | { kind: 'sermon' }
   | { kind: 'categories' }
   | {
       kind: 'edit'
@@ -127,6 +129,7 @@ export default function App() {
   if (panel === 'settings') title = t('settingsTitle')
   else if (panel === 'options') title = t('readingOptions')
   else if (panel === 'plan') title = t('planProgressTitle')
+  else if (view.kind === 'sermon') title = t('sermonTitle')
   else if (view.kind === 'categories') title = t('categoriesTitle')
   else if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
   else if (tab === 'daily') title = t('navDaily')
@@ -247,6 +250,11 @@ export default function App() {
     if (panel) {
       setPanel(null)
       setPanelFrom(null)
+      return
+    }
+    if (view.kind === 'sermon') {
+      setTab('daily')
+      setView({ kind: 'tabs' })
       return
     }
     if (view.kind === 'categories' || view.kind === 'edit') {
@@ -448,6 +456,12 @@ export default function App() {
               setView({ kind: 'edit', verseId, returnTo: { kind: 'daily' } })
             }}
             onSaveVerse={library.saveVerse}
+            onOpenSermon={() => {
+              listen.stop()
+              setPanel(null)
+              setPanelFrom(null)
+              setView({ kind: 'sermon' })
+            }}
             onOpenRead={showReadingHome}
             onOpenTopics={() => {
               showReadingHome()
@@ -621,6 +635,12 @@ export default function App() {
               listen={listen}
             />
           )}
+        </main>
+      ) : null}
+
+      {view.kind === 'sermon' ? (
+        <main>
+          <SermonMaker />
         </main>
       ) : null}
 

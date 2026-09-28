@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
 
 type ExploreGridProps = {
+  onSermon: () => void
   onRead: () => void
   onTopics: () => void
   onPlan: () => void
@@ -26,9 +27,20 @@ function TileIcon({ children }: { children: ReactNode }) {
   )
 }
 
-export function ExploreGrid({ onRead, onTopics, onPlan, onGrow, onSaved, onListen }: ExploreGridProps) {
+export function ExploreGrid({ onSermon, onRead, onTopics, onPlan, onGrow, onSaved, onListen }: ExploreGridProps) {
   const { t } = useLanguage()
   const tiles = [
+    {
+      id: 'sermon',
+      label: t('sermonTile'),
+      onClick: onSermon,
+      icon: (
+        <TileIcon>
+          <path d="M7 4.8h7.2L17.5 8v11.2H7z" {...stroke} />
+          <path d="M14.2 4.8V8H17.5M9.2 11.2h6M9.2 14.2h6M9.2 17h3.6" {...stroke} />
+        </TileIcon>
+      ),
+    },
     {
       id: 'read',
       label: t('navRead'),
