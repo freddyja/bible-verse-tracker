@@ -131,7 +131,7 @@ export function SermonMaker() {
                 <p className="sermon-punch">{block.punch}</p>
                 <p>{block.context}</p>
                 <p>{block.application}</p>
-                <p>{block.challenge}</p>
+                <p className="sermon-challenge">{block.challenge}</p>
                 <p>{block.charge}</p>
                 <h3 className="sermon-questions-label">{block.questionsLabel}</h3>
                 <ol className="sermon-questions">
