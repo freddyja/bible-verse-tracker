@@ -38,6 +38,21 @@ function scoreOutline(outline: SermonOutline, query: string): number {
   return score
 }
 
+/**
+ * Exact topic words use the first spoken take.
+ * A longer class title still lands on the same passage, with another take.
+ */
+export function lineIndex(outline: SermonOutline, topic: string): number {
+  const query = normalize(topic)
+  if (query.length >= 2 && outline.keywords.some((keyword) => normalize(keyword) === query)) return 0
+  let hash = 2166136261
+  for (let i = 0; i < query.length; i += 1) {
+    hash ^= query.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
 /** A curated outline when the topic is clear. Otherwise the Word-of-God handout, with the topic named. */
 export function pickOutline(topic: string): SermonOutline {
   const query = normalize(topic)

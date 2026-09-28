@@ -1,8 +1,8 @@
 import { BOOKS } from '../scripture/books'
 import { loadVerse } from '../scripture/api'
 import { formatPassageRange } from '../scripture/passages'
-import { pickOutline } from './match'
-import type { SermonBlock, SermonCopy, SermonHandout, SermonLang, SermonOutline } from './types'
+import { lineIndex, pickOutline } from './match'
+import type { SermonBlock, SermonCopy, SermonHandout, SermonLang, SermonLines, SermonOutline } from './types'
 
 const VERSIONS: Record<SermonLang, string> = {
   en: 'kjv',
@@ -13,7 +13,13 @@ const VERSIONS: Record<SermonLang, string> = {
 export const QUESTION_LABEL: Record<SermonLang, string> = {
   en: 'Discussion Questions:',
   es: 'Preguntas para el grupo:',
-  pt: 'Preguntas para la reflexión:',
+  pt: 'Perguntas para a reflexão:',
+}
+
+const ADDRESS: Record<SermonLang, string> = {
+  en: 'Brothers, ',
+  es: 'Hermanos, ',
+  pt: 'Irmãos, ',
 }
 
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
@@ -22,6 +28,24 @@ function bookIndex(bookId: string): number {
   const index = BOOKS.findIndex((book) => book.id === bookId)
   if (index < 0) throw new Error(bookId)
   return index
+}
+
+function at<T>(items: readonly T[], index: number): T {
+  const found = items[index % items.length]
+  if (found === undefined) throw new Error('sermon')
+  return found
+}
+
+function spokenCopy(lines: SermonLines, index: number): SermonCopy {
+  const questions = at(lines.questions, index)
+  return {
+    punch: at(lines.punch, index),
+    context: at(lines.context, index),
+    application: at(lines.application, index),
+    challenge: at(lines.challenge, index),
+    charge: at(lines.charge, index),
+    questions: [questions[0], questions[1]],
+  }
 }
 
 function fill(copy: SermonCopy, topic: string, slots: boolean): SermonCopy {
@@ -39,9 +63,10 @@ function fill(copy: SermonCopy, topic: string, slots: boolean): SermonCopy {
 
 function withAudience(language: SermonLang, challenge: string, audience: string): string {
   if (!audience) return challenge
-  if (language === 'es') return `Una palabra para ${audience}. ${challenge}`
-  if (language === 'pt') return `Uma palavra para ${audience}. ${challenge}`
-  return `A word for ${audience}. ${challenge}`
+  const name = audience.charAt(0).toUpperCase() + audience.slice(1)
+  const open = ADDRESS[language]
+  if (challenge.startsWith(open)) return `${name}, ${challenge.slice(open.length)}`
+  return `${name}. ${challenge}`
 }
 
 function wrapQuote(language: SermonLang, text: string): string {
@@ -67,7 +92,7 @@ function blockFor(
   audience: string,
   quote: string,
 ): SermonBlock {
-  const copy = fill(outline.copy[language], topic, outline.slots === true)
+  const copy = fill(spokenCopy(outline.lines[language], lineIndex(outline, topic)), topic, outline.slots === true)
   const index = bookIndex(outline.bookId)
   return {
     reference: formatPassageRange(language, {
