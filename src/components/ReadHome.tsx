@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { filterVerses } from '../data/filter'
 import type { Verse } from '../data/types'
 import { useLanguage } from '../i18n/useLanguage'
-import { FRUITS, fruitLabel } from '../grow/fruit'
 import { searchScripture, searchTopics, type ScriptureHit, type TopicGroup } from '../scripture/api'
 import { BOOKS, NEW_TESTAMENT_INDEX, type Book, type Testament } from '../scripture/books'
 import { CANON_SECTIONS, type SectionIcon } from '../scripture/sections'
@@ -171,24 +170,6 @@ export function ReadHome({
         </div>
       </div>
       <p className="field-note">{mode === 'topics' ? t('searchModeTopicsHint') : t('searchModeWordHint')}</p>
-
-      {mode === 'topics' && !trimmed ? (
-        <section className="fruit-themes" aria-labelledby="fruit-themes-title">
-          <h2 id="fruit-themes-title" className="grow-kicker fruit-kicker">
-            {t('growFruit')}
-          </h2>
-          <p className="field-note">{t('fruitThemesLead')}</p>
-          <ul className="fruit-chips">
-            {FRUITS.map((fruit) => (
-              <li key={fruit.id}>
-                <button type="button" className="fruit-chip" onClick={() => setQuery(fruitLabel(language, fruit))}>
-                  {fruitLabel(language, fruit)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {trimmed ? (
         <div className="search-results">
