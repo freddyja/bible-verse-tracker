@@ -21,6 +21,7 @@ export function GospelAsk({ onOpenPassage }: GospelAskProps) {
   const [error, setError] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const versionName = versionById(versionId)?.name ?? versionId
 
   useEffect(() => {
@@ -56,6 +57,13 @@ export function GospelAsk({ onOpenPassage }: GospelAskProps) {
     t('gospelStarterFear'),
   ]
 
+  function fillDraft(starter: string) {
+    setDraft(starter)
+    setConfirmClear(false)
+    setError(null)
+    queueMicrotask(() => inputRef.current?.focus())
+  }
+
   return (
     <div className="gospel-ask">
       <p className="field-note">{t('gospelLead')}</p>
@@ -66,7 +74,7 @@ export function GospelAsk({ onOpenPassage }: GospelAskProps) {
         <div className="gospel-chips">
           <p className="gospel-try">{t('gospelTry')}</p>
           {starters.map((starter) => (
-            <button key={starter} type="button" className="gospel-chip" disabled={busy} onClick={() => void ask(starter)}>
+            <button key={starter} type="button" className="gospel-chip" disabled={busy} onClick={() => fillDraft(starter)}>
               {starter}
             </button>
           ))}
@@ -148,6 +156,7 @@ export function GospelAsk({ onOpenPassage }: GospelAskProps) {
         </label>
         <input
           id="gospel-question"
+          ref={inputRef}
           type="text"
           value={draft}
           maxLength={280}

@@ -271,8 +271,8 @@ const en = {
   gospelTile: 'Gospel',
   gospelTitle: 'Gospel',
   gospelLead:
-    'Ask a question about Scripture. The reply quotes the Bible you are reading and adds a short note. Nothing is sent off this phone.',
-  gospelPlaceholder: 'What is the gospel? How should I pray?',
+    'Type any Gospels or faith topic. The reply quotes the Bible you are reading and adds a short note. Nothing is sent off this phone.',
+  gospelPlaceholder: 'Ask any Gospels topic — humility, baptism, hope…',
   gospelSend: 'Ask',
   gospelWorking: 'Opening the verses…',
   gospelClear: 'Clear chat',
@@ -737,8 +737,8 @@ const es: Record<MessageKey, string> = {
   gospelTile: 'Evangelio',
   gospelTitle: 'Evangelio',
   gospelLead:
-    'Haz una pregunta sobre las Escrituras. La respuesta cita la Biblia que estás leyendo y añade una nota breve. Nada se envía fuera de este teléfono.',
-  gospelPlaceholder: '¿Qué es el evangelio? ¿Cómo debo orar?',
+    'Escribe cualquier tema del Evangelio o de la fe. La respuesta cita la Biblia que estás leyendo y añade una nota breve. Nada se envía fuera de este teléfono.',
+  gospelPlaceholder: 'Pregunta cualquier tema del Evangelio — humildad, bautismo, esperanza…',
   gospelSend: 'Preguntar',
   gospelWorking: 'Abriendo los versículos…',
   gospelClear: 'Borrar chat',
@@ -1203,8 +1203,8 @@ const pt: Record<MessageKey, string> = {
   gospelTile: 'Evangelho',
   gospelTitle: 'Evangelho',
   gospelLead:
-    'Faça uma pergunta sobre as Escrituras. A resposta cita a Bíblia que você está lendo e acrescenta uma nota breve. Nada é enviado para fora deste telefone.',
-  gospelPlaceholder: 'O que é o evangelho? Como devo orar?',
+    'Digite qualquer tema do Evangelho ou da fé. A resposta cita a Bíblia que você está lendo e acrescenta uma nota breve. Nada é enviado para fora deste telefone.',
+  gospelPlaceholder: 'Pergunte qualquer tema do Evangelho — humildade, batismo, esperança…',
   gospelSend: 'Perguntar',
   gospelWorking: 'Abrindo os versículos…',
   gospelClear: 'Apagar chat',
