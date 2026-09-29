@@ -42,6 +42,10 @@ export function useListen(
   const languageRef = useRef(language)
   const versionRef = useRef(versionId)
   const generationRef = useRef(0)
+  /** True after the current utterance has started audio (watchdog may end it). */
+  const utteranceStartedRef = useRef(false)
+  /** Marks the in-flight utterance settled; returns false if already settled. */
+  const markUtteranceSettledRef = useRef<(() => boolean) | null>(null)
 
   useEffect(() => {
     onMoveRef.current = onMove
@@ -58,17 +62,32 @@ export function useListen(
   }
 
   function stop() {
-    if (!sessionRef.current && !window.speechSynthesis?.speaking) return
+    const synth = window.speechSynthesis
+    const engineBusy = Boolean(synth?.speaking || synth?.pending)
+    if (!sessionRef.current && !engineBusy) return
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     commit(null)
-    window.speechSynthesis?.cancel()
+    synth?.cancel()
   }
 
   function fail(current: Session, refusedSpeech: boolean) {
     if (sessionRef.current?.generation !== current.generation) return
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     commit(null)
     if (refusedSpeech) setRefused(true)
+  }
+
+  /** Clear playing UI when speech stops without an intentional pause. */
+  function clearUnexpected(current: Session) {
+    if (sessionRef.current?.generation !== current.generation) return
+    generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
+    commit(null)
   }
 
   function prefetchAhead(current: Session) {
@@ -122,14 +141,26 @@ export function useListen(
     let started = false
     let queuedAt = 0
     const stillCurrent = () => sessionRef.current?.generation === current.generation
+    const markSettled = () => {
+      if (settled) return false
+      settled = true
+      utteranceStartedRef.current = false
+      if (markUtteranceSettledRef.current === markSettled) {
+        markUtteranceSettledRef.current = null
+      }
+      return true
+    }
+    markUtteranceSettledRef.current = markSettled
+    utteranceStartedRef.current = false
     const retryPitch = () => {
       if (settled || !stillCurrent()) return
-      settled = true
+      markSettled()
       utter(current, text, true, true)
     }
 
     utterance.onstart = () => {
       started = true
+      if (stillCurrent() && !settled) utteranceStartedRef.current = true
     }
     utterance.onend = () => {
       if (settled) return
@@ -140,7 +171,7 @@ export function useListen(
         retryPitch()
         return
       }
-      settled = true
+      if (!markSettled()) return
       const live = sessionRef.current
       if (!live || live.generation !== current.generation || live.status !== 'playing') return
       goNext(live)
@@ -153,8 +184,13 @@ export function useListen(
         retryPitch()
         return
       }
-      settled = true
-      if (ignoredSpeechError(event.error)) return
+      if (!markSettled()) return
+      // Intentional stop/start already bumped generation, so we would have
+      // returned above. A cancel/interrupt here left the UI stuck on playing.
+      if (ignoredSpeechError(event.error)) {
+        clearUnexpected(live)
+        return
+      }
       fail(live, true)
     }
 
@@ -280,6 +316,8 @@ export function useListen(
     }
     setRefused(false)
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     const interrupted = cancelSpeech()
     const spoken =
       text?.trim() ||
@@ -305,6 +343,8 @@ export function useListen(
     if (!trimmed) return
     setRefused(false)
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     const interrupted = cancelSpeech()
     const next: Session = {
       generation: generationRef.current,
@@ -337,11 +377,14 @@ export function useListen(
       return
     }
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     const next = { ...current, generation: generationRef.current, status: 'playing' as const }
     commit(next)
     speakNow(next, false)
   }
 
+  // Chrome can stall long utterances; a pause/resume nudge keeps many engines alive.
   useEffect(() => {
     if (session?.status !== 'playing' || !canSpeak()) return
     const timer = window.setInterval(() => {
@@ -353,9 +396,93 @@ export function useListen(
     return () => window.clearInterval(timer)
   }, [session?.status])
 
+  // Some engines stop without onend. After speech has started, if the synth is
+  // neither speaking nor paused for a short grace period, treat the utterance
+  // as ended so Pause/Stop cannot stay stuck on playing.
+  useEffect(() => {
+    if (session?.status !== 'playing' || !canSpeak()) return
+    let silentSince: number | null = null
+    const GRACE_MS = 900
+    const timer = window.setInterval(() => {
+      const live = sessionRef.current
+      if (!live || live.status !== 'playing') {
+        silentSince = null
+        return
+      }
+      if (!utteranceStartedRef.current) {
+        silentSince = null
+        return
+      }
+      const synth = window.speechSynthesis
+      let speaking = false
+      let paused = false
+      let pending = false
+      try {
+        speaking = synth.speaking
+        paused = synth.paused
+        pending = synth.pending
+      } catch {
+        speaking = false
+        paused = false
+        pending = false
+      }
+      if (speaking || paused || pending) {
+        silentSince = null
+        return
+      }
+      const now = Date.now()
+      if (silentSince === null) {
+        silentSince = now
+        return
+      }
+      if (now - silentSince < GRACE_MS) return
+      silentSince = null
+      const mark = markUtteranceSettledRef.current
+      if (!mark || !mark()) return
+      if (sessionRef.current?.generation !== live.generation || sessionRef.current.status !== 'playing') {
+        return
+      }
+      goNext(live)
+    }, 250)
+    return () => window.clearInterval(timer)
+  }, [session?.status, session?.generation])
+
+  // Tab hide/background often cancels SpeechSynthesis without a clean onend.
+  useEffect(() => {
+    if (session?.status !== 'playing' || !canSpeak()) return
+    const onVisibility = () => {
+      if (document.visibilityState !== 'hidden') return
+      const live = sessionRef.current
+      if (!live || live.status !== 'playing') return
+      window.setTimeout(() => {
+        const still = sessionRef.current
+        if (!still || still.generation !== live.generation || still.status !== 'playing') return
+        const synth = window.speechSynthesis
+        let speaking = false
+        let paused = false
+        let pending = false
+        try {
+          speaking = synth.speaking
+          paused = synth.paused
+          pending = synth.pending
+        } catch {
+          // Engine unavailable — treat as stopped.
+        }
+        if (speaking || paused || pending) return
+        const mark = markUtteranceSettledRef.current
+        if (mark) mark()
+        clearUnexpected(still)
+      }, 300)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [session?.status, session?.generation])
+
   useEffect(() => {
     return () => {
       generationRef.current += 1
+      utteranceStartedRef.current = false
+      markUtteranceSettledRef.current = null
       sessionRef.current = null
       window.speechSynthesis?.cancel()
     }
@@ -364,6 +491,8 @@ export function useListen(
   useEffect(() => {
     if (!sessionRef.current) return
     generationRef.current += 1
+    utteranceStartedRef.current = false
+    markUtteranceSettledRef.current = null
     sessionRef.current = null
     setSession(null)
     window.speechSynthesis?.cancel()
