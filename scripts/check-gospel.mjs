@@ -48,6 +48,30 @@ const routes = [
   ['what happens when we die', 'judgment'],
   ['¿qué pasa cuando morimos?', 'judgment'],
   ['o que acontece quando morremos', 'judgment'],
+  ['contentment', 'contentment'],
+  ['be content', 'contentment'],
+  ['contentamiento', 'contentment'],
+  ['contentamento', 'contentment'],
+  ['baptism', 'baptism'],
+  ['what is baptism', 'baptism'],
+  ['bautismo', 'baptism'],
+  ['batismo', 'baptism'],
+  ['Who is Jesus?', 'jesus'],
+  ['perdón', 'forgiveness'],
+  ['temor', 'fear'],
+  ['What does Scripture say about fear?', 'fear'],
+  ['¿Qué dice la Escritura sobre el miedo?', 'fear'],
+  ['O que a Escritura diz sobre o medo?', 'fear'],
+  ['What does Scripture say about forgiveness?', 'forgiveness'],
+  ['humility', 'humility'],
+  ['humildad', 'humility'],
+  ['humildade', 'humility'],
+  ['pride', 'pride'],
+  ['orgullo', 'pride'],
+  ['soberbia', 'pride'],
+  ['orgulho', 'pride'],
+  ['what does the bible say about contentment', 'contentment'],
+  ['what about humility', 'humility'],
 ]
 
 for (const [question, id] of routes) {
@@ -58,6 +82,7 @@ for (const [question, id] of routes) {
 assert(pickPack('John') === null, 'a book name is not forced into a theme')
 assert(pickPack('gracias') === null, 'gracias is not the theme grace')
 assert(pickPack('ele irá orar')?.id === 'prayer', 'irá is not the theme anger')
+assert(pickPack('What does Scripture say about fear?')?.id === 'fear', 'scripture framing must not steal fear')
 
 const guards = [
   ['I want to die', 'care'],
