@@ -301,31 +301,20 @@ export function SermonMaker() {
           onChange={(event) => setAudience(event.target.value)}
         />
       </label>
-      <fieldset className="field sermon-depth">
-        <legend className="label">{t('sermonDepth')}</legend>
-        <div className="sermon-depth-options" role="radiogroup" aria-label={t('sermonDepth')}>
-          <label className={depth === 'short' ? 'sermon-depth-option is-active' : 'sermon-depth-option'}>
-            <input
-              type="radio"
-              name="sermon-depth"
-              value="short"
-              checked={depth === 'short'}
-              onChange={() => setDepth('short')}
-            />
-            {t('sermonDepthShort')}
-          </label>
-          <label className={depth === 'full' ? 'sermon-depth-option is-active' : 'sermon-depth-option'}>
-            <input
-              type="radio"
-              name="sermon-depth"
-              value="full"
-              checked={depth === 'full'}
-              onChange={() => setDepth('full')}
-            />
-            {t('sermonDepthFull')}
-          </label>
-        </div>
-      </fieldset>
+      <button
+        type="button"
+        className={depth === 'full' ? 'button button-ghost sermon-depth-toggle is-full' : 'button button-ghost sermon-depth-toggle'}
+        aria-pressed={depth === 'full'}
+        aria-label={t('sermonDepth')}
+        onClick={() => setDepth(depth === 'full' ? 'short' : 'full')}
+      >
+        {t('sermonDepth')}
+        {depth === 'full' ? (
+          <span className="sermon-depth-check" aria-hidden="true">
+            ✓
+          </span>
+        ) : null}
+      </button>
       <button type="button" className="button" disabled={working} onClick={() => void generate()}>
         {working ? t('sermonWorking') : t('sermonGenerate')}
       </button>

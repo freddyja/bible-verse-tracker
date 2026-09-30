@@ -3656,38 +3656,18 @@ main {
   background: rgba(14, 22, 40, 0.62);
 }
 
-.sermon-depth {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  min-inline-size: 0;
+.sermon-depth-toggle {
+  align-self: flex-start;
 }
 
-.sermon-depth-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.sermon-depth-toggle.is-full {
+  border-color: color-mix(in srgb, #1f9d55 55%, var(--gold-line));
 }
 
-.sermon-depth-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
-  border: 1px solid var(--border, #c9c2b4);
-  border-radius: 999px;
-  background: var(--surface, #fff);
-  cursor: pointer;
-  font: inherit;
-}
-
-.sermon-depth-option.is-active {
-  border-color: var(--accent, #6b4f2e);
-  background: color-mix(in srgb, var(--accent, #6b4f2e) 12%, white);
-}
-
-.sermon-depth-option input {
-  margin: 0;
+.sermon-depth-check {
+  color: #1f9d55;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .sermon-section-label {
