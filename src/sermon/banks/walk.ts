@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { WALK_FULL } from './walk-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = WALK_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const WALK: readonly SermonOutline[] = [
@@ -24,7 +38,7 @@ export const WALK: readonly SermonOutline[] = [
     chapter: 15,
     verse: 13,
     endVerse: 13,
-    lines: lines(
+    lines: lines('hope',
       {
         punch: [
           'Hope isn’t a mood. It’s the God of hope filling the room.',
@@ -140,7 +154,7 @@ export const WALK: readonly SermonOutline[] = [
     chapter: 13,
     verse: 34,
     endVerse: 35,
-    lines: lines(
+    lines: lines('love',
       {
         punch: [
           'He washed their feet. Then he told them to love like that.',
@@ -263,7 +277,7 @@ export const WALK: readonly SermonOutline[] = [
     chapter: 4,
     verse: 32,
     endVerse: 32,
-    lines: lines(
+    lines: lines('forgiveness',
       {
         punch: [
           'We forgive because we have already been forgiven.',
@@ -379,7 +393,7 @@ export const WALK: readonly SermonOutline[] = [
     chapter: 14,
     verse: 27,
     endVerse: 27,
-    lines: lines(
+    lines: lines('peace',
       {
         punch: [
           'The peace Jesus gives is not the peace the world sells.',

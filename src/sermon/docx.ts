@@ -1,6 +1,55 @@
 import type { SermonBlock, SermonHandout, SermonLang } from './types'
 import { zipStore } from './zip'
 
+const SECTION: Record<
+  SermonLang,
+  {
+    title: string
+    bigIdea: string
+    openingHook: string
+    passage: string
+    context: string
+    point: string
+    application: string
+    invitation: string
+    closingPrayer: string
+  }
+> = {
+  en: {
+    title: 'Title',
+    bigIdea: 'Big idea',
+    openingHook: 'Opening hook',
+    passage: 'Passage',
+    context: 'Context',
+    point: 'Point',
+    application: 'Application',
+    invitation: 'Invitation',
+    closingPrayer: 'Closing prayer',
+  },
+  es: {
+    title: 'Título',
+    bigIdea: 'Idea central',
+    openingHook: 'Gancho de apertura',
+    passage: 'Pasaje',
+    context: 'Contexto',
+    point: 'Punto',
+    application: 'Aplicación',
+    invitation: 'Invitación',
+    closingPrayer: 'Oración final',
+  },
+  pt: {
+    title: 'Título',
+    bigIdea: 'Grande ideia',
+    openingHook: 'Gancho de abertura',
+    passage: 'Passagem',
+    context: 'Contexto',
+    point: 'Ponto',
+    application: 'Aplicação',
+    invitation: 'Convite',
+    closingPrayer: 'Oração final',
+  },
+}
+
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
 
 const LANG: Record<SermonLang, string> = {
@@ -39,7 +88,7 @@ function spacer(): string {
   return `<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/></w:rPr></w:r></w:p>`
 }
 
-function blockXml(block: SermonBlock, language: SermonLang): string {
+function shortBlockXml(block: SermonBlock, language: SermonLang): string {
   return [
     paragraph(run(block.reference, language, 'bold'), language),
     paragraph(run(block.quote, language, 'italic'), language),
@@ -49,9 +98,45 @@ function blockXml(block: SermonBlock, language: SermonLang): string {
     paragraph(run(block.challenge, language, 'bold'), language),
     paragraph(run(block.charge, language), language),
     paragraph(run(block.questionsLabel, language, 'bold'), language),
-    paragraph(run(block.questions[0], language), language, { numbered: true }),
-    paragraph(run(block.questions[1], language), language, { numbered: true }),
+    ...block.questions.map((question) => paragraph(run(question, language), language, { numbered: true })),
   ].join('')
+}
+
+function fullBlockXml(block: SermonBlock, language: SermonLang): string {
+  const L = SECTION[language]
+  const points = block.points ?? []
+  const pointParts = points.flatMap((point, index) => {
+    const heading = `${L.point} ${index + 1}: ${point.heading}`
+    const thought = point.crossRef ? `${point.thought} (${point.crossRef})` : point.thought
+    return [
+      paragraph(run(heading, language, 'bold'), language),
+      paragraph(run(thought, language), language),
+    ]
+  })
+  return [
+    paragraph(run(`${L.title}: ${block.title ?? ''}`, language, 'bold'), language),
+    paragraph(run(`${L.bigIdea}: ${block.bigIdea ?? ''}`, language), language),
+    paragraph(run(`${L.openingHook}:`, language, 'bold'), language),
+    paragraph(run(block.openingHook ?? '', language), language),
+    paragraph(run(`${L.passage}:`, language, 'bold'), language),
+    paragraph(run(block.reference, language, 'bold'), language),
+    paragraph(run(block.quote, language, 'italic'), language),
+    paragraph(run(`${L.context}:`, language, 'bold'), language),
+    paragraph(run(block.context, language), language),
+    ...pointParts,
+    paragraph(run(`${L.application}:`, language, 'bold'), language),
+    paragraph(run(block.application, language), language),
+    paragraph(run(`${L.invitation}:`, language, 'bold'), language),
+    paragraph(run(block.invitation ?? '', language, 'bold'), language),
+    paragraph(run(`${L.closingPrayer}:`, language, 'bold'), language),
+    paragraph(run(block.closingPrayer ?? '', language), language),
+    paragraph(run(block.questionsLabel, language, 'bold'), language),
+    ...block.questions.map((question) => paragraph(run(question, language), language, { numbered: true })),
+  ].join('')
+}
+
+function blockXml(block: SermonBlock, language: SermonLang): string {
+  return block.depth === 'full' ? fullBlockXml(block, language) : shortBlockXml(block, language)
 }
 
 function documentXml(handout: SermonHandout): string {

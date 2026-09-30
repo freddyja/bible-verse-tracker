@@ -3,7 +3,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { buildHandout } from '../sermon/build'
 import { handoutDocx } from '../sermon/docx'
 import { handoutFileName, handoutText } from '../sermon/plain'
-import type { SermonBlock, SermonHandout, SermonLang } from '../sermon/types'
+import type { SermonBlock, SermonDepth, SermonHandout, SermonLang } from '../sermon/types'
 
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
 
@@ -26,7 +26,7 @@ function activeFullscreen(): Element | null {
   return document.fullscreenElement ?? (document as LegacyDocument).webkitFullscreenElement ?? null
 }
 
-function SermonColumn({ language, block }: { language: SermonLang; block: SermonBlock }) {
+function ShortColumn({ language, block }: { language: SermonLang; block: SermonBlock }) {
   return (
     <section className="sermon-block" lang={language}>
       <p className="sermon-lang">{COLUMN_NAME[language]}</p>
@@ -39,8 +39,70 @@ function SermonColumn({ language, block }: { language: SermonLang; block: Sermon
       <p>{block.charge}</p>
       <h3 className="sermon-questions-label">{block.questionsLabel}</h3>
       <ol className="sermon-questions">
-        <li>{block.questions[0]}</li>
-        <li>{block.questions[1]}</li>
+        {block.questions.map((question) => (
+          <li key={question}>{question}</li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+function FullColumn({
+  language,
+  block,
+  labels,
+}: {
+  language: SermonLang
+  block: SermonBlock
+  labels: {
+    title: string
+    bigIdea: string
+    openingHook: string
+    passage: string
+    context: string
+    point: string
+    application: string
+    invitation: string
+    closingPrayer: string
+  }
+}) {
+  return (
+    <section className="sermon-block sermon-block-full" lang={language}>
+      <p className="sermon-lang">{COLUMN_NAME[language]}</p>
+      <p className="sermon-section-label">{labels.title}</p>
+      <h2 className="sermon-ref">{block.title}</h2>
+      <p className="sermon-section-label">{labels.bigIdea}</p>
+      <p className="sermon-punch">{block.bigIdea}</p>
+      <p className="sermon-section-label">{labels.openingHook}</p>
+      <p>{block.openingHook}</p>
+      <p className="sermon-section-label">{labels.passage}</p>
+      <h3 className="sermon-ref">{block.reference}</h3>
+      <p className="sermon-quote">{block.quote}</p>
+      <p className="sermon-section-label">{labels.context}</p>
+      <p>{block.context}</p>
+      {(block.points ?? []).map((point, index) => (
+        <div key={`${point.heading}-${index}`} className="sermon-point">
+          <p className="sermon-section-label">
+            {labels.point} {index + 1}
+          </p>
+          <p className="sermon-punch">{point.heading}</p>
+          <p>
+            {point.thought}
+            {point.crossRef ? ` (${point.crossRef})` : null}
+          </p>
+        </div>
+      ))}
+      <p className="sermon-section-label">{labels.application}</p>
+      <p>{block.application}</p>
+      <p className="sermon-section-label">{labels.invitation}</p>
+      <p className="sermon-challenge">{block.invitation}</p>
+      <p className="sermon-section-label">{labels.closingPrayer}</p>
+      <p>{block.closingPrayer}</p>
+      <h3 className="sermon-questions-label">{block.questionsLabel}</h3>
+      <ol className="sermon-questions">
+        {block.questions.map((question) => (
+          <li key={question}>{question}</li>
+        ))}
       </ol>
     </section>
   )
@@ -77,6 +139,7 @@ export function SermonMaker() {
   const boardRef = useRef<HTMLDivElement>(null)
   const [topic, setTopic] = useState('')
   const [audience, setAudience] = useState('')
+  const [depth, setDepth] = useState<SermonDepth>('short')
   const [handout, setHandout] = useState<SermonHandout | null>(null)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,6 +147,18 @@ export function SermonMaker() {
   const [fullscreenOn, setFullscreenOn] = useState(false)
   const [fallback, setFallback] = useState(false)
   const presenting = fullscreenOn || fallback
+
+  const sectionLabels = {
+    title: t('sermonSectionTitle'),
+    bigIdea: t('sermonSectionBigIdea'),
+    openingHook: t('sermonSectionOpeningHook'),
+    passage: t('sermonSectionPassage'),
+    context: t('sermonSectionContext'),
+    point: t('sermonSectionPoint'),
+    application: t('sermonSectionApplication'),
+    invitation: t('sermonSectionInvitation'),
+    closingPrayer: t('sermonSectionClosingPrayer'),
+  }
 
   async function generate() {
     const clean = topic.trim()
@@ -96,7 +171,7 @@ export function SermonMaker() {
     setError(null)
     setNotice(null)
     try {
-      setHandout(await buildHandout(clean, audience))
+      setHandout(await buildHandout(clean, audience, depth))
     } catch {
       setHandout(null)
       setError(t('sermonFailed'))
@@ -226,6 +301,31 @@ export function SermonMaker() {
           onChange={(event) => setAudience(event.target.value)}
         />
       </label>
+      <fieldset className="field sermon-depth">
+        <legend className="label">{t('sermonDepth')}</legend>
+        <div className="sermon-depth-options" role="radiogroup" aria-label={t('sermonDepth')}>
+          <label className={depth === 'short' ? 'sermon-depth-option is-active' : 'sermon-depth-option'}>
+            <input
+              type="radio"
+              name="sermon-depth"
+              value="short"
+              checked={depth === 'short'}
+              onChange={() => setDepth('short')}
+            />
+            {t('sermonDepthShort')}
+          </label>
+          <label className={depth === 'full' ? 'sermon-depth-option is-active' : 'sermon-depth-option'}>
+            <input
+              type="radio"
+              name="sermon-depth"
+              value="full"
+              checked={depth === 'full'}
+              onChange={() => setDepth('full')}
+            />
+            {t('sermonDepthFull')}
+          </label>
+        </div>
+      </fieldset>
       <button type="button" className="button" disabled={working} onClick={() => void generate()}>
         {working ? t('sermonWorking') : t('sermonGenerate')}
       </button>
@@ -263,9 +363,18 @@ export function SermonMaker() {
               </button>
             </div>
             <p className="sermon-rotate">{t('sermonRotate')}</p>
-            {ORDER.map((language) => (
-              <SermonColumn key={language} language={language} block={handout.blocks[language]} />
-            ))}
+            {ORDER.map((language) =>
+              handout.depth === 'full' ? (
+                <FullColumn
+                  key={language}
+                  language={language}
+                  block={handout.blocks[language]}
+                  labels={sectionLabels}
+                />
+              ) : (
+                <ShortColumn key={language} language={language} block={handout.blocks[language]} />
+              ),
+            )}
           </div>
           {notice ? (
             <p className="field-note" role="status">

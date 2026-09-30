@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { HANDS_FULL } from './hands-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = HANDS_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const HANDS: readonly SermonOutline[] = [
@@ -26,7 +40,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 2,
     verse: 3,
     endVerse: 4,
-    lines: lines(
+    lines: lines('humility',
       {
         punch: ['Humility looks at others the way Christ looked at us.', 'Pride keeps a private ranking of the room.'],
         context: [
@@ -135,7 +149,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 3,
     verse: 5,
     endVerse: 6,
-    lines: lines(
+    lines: lines('trust',
       {
         punch: ['Trust in the Lord is a whole heart, not a spare plan.', 'Leaning on your own understanding feels responsible. The proverb calls it a rival support.'],
         context: [
@@ -246,7 +260,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 7,
     verse: 7,
     endVerse: 8,
-    lines: lines(
+    lines: lines('prayer',
       {
         punch: ['Jesus expects his people to ask.', 'We worry in detail and pray in general.'],
         context: [
@@ -343,7 +357,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 4,
     verse: 4,
     endVerse: 4,
-    lines: lines(
+    lines: lines('joy',
       {
         punch: ['Joy in the Lord is a command, not a lucky mood.', 'He says it twice. Rejoice. And again I say, rejoice.'],
         context: [
@@ -458,7 +472,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 8,
     verse: 28,
     endVerse: 28,
-    lines: lines(
+    lines: lines('suffering',
       {
         punch: ['God works all things for good. He does not call all things good.', 'Romans 8:28 is not a shrug.'],
         context: [
@@ -570,7 +584,7 @@ export const HANDS: readonly SermonOutline[] = [
     chapter: 10,
     verse: 13,
     endVerse: 13,
-    lines: lines(
+    lines: lines('temptation',
       {
         punch: ['The way out is as real as the temptation.', 'Your case is not the exception. God is faithful.'],
         context: [

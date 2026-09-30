@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { HEART_FULL } from './heart-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = HEART_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const HEART: readonly SermonOutline[] = [
@@ -35,7 +49,7 @@ export const HEART: readonly SermonOutline[] = [
     chapter: 4,
     verse: 11,
     endVerse: 12,
-    lines: lines(
+    lines: lines('contentment',
       {
         punch: [
           'Paul didn’t wake up content. He got there.',
@@ -161,7 +175,7 @@ export const HEART: readonly SermonOutline[] = [
     chapter: 4,
     verse: 6,
     endVerse: 7,
-    lines: lines(
+    lines: lines('anxiety',
       {
         punch: [
           'Worry talks all night. It never gets the letter to God.',
@@ -282,7 +296,7 @@ export const HEART: readonly SermonOutline[] = [
     chapter: 41,
     verse: 10,
     endVerse: 10,
-    lines: lines(
+    lines: lines('fear',
       {
         punch: [
           'God doesn’t tell the fearful to be brave alone.',
@@ -401,7 +415,7 @@ export const HEART: readonly SermonOutline[] = [
     chapter: 11,
     verse: 1,
     endVerse: 1,
-    lines: lines(
+    lines: lines('faith',
       {
         punch: [
           'Faith isn’t a guess. It’s taking God at his word.',
