@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useBibleHistory, type ChapterView } from './hooks/useBibleHistory'
 import { CategoryManager } from './components/CategoryManager'
 import { ChapterPicker } from './components/ChapterPicker'
 import { ChapterReader } from './components/ChapterReader'
@@ -28,18 +29,6 @@ import { formatPlanSpan, type PlanDay } from './scripture/readingPlan'
 import { type PassageRef } from './scripture/passages'
 import { useListen } from './speech/useListen'
 
-type ChapterView = {
-  kind: 'chapter'
-  bookIndex: number
-  chapter: number
-  verse: number | null
-  startBook: number
-  startChapter: number
-  startVerse: number | null
-}
-
-type ReadPlace = { kind: 'home' } | { kind: 'book'; bookIndex: number } | ChapterView
-
 type Panel = null | 'settings' | 'options' | 'plan'
 
 type EditReturn = { kind: 'saved' } | { kind: 'daily' } | { kind: 'read' } | ChapterView
@@ -62,6 +51,21 @@ function BackIcon() {
     <svg className="back-icon" viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M14.5 6.5 9 12l5.5 5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ForwardIcon() {
+  return (
+    <svg className="back-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M9.5 6.5 15 12l-5.5 5.5"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.8"
@@ -104,10 +108,12 @@ export default function App() {
   const growBack = useRef<() => void>(() => {})
   const [panel, setPanel] = useState<Panel>(null)
   const [panelFrom, setPanelFrom] = useState<Panel>(null)
-  const [read, setRead] = useState<ReadPlace>({ kind: 'home' })
   const [view, setView] = useState<View>({ kind: 'tabs' })
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
+  const readActive = view.kind === 'tabs' && panel === null && tab === 'read'
+  const bible = useBibleHistory(readActive)
+  const read = bible.read
 
   const activeCategoryId =
     categoryId !== null && library.categories.some((category) => category.id === categoryId)
@@ -159,17 +165,24 @@ export default function App() {
     }
   }
 
+  function seedChapter(nextBook: number, chapter: number, verse: number | null) {
+    bible.reset([
+      { kind: 'home' },
+      { kind: 'book', bookIndex: nextBook },
+      openAt(nextBook, chapter, verse),
+    ])
+  }
+
   function followSpoken(passage: PassageRef) {
     setTab('read')
     setPanel(null)
     setView({ kind: 'tabs' })
-    setRead((current) => {
-      if (current.kind === 'chapter') {
-        if (current.bookIndex === passage.bookIndex && current.chapter === passage.chapter) return current
-        return { ...current, bookIndex: passage.bookIndex, chapter: passage.chapter }
-      }
-      return openAt(passage.bookIndex, passage.chapter, passage.verse)
-    })
+    if (read.kind === 'chapter') {
+      if (read.bookIndex === passage.bookIndex && read.chapter === passage.chapter) return
+      bible.replace({ ...read, bookIndex: passage.bookIndex, chapter: passage.chapter })
+      return
+    }
+    seedChapter(passage.bookIndex, passage.chapter, passage.verse)
   }
 
   const listen = useListen(language, versionId, followSpoken)
@@ -192,7 +205,7 @@ export default function App() {
     setPanel(null)
     setPanelFrom(null)
     setView({ kind: 'tabs' })
-    setRead({ kind: 'home' })
+    bible.reset([{ kind: 'home' }])
     setTab('read')
   }
 
@@ -201,7 +214,7 @@ export default function App() {
     setPanel(null)
     setPanelFrom(null)
     setView({ kind: 'tabs' })
-    if (next === 'read' && tab === 'read' && read.kind !== 'home') setRead({ kind: 'home' })
+    if (next === 'read' && tab === 'read' && read.kind !== 'home') bible.reset([{ kind: 'home' }])
     if (next === 'grow' && tab === 'grow') setGrowKey((current) => current + 1)
     setTab(next)
   }
@@ -211,7 +224,7 @@ export default function App() {
     setTab('read')
     setPanel(null)
     setView({ kind: 'tabs' })
-    setRead(openAt(passage.bookIndex, passage.chapter, passage.verse))
+    seedChapter(passage.bookIndex, passage.chapter, passage.verse)
   }
 
   function readPlanDay(day: PlanDay) {
@@ -221,16 +234,18 @@ export default function App() {
     setPanel(null)
     setPanelFrom(null)
     setView({ kind: 'tabs' })
-    setRead(openAt(day.start.bookIndex, day.start.chapter, null))
+    seedChapter(day.start.bookIndex, day.start.chapter, null)
   }
 
   const showTabBar = view.kind === 'tabs'
   const onDaily = view.kind === 'tabs' && panel === null && tab === 'daily'
-  const onReadSurface = view.kind === 'tabs' && panel === null && tab === 'read'
+  const onReadSurface = readActive
   const onGrow = view.kind === 'tabs' && panel === null && tab === 'grow'
   const showGear = view.kind === 'tabs' && panel !== 'settings'
   const growNested = onGrow && growPlace.active
-  const showBack = panel !== null || view.kind !== 'tabs' || (onReadSurface && read.kind !== 'home') || growNested
+  const onBibleDrill = onReadSurface && read.kind !== 'home'
+  const showBack =
+    panel !== null || view.kind !== 'tabs' || growNested
 
   const onGrowNested = useCallback((next: GrowNested) => {
     growBack.current = next.back
@@ -238,6 +253,16 @@ export default function App() {
       current.active === next.active && current.title === next.title ? current : { active: next.active, title: next.title },
     )
   }, [])
+
+  function goBibleBack() {
+    listen.stop()
+    bible.back()
+  }
+
+  function goBibleForward() {
+    listen.stop()
+    bible.forward()
+  }
 
   function goBack() {
     listen.stop()
@@ -263,15 +288,14 @@ export default function App() {
     if (view.kind === 'categories' || view.kind === 'edit') {
       if (view.kind === 'edit' && view.returnTo.kind === 'chapter') {
         setTab('read')
-        setRead(view.returnTo)
+        seedChapter(view.returnTo.bookIndex, view.returnTo.chapter, view.returnTo.verse)
       } else if (view.kind === 'edit' && view.returnTo.kind === 'daily') setTab('daily')
       else if (view.kind === 'edit' && view.returnTo.kind === 'saved') setTab('saved')
       else if (view.kind === 'edit') setTab('read')
       setView({ kind: 'tabs' })
       return
     }
-    if (tab === 'read' && read.kind === 'chapter') setRead({ kind: 'book', bookIndex: read.bookIndex })
-    else if (tab === 'read' && read.kind === 'book') setRead({ kind: 'home' })
+    if (onBibleDrill) bible.back()
   }
 
   const today = reading.currentDay
@@ -288,7 +312,7 @@ export default function App() {
           onDaily ? 'mast-home' : '',
           onReadSurface && read.kind === 'home' ? 'mast-read' : '',
           onReadSurface && read.kind === 'chapter' ? 'mast-chapter' : '',
-          showBack ? 'mast-nested' : '',
+          showBack || onBibleDrill ? 'mast-nested' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -323,18 +347,40 @@ export default function App() {
                     {t('navBack')}
                   </button>
                 ) : null}
-                {onReadSurface && (read.kind === 'book' || read.kind === 'chapter') ? (
-                  <h1 className="brand">
-                    <nav className="crumb" aria-label={t('readingCrumb')}>
-                      <button type="button" onClick={goBack}>
-                        {read.kind === 'chapter' ? bookName : t('navRead')}
+                {onBibleDrill ? (
+                  <div className="bible-history-bar">
+                    <div className="bible-history-nav" role="group">
+                      <button
+                        type="button"
+                        className="bible-history-btn"
+                        aria-label={t('navBack')}
+                        disabled={!bible.canBack}
+                        onClick={goBibleBack}
+                      >
+                        <BackIcon />
                       </button>
-                      <span className="crumb-sep" aria-hidden="true">
-                        ›
-                      </span>
-                      <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
-                    </nav>
-                  </h1>
+                      <button
+                        type="button"
+                        className="bible-history-btn"
+                        aria-label={t('navForward')}
+                        disabled={!bible.canForward}
+                        onClick={goBibleForward}
+                      >
+                        <ForwardIcon />
+                      </button>
+                    </div>
+                    <h1 className="brand">
+                      <nav className="crumb" aria-label={t('readingCrumb')}>
+                        <button type="button" onClick={goBibleBack} disabled={!bible.canBack}>
+                          {read.kind === 'chapter' ? bookName : t('navRead')}
+                        </button>
+                        <span className="crumb-sep" aria-hidden="true">
+                          ›
+                        </span>
+                        <span aria-current="page">{read.kind === 'chapter' ? read.chapter : bookName}</span>
+                      </nav>
+                    </h1>
+                  </div>
                 ) : (
                   <h1 className={panel === 'options' ? 'brand sr-only' : 'brand'}>{title}</h1>
                 )}
@@ -439,7 +485,7 @@ export default function App() {
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
               setTab('read')
-              setRead(openAt(nextBook, chapter, verse))
+              seedChapter(nextBook, chapter, verse)
             }}
           />
         </main>
@@ -452,7 +498,7 @@ export default function App() {
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
               setTab('read')
-              setRead(openAt(nextBook, chapter, verse))
+              seedChapter(nextBook, chapter, verse)
             }}
             onOpenSaved={(verseId) => {
               listen.stop()
@@ -486,7 +532,7 @@ export default function App() {
               setPanelFrom(null)
               setView({ kind: 'tabs' })
               setTab('read')
-              setRead(openAt(passage.bookIndex, passage.chapter, passage.verse))
+              seedChapter(passage.bookIndex, passage.chapter, passage.verse)
             }}
           />
         </main>
@@ -499,10 +545,10 @@ export default function App() {
             planToday={planToday}
             topicsToken={topicsToken}
             onTopicsReady={clearTopics}
-            onOpenBook={(next) => setRead({ kind: 'book', bookIndex: next })}
+            onOpenBook={(next) => bible.push({ kind: 'book', bookIndex: next })}
             onOpenPassage={(nextBook, chapter, verse) => {
               listen.stop()
-              setRead(openAt(nextBook, chapter, verse))
+              seedChapter(nextBook, chapter, verse)
             }}
             onOpenSaved={(verseId) => {
               listen.stop()
@@ -522,11 +568,11 @@ export default function App() {
             bookIndex={read.bookIndex}
             onOpenBook={(next) => {
               listen.stop()
-              setRead({ kind: 'book', bookIndex: next })
+              bible.push({ kind: 'book', bookIndex: next })
             }}
             onOpenChapter={(chapter) => {
               listen.stop()
-              setRead(openAt(read.bookIndex, chapter, null))
+              bible.push(openAt(read.bookIndex, chapter, null))
             }}
           />
         </main>
@@ -546,19 +592,17 @@ export default function App() {
             onCreateCategory={library.createCategory}
             onShowChapters={() => {
               listen.stop()
-              setRead({ kind: 'book', bookIndex: read.bookIndex })
+              bible.reset([{ kind: 'home' }, { kind: 'book', bookIndex: read.bookIndex }])
             }}
             onJump={(nextBook, chapter) => {
               listen.stop()
-              setRead(openAt(nextBook, chapter, null))
+              bible.push(openAt(nextBook, chapter, null))
             }}
-            onVisible={(nextBook, chapter) =>
-              setRead((current) => {
-                if (current.kind !== 'chapter') return current
-                if (current.bookIndex === nextBook && current.chapter === chapter) return current
-                return { ...current, bookIndex: nextBook, chapter }
-              })
-            }
+            onVisible={(nextBook, chapter) => {
+              if (read.kind !== 'chapter') return
+              if (read.bookIndex === nextBook && read.chapter === chapter) return
+              bible.replace({ ...read, bookIndex: nextBook, chapter })
+            }}
             listen={listen}
           />
         </main>
@@ -621,7 +665,7 @@ export default function App() {
               onDone={() => {
                 if (view.returnTo.kind === 'chapter') {
                   setTab('read')
-                  setRead(view.returnTo)
+                  seedChapter(view.returnTo.bookIndex, view.returnTo.chapter, view.returnTo.verse)
                 } else if (view.returnTo.kind === 'daily') setTab('daily')
                 else if (view.returnTo.kind === 'saved') setTab('saved')
                 else setTab('read')
@@ -660,7 +704,7 @@ export default function App() {
               listen.stop()
               setTab('read')
               setView({ kind: 'tabs' })
-              setRead(openAt(nextBook, chapter, verse))
+              seedChapter(nextBook, chapter, verse)
             }}
           />
         </main>

@@ -308,6 +308,57 @@ button {
   margin-top: 0.2rem;
 }
 
+.bible-history-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.bible-history-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex: none;
+}
+
+.bible-history-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--gold);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.bible-history-btn:disabled {
+  opacity: 0.38;
+  color: var(--ink-soft);
+  box-shadow: none;
+  cursor: default;
+}
+
+.bible-history-btn .back-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.bible-history-bar .brand {
+  min-width: 0;
+}
+
+.bible-history-bar .crumb button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .crumb {
   display: flex;
   flex-wrap: wrap;
@@ -3503,6 +3554,7 @@ main {
 .votd-past-row,
 .select-bar,
 .icon-button,
+.bible-history-btn,
 .version-menu,
 .related-sheet,
 .lex-word,
