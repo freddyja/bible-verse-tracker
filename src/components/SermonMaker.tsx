@@ -301,20 +301,46 @@ export function SermonMaker() {
           onChange={(event) => setAudience(event.target.value)}
         />
       </label>
-      <button
-        type="button"
-        className={depth === 'full' ? 'button button-ghost sermon-depth-toggle is-full' : 'button button-ghost sermon-depth-toggle'}
-        aria-pressed={depth === 'full'}
-        aria-label={t('sermonDepth')}
-        onClick={() => setDepth(depth === 'full' ? 'short' : 'full')}
-      >
-        {t('sermonDepth')}
-        {depth === 'full' ? (
-          <span className="sermon-depth-check" aria-hidden="true">
-            ✓
-          </span>
-        ) : null}
-      </button>
+      <div className="sermon-depth-options" role="radiogroup" aria-label={t('sermonDepth')}>
+        <button
+          type="button"
+          role="radio"
+          className={
+            depth === 'short'
+              ? 'button button-ghost sermon-depth-toggle is-selected'
+              : 'button button-ghost sermon-depth-toggle'
+          }
+          aria-checked={depth === 'short'}
+          aria-pressed={depth === 'short'}
+          onClick={() => setDepth('short')}
+        >
+          {t('sermonDepthShort')}
+          {depth === 'short' ? (
+            <span className="sermon-depth-check" aria-hidden="true">
+              ✓
+            </span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          role="radio"
+          className={
+            depth === 'full'
+              ? 'button button-ghost sermon-depth-toggle is-selected'
+              : 'button button-ghost sermon-depth-toggle'
+          }
+          aria-checked={depth === 'full'}
+          aria-pressed={depth === 'full'}
+          onClick={() => setDepth('full')}
+        >
+          {t('sermonDepth')}
+          {depth === 'full' ? (
+            <span className="sermon-depth-check" aria-hidden="true">
+              ✓
+            </span>
+          ) : null}
+        </button>
+      </div>
       <button type="button" className="button" disabled={working} onClick={() => void generate()}>
         {working ? t('sermonWorking') : t('sermonGenerate')}
       </button>

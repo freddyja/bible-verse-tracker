@@ -3656,11 +3656,14 @@ main {
   background: rgba(14, 22, 40, 0.62);
 }
 
-.sermon-depth-toggle {
+.sermon-depth-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   align-self: flex-start;
 }
 
-.sermon-depth-toggle.is-full {
+.sermon-depth-toggle.is-selected {
   border-color: color-mix(in srgb, #1f9d55 55%, var(--gold-line));
 }
 
