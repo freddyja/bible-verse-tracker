@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { HOUSE_FULL } from './house-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = HOUSE_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const HOUSE: readonly SermonOutline[] = [
@@ -27,7 +41,7 @@ export const HOUSE: readonly SermonOutline[] = [
     chapter: 3,
     verse: 23,
     endVerse: 23,
-    lines: lines(
+    lines: lines('work',
       {
         punch: ['The real Supervisor is not the one who signs the check.', 'Eye-service works when the boss is watching. Heart-service works because Christ is worthy.'],
         context: [
@@ -142,7 +156,7 @@ export const HOUSE: readonly SermonOutline[] = [
     chapter: 24,
     verse: 15,
     endVerse: 15,
-    lines: lines(
+    lines: lines('family',
       {
         punch: ['A household follows the god the leader actually serves.', 'As for me and my house. Joshua says it out loud.'],
         context: [
@@ -258,7 +272,7 @@ export const HOUSE: readonly SermonOutline[] = [
     chapter: 5,
     verse: 25,
     endVerse: 25,
-    lines: lines(
+    lines: lines('marriage',
       {
         punch: ['Husbands, love your wives. The pattern is a cross, not a mood.', 'Christ loved the church and gave himself. That’s the sentence.'],
         context: [
@@ -382,7 +396,7 @@ export const HOUSE: readonly SermonOutline[] = [
     chapter: 9,
     verse: 7,
     endVerse: 7,
-    lines: lines(
+    lines: lines('generosity',
       {
         punch: ['God loves a giver whose heart has already decided.', 'A tight fist feels like wisdom. Paul calls it a grudging gift.'],
         context: [
@@ -492,7 +506,7 @@ export const HOUSE: readonly SermonOutline[] = [
     chapter: 1,
     verse: 19,
     endVerse: 20,
-    lines: lines(
+    lines: lines('anger',
       {
         punch: ['The anger of man does not work the righteousness of God.', 'A hot word can feel like zeal and still be the flesh.'],
         context: [

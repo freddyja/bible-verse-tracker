@@ -2,7 +2,18 @@ import { BOOKS } from '../scripture/books'
 import { loadVerse } from '../scripture/api'
 import { formatPassageRange } from '../scripture/passages'
 import { lineIndex, pickOutline } from './match'
-import type { SermonBlock, SermonCopy, SermonHandout, SermonLang, SermonLines, SermonOutline } from './types'
+import type {
+  SermonBlock,
+  SermonCopy,
+  SermonDepth,
+  SermonFullCopy,
+  SermonFullLines,
+  SermonHandout,
+  SermonLang,
+  SermonLines,
+  SermonOutline,
+  SermonPoint,
+} from './types'
 
 const VERSIONS: Record<SermonLang, string> = {
   en: 'kjv',
@@ -61,6 +72,32 @@ function fill(copy: SermonCopy, topic: string, slots: boolean): SermonCopy {
   }
 }
 
+function fillFull(copy: SermonFullCopy, topic: string, slots: boolean): SermonFullCopy {
+  if (!slots) return copy
+  const write = (value: string) => value.replaceAll('{topic}', topic)
+  const writePoint = (point: SermonPoint): SermonPoint => ({
+    heading: write(point.heading),
+    thought: write(point.thought),
+    crossRef: point.crossRef ? write(point.crossRef) : undefined,
+  })
+  return {
+    title: write(copy.title),
+    bigIdea: write(copy.bigIdea),
+    openingHook: write(copy.openingHook),
+    context: write(copy.context),
+    points: [writePoint(copy.points[0]), writePoint(copy.points[1]), writePoint(copy.points[2])],
+    application: write(copy.application),
+    invitation: write(copy.invitation),
+    closingPrayer: write(copy.closingPrayer),
+    questions: [
+      write(copy.questions[0]),
+      write(copy.questions[1]),
+      write(copy.questions[2]),
+      write(copy.questions[3]),
+    ],
+  }
+}
+
 function withAudience(language: SermonLang, challenge: string, audience: string): string {
   if (!audience) return challenge
   const name = audience.charAt(0).toUpperCase() + audience.slice(1)
@@ -85,41 +122,111 @@ async function quoteFor(language: SermonLang, outline: SermonOutline): Promise<s
   return wrapQuote(language, parts.join(' '))
 }
 
+function pointAt(lines: SermonFullLines, pointIndex: 0 | 1 | 2, index: number): SermonPoint {
+  const pack = lines.points[pointIndex]
+  const cross = pack.crossRef ? at(pack.crossRef, index) : undefined
+  return {
+    heading: at(pack.heading, index),
+    thought: at(pack.thought, index),
+    crossRef: cross || undefined,
+  }
+}
+
+function spokenFull(lines: SermonLines, index: number): SermonFullCopy {
+  const full = lines.full
+  const questions = at(full.questions, index)
+  const context = full.context ? at(full.context, index) : at(lines.context, index)
+  return {
+    title: at(full.title, index),
+    bigIdea: at(full.bigIdea, index),
+    openingHook: at(full.openingHook, index),
+    context,
+    points: [pointAt(full, 0, index), pointAt(full, 1, index), pointAt(full, 2, index)],
+    application: at(full.application, index),
+    invitation: at(full.invitation, index),
+    closingPrayer: at(full.closingPrayer, index),
+    questions: [questions[0], questions[1], questions[2], questions[3]],
+  }
+}
+
+function referenceFor(language: SermonLang, outline: SermonOutline): string {
+  const index = bookIndex(outline.bookId)
+  return formatPassageRange(language, {
+    bookIndex: index,
+    chapter: outline.chapter,
+    verse: outline.verse,
+    endVerse: outline.endVerse > outline.verse ? outline.endVerse : undefined,
+  })
+}
+
 function blockFor(
   language: SermonLang,
   outline: SermonOutline,
   topic: string,
   audience: string,
   quote: string,
+  depth: SermonDepth,
 ): SermonBlock {
-  const copy = fill(spokenCopy(outline.lines[language], lineIndex(outline, topic)), topic, outline.slots === true)
-  const index = bookIndex(outline.bookId)
+  const index = lineIndex(outline, topic)
+  const slots = outline.slots === true
+  const short = fill(spokenCopy(outline.lines[language], index), topic, slots)
+  const reference = referenceFor(language, outline)
+
+  if (depth === 'short') {
+    return {
+      depth,
+      reference,
+      quote,
+      punch: short.punch,
+      context: short.context,
+      application: short.application,
+      challenge: withAudience(language, short.challenge, audience),
+      charge: short.charge,
+      questionsLabel: QUESTION_LABEL[language],
+      questions: short.questions,
+    }
+  }
+
+  const full = fillFull(spokenFull(outline.lines[language], index), topic, slots)
   return {
-    reference: formatPassageRange(language, {
-      bookIndex: index,
-      chapter: outline.chapter,
-      verse: outline.verse,
-      endVerse: outline.endVerse > outline.verse ? outline.endVerse : undefined,
-    }),
+    depth,
+    reference,
     quote,
-    punch: copy.punch,
-    context: copy.context,
-    application: copy.application,
-    challenge: withAudience(language, copy.challenge, audience),
-    charge: copy.charge,
+    punch: short.punch,
+    context: full.context,
+    application: full.application,
+    challenge: withAudience(language, short.challenge, audience),
+    charge: short.charge,
     questionsLabel: QUESTION_LABEL[language],
-    questions: copy.questions,
+    questions: full.questions,
+    title: full.title,
+    bigIdea: full.bigIdea,
+    openingHook: full.openingHook,
+    points: full.points,
+    invitation: withAudience(language, full.invitation, audience),
+    closingPrayer: full.closingPrayer,
   }
 }
 
-export async function buildHandout(topic: string, audience: string): Promise<SermonHandout> {
+export async function buildHandout(
+  topic: string,
+  audience: string,
+  depth: SermonDepth = 'short',
+): Promise<SermonHandout> {
   const cleanTopic = topic.replace(/\s+/g, ' ').trim()
   const cleanAudience = audience.replace(/\s+/g, ' ').trim().slice(0, 80)
   const outline = pickOutline(cleanTopic)
   const quotes = await Promise.all(ORDER.map((language) => quoteFor(language, outline)))
   const blocks = {} as Record<SermonLang, SermonBlock>
   ORDER.forEach((language, index) => {
-    blocks[language] = blockFor(language, outline, cleanTopic, cleanAudience, quotes[index] ?? '')
+    blocks[language] = blockFor(
+      language,
+      outline,
+      cleanTopic,
+      cleanAudience,
+      quotes[index] ?? '',
+      depth,
+    )
   })
-  return { topic: cleanTopic, blocks }
+  return { topic: cleanTopic, depth, blocks }
 }

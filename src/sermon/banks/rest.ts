@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { REST_FULL } from './rest-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = REST_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const REST: readonly SermonOutline[] = [
@@ -27,7 +41,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 2,
     verse: 10,
     endVerse: 10,
-    lines: lines(
+    lines: lines('purpose',
       {
         punch: ['You are not an accident with a busy calendar.', 'Purpose isn’t a feeling you discover. It’s a path God already prepared.'],
         context: [
@@ -139,7 +153,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 11,
     verse: 28,
     endVerse: 30,
-    lines: lines(
+    lines: lines('rest',
       {
         punch: ['Rest is a person who says, Come unto me.', 'His yoke is easy because he carries it with you.'],
         context: [
@@ -247,7 +261,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 4,
     verse: 24,
     endVerse: 24,
-    lines: lines(
+    lines: lines('worship',
       {
         punch: ['The Father is seeking worshipers, not spectators.', 'You can sing and still stay far.'],
         context: [
@@ -362,7 +376,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 15,
     verse: 20,
     endVerse: 20,
-    lines: lines(
+    lines: lines('repentance',
       {
         punch: ['He got up. The father was already running.', 'Repentance is a road home, not a speech about the pigpen.'],
         context: [
@@ -477,7 +491,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 23,
     verse: 4,
     endVerse: 4,
-    lines: lines(
+    lines: lines('loneliness',
       {
         punch: ['The valley is real. So is the Shepherd.', 'Yea, though I walk through the valley. He does not say you will camp there.'],
         context: [
@@ -588,7 +602,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 9,
     verse: 24,
     endVerse: 24,
-    lines: lines(
+    lines: lines('doubt',
       {
         punch: ['He cried, Lord, I believe. Help thou mine unbelief.', 'Honest doubt walks toward Jesus. It doesn’t set up house away from him.'],
         context: [
@@ -702,7 +716,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 1,
     verse: 8,
     endVerse: 8,
-    lines: lines(
+    lines: lines('witness',
       {
         punch: ['You will receive power. Then you will be witnesses. Not the other way around.', 'Jerusalem is the street you already live on.'],
         context: [
@@ -808,7 +822,7 @@ export const REST: readonly SermonOutline[] = [
     chapter: 14,
     verse: 16,
     endVerse: 16,
-    lines: lines(
+    lines: lines('spirit',
       {
         punch: ['He doesn’t leave them with a memory. He promises another Comforter.', 'The Spirit stays. That is the gift.'],
         context: [
@@ -910,7 +924,7 @@ export const FALLBACK: SermonOutline = {
   verse: 105,
   endVerse: 105,
   slots: true,
-  lines: lines(
+  lines: lines('word-for-the-class',
     {
       punch: [
         'Before this class decides, the Word gets the first word.',

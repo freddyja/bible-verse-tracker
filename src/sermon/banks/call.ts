@@ -1,7 +1,21 @@
 import type { SermonLang, SermonLines, SermonOutline } from '../types'
+import { CALL_FULL } from './call-full'
 
-function lines(en: SermonLines, es: SermonLines, pt: SermonLines): Record<SermonLang, SermonLines> {
-  return { en, es, pt }
+type ShortLines = Omit<SermonLines, 'full'>
+
+function lines(
+  id: string,
+  en: ShortLines,
+  es: ShortLines,
+  pt: ShortLines,
+): Record<SermonLang, SermonLines> {
+  const pack = CALL_FULL[id]
+  if (!pack) throw new Error(`missing full lines for ${id}`)
+  return {
+    en: { ...en, full: pack.en },
+    es: { ...es, full: pack.es },
+    pt: { ...pt, full: pack.pt },
+  }
 }
 
 export const CALL: readonly SermonOutline[] = [
@@ -22,7 +36,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 14,
     verse: 15,
     endVerse: 15,
-    lines: lines(
+    lines: lines('obedience',
       {
         punch: ['Love for Jesus shows up as obedience.', 'If ye love me, keep my commandments. He already joined the two.'],
         context: [
@@ -129,7 +143,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 119,
     verse: 105,
     endVerse: 105,
-    lines: lines(
+    lines: lines('word',
       {
         punch: ['The Word is a lamp, not a souvenir.', 'A closed book cannot light the next step.'],
         context: [
@@ -238,7 +252,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 10,
     verse: 45,
     endVerse: 45,
-    lines: lines(
+    lines: lines('service',
       {
         punch: ['The Son of Man came to serve, and to give his life.', 'Greatness in this room looks like a towel, not a seat.'],
         context: [
@@ -346,7 +360,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 5,
     verse: 17,
     endVerse: 17,
-    lines: lines(
+    lines: lines('identity',
       {
         punch: ['In Christ, the old verdict is not the last word.', 'If any man be in Christ, he is a new creature. Old things are passed away.'],
         context: [
@@ -460,7 +474,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 34,
     verse: 18,
     endVerse: 18,
-    lines: lines(
+    lines: lines('grief',
       {
         punch: ['The Lord is near the brokenhearted. He does not wait at a distance.', 'Grief is not a failure of faith. Hiding it from God is.'],
         context: [
@@ -571,7 +585,7 @@ export const CALL: readonly SermonOutline[] = [
     chapter: 4,
     verse: 3,
     endVerse: 3,
-    lines: lines(
+    lines: lines('unity',
       {
         punch: ['Unity is something you keep, not something you feel into existence.', 'The Spirit already made you one. Your work is to guard it.'],
         context: [
