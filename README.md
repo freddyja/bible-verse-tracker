@@ -81,6 +81,14 @@ Record / Stop / Play keeps the voice note in this browser. If the microphone is 
 
 The line under the home title reads “Diseñado por Freddy Jara-Almonte.” in Spanish, and “Designed by Freddy Jara-Almonte.” in English and Portuguese.
 
+## Prayer Guide custom topics (optional)
+
+Suggested prayer topics are local. Free-text custom guides call a **Cloudflare Worker** proxy so `ANTHROPIC_API_KEY` never ships in the browser.
+
+1. Deploy `workers/prayer-proxy/` (see that folder’s README): set Worker secret **`ANTHROPIC_API_KEY`**, then `npx wrangler deploy`.
+2. Set public build env **`VITE_PRAYER_PROXY_URL`** to the Worker URL (GitHub Actions secret + pass it in `.github/workflows/pages.yml` Build `env`, or `.env.local` for Vite).
+3. If unset, templates still work; custom topics show a clear not-configured message.
+
 ## Demo
 
 ```bash
