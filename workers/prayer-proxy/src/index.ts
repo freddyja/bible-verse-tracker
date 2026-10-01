@@ -5,6 +5,7 @@
 
 export interface Env {
   ANTHROPIC_API_KEY: string
+  ANTHROPIC_MODEL?: string
 }
 
 type Language = 'en' | 'es' | 'pt'
@@ -228,7 +229,7 @@ export default {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-5-5',
           max_tokens: 1200,
           messages: [{ role: 'user', content: buildPrompt(cleanTopic, language) }],
         }),
