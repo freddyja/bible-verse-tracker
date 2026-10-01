@@ -36,6 +36,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /bible-verse-tracker/
+          VITE_PRAYER_PROXY_URL: ${{ secrets.VITE_PRAYER_PROXY_URL }}
 
       - name: Pages files
         run: cp dist/index.html dist/404.html && touch dist/.nojekyll
