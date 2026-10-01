@@ -11,6 +11,7 @@ type DailyHomeProps = {
   onOpenSaved: (verseId: string) => void
   onSaveVerse: (draft: VerseDraft, id: string | undefined, voice: VoiceNoteUpdate) => Promise<void>
   onOpenSermon: () => void
+  onOpenPrayer: () => void
   onOpenGospel: () => void
   onOpenRead: () => void
   onOpenTopics: () => void
@@ -26,6 +27,7 @@ export function DailyHome({
   onOpenSaved,
   onSaveVerse,
   onOpenSermon,
+  onOpenPrayer,
   onOpenGospel,
   onOpenRead,
   onOpenTopics,
@@ -47,6 +49,7 @@ export function DailyHome({
       />
       <ExploreGrid
         onSermon={onOpenSermon}
+        onPrayer={onOpenPrayer}
         onGospel={onOpenGospel}
         onRead={onOpenRead}
         onTopics={onOpenTopics}

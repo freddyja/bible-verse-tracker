@@ -280,6 +280,26 @@ const en = {
   sermonShareTitle: 'Sermon',
   sermonSource:
     'English is the King James Version. Spanish is the Reina-Valera 1909. Portuguese is the Bíblia Livre. The notes are a class outline, not a new translation.',
+  prayerGuideTile: 'Prayer Guide',
+  prayerGuideTitle: 'Prayer Guide',
+  prayerLead:
+    'Enter a topic for a Scripture-shaped prayer card. Known topics load instantly on this phone. Custom topics need a Claude key when configured.',
+  prayerTopic: 'Who or what to pray for',
+  prayerTopicPlaceholder: 'My wife, anxiety, our church…',
+  prayerGenerate: 'Generate',
+  prayerWorking: 'Preparing the guide…',
+  prayerTopicRequired: 'Add a topic to pray for.',
+  prayerFailed: 'The prayer guide could not be prepared. Try again.',
+  prayerCustomUnavailable:
+    'Custom topics are not configured on this build. Choose a suggested topic, or ask Freddy to add an Anthropic key for free-text guides.',
+  prayerCustomHint:
+    'Suggested topics work offline. Free-text custom guides need VITE_ANTHROPIC_API_KEY in the build environment.',
+  prayerCopy: 'Copy',
+  prayerCopied: 'Copied',
+  prayerCopyFailed: 'Could not copy the guide.',
+  prayerShare: 'Share',
+  prayerShareTitle: 'Prayer Guide',
+  prayerCredit: 'Designed by Freddy / Living Word',
   gospelTile: 'Gospel',
   gospelTitle: 'Gospel',
   gospelLead:
@@ -759,6 +779,26 @@ const es: Record<MessageKey, string> = {
   sermonShareTitle: 'Sermón',
   sermonSource:
     'El inglés es la King James Version. El español es la Reina-Valera 1909. El portugués es la Bíblia Livre. Las notas son un bosquejo para la clase, no una traducción nueva.',
+  prayerGuideTile: 'Guía de oración',
+  prayerGuideTitle: 'Guía de oración',
+  prayerLead:
+    'Escribe un tema para una tarjeta de oración basada en la Escritura. Los temas conocidos se cargan al instante en este teléfono. Los temas libres necesitan una clave de Claude cuando esté configurada.',
+  prayerTopic: 'Por quién o qué orar',
+  prayerTopicPlaceholder: 'Mi esposa, ansiedad, nuestra iglesia…',
+  prayerGenerate: 'Generar',
+  prayerWorking: 'Preparando la guía…',
+  prayerTopicRequired: 'Añade un tema por el que orar.',
+  prayerFailed: 'No se pudo preparar la guía de oración. Inténtalo de nuevo.',
+  prayerCustomUnavailable:
+    'Los temas personalizados no están configurados en esta versión. Elige un tema sugerido, o pide a Freddy que añada una clave de Anthropic para guías de texto libre.',
+  prayerCustomHint:
+    'Los temas sugeridos funcionan sin conexión. Las guías personalizadas necesitan VITE_ANTHROPIC_API_KEY en el entorno de compilación.',
+  prayerCopy: 'Copiar',
+  prayerCopied: 'Copiado',
+  prayerCopyFailed: 'No se pudo copiar la guía.',
+  prayerShare: 'Compartir',
+  prayerShareTitle: 'Guía de oración',
+  prayerCredit: 'Diseñado por Freddy / Living Word',
   gospelTile: 'Evangelio',
   gospelTitle: 'Evangelio',
   gospelLead:
@@ -1238,6 +1278,26 @@ const pt: Record<MessageKey, string> = {
   sermonShareTitle: 'Sermão',
   sermonSource:
     'O inglês é a King James Version. O espanhol é a Reina-Valera 1909. O português é a Bíblia Livre. As notas são um esboço para a classe, não uma tradução nova.',
+  prayerGuideTile: 'Guia de oração',
+  prayerGuideTitle: 'Guia de oração',
+  prayerLead:
+    'Digite um tema para um cartão de oração baseado na Escritura. Temas conhecidos carregam na hora neste telefone. Temas livres precisam de uma chave Claude quando configurada.',
+  prayerTopic: 'Por quem ou o que orar',
+  prayerTopicPlaceholder: 'Minha esposa, ansiedade, nossa igreja…',
+  prayerGenerate: 'Gerar',
+  prayerWorking: 'Preparando o guia…',
+  prayerTopicRequired: 'Adicione um tema para orar.',
+  prayerFailed: 'Não foi possível preparar o guia de oração. Tente de novo.',
+  prayerCustomUnavailable:
+    'Temas personalizados não estão configurados nesta versão. Escolha um tema sugerido, ou peça a Freddy para adicionar uma chave Anthropic para guias de texto livre.',
+  prayerCustomHint:
+    'Temas sugeridos funcionam offline. Guias personalizados precisam de VITE_ANTHROPIC_API_KEY no ambiente de build.',
+  prayerCopy: 'Copiar',
+  prayerCopied: 'Copiado',
+  prayerCopyFailed: 'Não foi possível copiar o guia.',
+  prayerShare: 'Compartilhar',
+  prayerShareTitle: 'Guia de oração',
+  prayerCredit: 'Designed by Freddy / Living Word',
   gospelTile: 'Evangelho',
   gospelTitle: 'Evangelho',
   gospelLead:

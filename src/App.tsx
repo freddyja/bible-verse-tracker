@@ -10,6 +10,7 @@ import { LanguagePicker } from './components/LanguagePicker'
 import { PlanProgress } from './components/PlanProgress'
 import { ReadHome } from './components/ReadHome'
 import { ReadingOptions } from './components/ReadingOptions'
+import { PrayerGuide } from './components/PrayerGuide'
 import { SermonMaker } from './components/SermonMaker'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ShareAppButton } from './components/ShareAppButton'
@@ -36,6 +37,7 @@ type EditReturn = { kind: 'saved' } | { kind: 'daily' } | { kind: 'read' } | Cha
 type View =
   | { kind: 'tabs' }
   | { kind: 'sermon' }
+  | { kind: 'prayer' }
   | { kind: 'gospel' }
   | { kind: 'categories' }
   | {
@@ -138,6 +140,7 @@ export default function App() {
   else if (panel === 'options') title = t('readingOptions')
   else if (panel === 'plan') title = t('planProgressTitle')
   else if (view.kind === 'sermon') title = t('sermonTitle')
+  else if (view.kind === 'prayer') title = t('prayerGuideTitle')
   else if (view.kind === 'gospel') title = t('gospelTitle')
   else if (view.kind === 'categories') title = t('categoriesTitle')
   else if (view.kind === 'edit') title = editingVerse ? t('editTitle') : t('newTitle')
@@ -280,7 +283,7 @@ export default function App() {
       setPanelFrom(null)
       return
     }
-    if (view.kind === 'sermon' || view.kind === 'gospel') {
+    if (view.kind === 'sermon' || view.kind === 'prayer' || view.kind === 'gospel') {
       setTab('daily')
       setView({ kind: 'tabs' })
       return
@@ -511,6 +514,12 @@ export default function App() {
               setPanelFrom(null)
               setView({ kind: 'sermon' })
             }}
+            onOpenPrayer={() => {
+              listen.stop()
+              setPanel(null)
+              setPanelFrom(null)
+              setView({ kind: 'prayer' })
+            }}
             onOpenGospel={() => {
               listen.stop()
               setPanel(null)
@@ -694,6 +703,12 @@ export default function App() {
       {view.kind === 'sermon' ? (
         <main>
           <SermonMaker />
+        </main>
+      ) : null}
+
+      {view.kind === 'prayer' ? (
+        <main>
+          <PrayerGuide />
         </main>
       ) : null}
 
