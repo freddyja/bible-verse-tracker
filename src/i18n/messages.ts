@@ -283,7 +283,7 @@ const en = {
   prayerGuideTile: 'Prayer Guide',
   prayerGuideTitle: 'Prayer Guide',
   prayerLead:
-    'Enter a topic for a Scripture-shaped prayer card. Known topics load instantly on this phone. Custom topics need a Claude key when configured.',
+    'Enter a topic for a Scripture-shaped prayer card. Known topics load instantly on this phone. Custom topics use a server proxy when configured.',
   prayerTopic: 'Who or what to pray for',
   prayerTopicPlaceholder: 'My wife, anxiety, our church…',
   prayerGenerate: 'Generate',
@@ -291,9 +291,9 @@ const en = {
   prayerTopicRequired: 'Add a topic to pray for.',
   prayerFailed: 'The prayer guide could not be prepared. Try again.',
   prayerCustomUnavailable:
-    'Custom topics are not configured on this build. Choose a suggested topic, or ask Freddy to add an Anthropic key for free-text guides.',
+    'Custom topics are not configured on this build. Choose a suggested topic, or ask Freddy to set VITE_PRAYER_PROXY_URL after deploying the prayer proxy.',
   prayerCustomHint:
-    'Suggested topics work offline. Free-text custom guides need VITE_ANTHROPIC_API_KEY in the build environment.',
+    'Suggested topics work offline. Free-text custom guides need VITE_PRAYER_PROXY_URL (public proxy URL) in the build environment.',
   prayerCopy: 'Copy',
   prayerCopied: 'Copied',
   prayerCopyFailed: 'Could not copy the guide.',
@@ -782,7 +782,7 @@ const es: Record<MessageKey, string> = {
   prayerGuideTile: 'Guía de oración',
   prayerGuideTitle: 'Guía de oración',
   prayerLead:
-    'Escribe un tema para una tarjeta de oración basada en la Escritura. Los temas conocidos se cargan al instante en este teléfono. Los temas libres necesitan una clave de Claude cuando esté configurada.',
+    'Escribe un tema para una tarjeta de oración basada en la Escritura. Los temas conocidos se cargan al instante en este teléfono. Los temas libres usan un proxy del servidor cuando esté configurado.',
   prayerTopic: 'Por quién o qué orar',
   prayerTopicPlaceholder: 'Mi esposa, ansiedad, nuestra iglesia…',
   prayerGenerate: 'Generar',
@@ -790,9 +790,9 @@ const es: Record<MessageKey, string> = {
   prayerTopicRequired: 'Añade un tema por el que orar.',
   prayerFailed: 'No se pudo preparar la guía de oración. Inténtalo de nuevo.',
   prayerCustomUnavailable:
-    'Los temas personalizados no están configurados en esta versión. Elige un tema sugerido, o pide a Freddy que añada una clave de Anthropic para guías de texto libre.',
+    'Los temas personalizados no están configurados en esta versión. Elige un tema sugerido, o pide a Freddy que configure VITE_PRAYER_PROXY_URL tras desplegar el proxy de oración.',
   prayerCustomHint:
-    'Los temas sugeridos funcionan sin conexión. Las guías personalizadas necesitan VITE_ANTHROPIC_API_KEY en el entorno de compilación.',
+    'Los temas sugeridos funcionan sin conexión. Las guías personalizadas necesitan VITE_PRAYER_PROXY_URL (URL pública del proxy) en el entorno de compilación.',
   prayerCopy: 'Copiar',
   prayerCopied: 'Copiado',
   prayerCopyFailed: 'No se pudo copiar la guía.',
@@ -1281,7 +1281,7 @@ const pt: Record<MessageKey, string> = {
   prayerGuideTile: 'Guia de oração',
   prayerGuideTitle: 'Guia de oração',
   prayerLead:
-    'Digite um tema para um cartão de oração baseado na Escritura. Temas conhecidos carregam na hora neste telefone. Temas livres precisam de uma chave Claude quando configurada.',
+    'Digite um tema para um cartão de oração baseado na Escritura. Temas conhecidos carregam na hora neste telefone. Temas livres usam um proxy no servidor quando configurado.',
   prayerTopic: 'Por quem ou o que orar',
   prayerTopicPlaceholder: 'Minha esposa, ansiedade, nossa igreja…',
   prayerGenerate: 'Gerar',
@@ -1289,9 +1289,9 @@ const pt: Record<MessageKey, string> = {
   prayerTopicRequired: 'Adicione um tema para orar.',
   prayerFailed: 'Não foi possível preparar o guia de oração. Tente de novo.',
   prayerCustomUnavailable:
-    'Temas personalizados não estão configurados nesta versão. Escolha um tema sugerido, ou peça a Freddy para adicionar uma chave Anthropic para guias de texto livre.',
+    'Temas personalizados não estão configurados nesta versão. Escolha um tema sugerido, ou peça a Freddy para definir VITE_PRAYER_PROXY_URL após publicar o proxy de oração.',
   prayerCustomHint:
-    'Temas sugeridos funcionam offline. Guias personalizados precisam de VITE_ANTHROPIC_API_KEY no ambiente de build.',
+    'Temas sugeridos funcionam offline. Guias personalizados precisam de VITE_PRAYER_PROXY_URL (URL pública do proxy) no ambiente de build.',
   prayerCopy: 'Copiar',
   prayerCopied: 'Copiado',
   prayerCopyFailed: 'Não foi possível copiar o guia.',

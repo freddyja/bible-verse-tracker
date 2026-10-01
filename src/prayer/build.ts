@@ -1,6 +1,6 @@
 import type { Language } from '../i18n/messages'
 import { readCachedGuide, writeCachedGuide } from './cache'
-import { anthropicKeyPresent, generateCustomGuide } from './claude'
+import { generateCustomGuide, prayerProxyConfigured } from './claude'
 import { matchTemplate } from './match'
 import type { PrayerGuideCard } from './types'
 
@@ -8,12 +8,12 @@ export type BuildResult =
   | { kind: 'template'; guide: PrayerGuideCard; templateId: string }
   | { kind: 'cached'; guide: PrayerGuideCard }
   | { kind: 'custom'; guide: PrayerGuideCard }
-  | { kind: 'no-key' }
+  | { kind: 'no-proxy' }
   | { kind: 'error'; message: string }
 
-export { anthropicKeyPresent }
+export { prayerProxyConfigured }
 
-/** Resolve a topic to a prayer card: local template first, then cache, then optional Claude. */
+/** Resolve a topic to a prayer card: local template first, then cache, then optional proxy. */
 export async function buildPrayerGuide(topic: string, language: Language): Promise<BuildResult> {
   const clean = topic.trim()
   if (!clean) return { kind: 'error', message: 'empty' }
@@ -26,7 +26,7 @@ export async function buildPrayerGuide(topic: string, language: Language): Promi
   const cached = readCachedGuide(language, clean)
   if (cached) return { kind: 'cached', guide: cached }
 
-  if (!anthropicKeyPresent()) return { kind: 'no-key' }
+  if (!prayerProxyConfigured()) return { kind: 'no-proxy' }
 
   try {
     const guide = await generateCustomGuide(clean, language)

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
-import { anthropicKeyPresent, buildPrayerGuide } from '../prayer/build'
+import { buildPrayerGuide, prayerProxyConfigured } from '../prayer/build'
 import { guidePlainText } from '../prayer/plain'
 import { TEMPLATES } from '../prayer/templates'
 import type { PrayerGuideCard } from '../prayer/types'
@@ -38,7 +38,7 @@ export function PrayerGuide() {
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const hasKey = anthropicKeyPresent()
+  const hasProxy = prayerProxyConfigured()
 
   async function generate(nextTopic?: string) {
     const clean = (nextTopic ?? topic).trim()
@@ -53,7 +53,7 @@ export function PrayerGuide() {
     setNotice(null)
     try {
       const result = await buildPrayerGuide(clean, language)
-      if (result.kind === 'no-key') {
+      if (result.kind === 'no-proxy') {
         setGuide(null)
         setError(t('prayerCustomUnavailable'))
         return
@@ -126,7 +126,7 @@ export function PrayerGuide() {
           }}
         />
       </label>
-      {!hasKey ? <p className="field-note">{t('prayerCustomHint')}</p> : null}
+      {!hasProxy ? <p className="field-note">{t('prayerCustomHint')}</p> : null}
       <button type="button" className="button" disabled={working} onClick={() => void generate()}>
         {working ? t('prayerWorking') : t('prayerGenerate')}
       </button>
