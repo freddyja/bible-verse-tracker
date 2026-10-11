@@ -26,6 +26,8 @@ type PrayerGuideCard = {
 }
 
 const ALLOWED_ORIGINS = new Set([
+  'https://computingmadeeasy.org',
+  'https://www.computingmadeeasy.org',
   'https://freddyja.github.io',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -47,7 +49,7 @@ const LANG_NAME: Record<Language, string> = {
 }
 
 function corsHeaders(origin: string | null): HeadersInit {
-  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://freddyja.github.io'
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://computingmadeeasy.org'
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
