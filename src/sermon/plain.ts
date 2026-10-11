@@ -1,4 +1,4 @@
-import type { SermonBlock, SermonDepth, SermonHandout, SermonLang } from './types'
+import type { SermonBlock, SermonDepth, SermonHandout, SermonLang, SermonLangChoice } from './types'
 
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
 
@@ -115,11 +115,13 @@ function blockText(block: SermonBlock, language: SermonLang, depth: SermonDepth)
   return shortBlockText(block)
 }
 
-export function handoutText(handout: SermonHandout): string {
-  return ORDER.map((language) => blockText(handout.blocks[language], language, handout.depth)).join('\n\n')
+export function handoutText(handout: SermonHandout, choice: SermonLangChoice = 'all'): string {
+  const languages: readonly SermonLang[] = choice === 'all' ? ORDER : [choice]
+  return languages.map((language) => blockText(handout.blocks[language], language, handout.depth)).join('\n\n')
 }
 
-export function handoutFileName(topic: string): string {
+/** `topic.docx` for all three languages, `topic-EN.docx` (or -ES / -PT) for one. */
+export function handoutFileName(topic: string, choice: SermonLangChoice = 'all'): string {
   const slug = topic
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
@@ -127,5 +129,6 @@ export function handoutFileName(topic: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
-  return `${slug || 'sermon'}.docx`
+  const suffix = choice === 'all' ? '' : `-${choice.toUpperCase()}`
+  return `${slug || 'sermon'}${suffix}.docx`
 }

@@ -3,7 +3,7 @@ import { useLanguage } from '../i18n/useLanguage'
 import { buildHandout } from '../sermon/build'
 import { handoutDocx } from '../sermon/docx'
 import { handoutFileName, handoutText } from '../sermon/plain'
-import type { SermonBlock, SermonDepth, SermonHandout, SermonLang } from '../sermon/types'
+import type { SermonBlock, SermonDepth, SermonHandout, SermonLang, SermonLangChoice } from '../sermon/types'
 
 const ORDER: readonly SermonLang[] = ['en', 'es', 'pt']
 
@@ -11,6 +11,27 @@ const COLUMN_NAME: Record<SermonLang, string> = {
   en: 'English',
   es: 'Español',
   pt: 'Português',
+}
+
+const LANG_CHOICES: readonly SermonLangChoice[] = ['all', ...ORDER]
+
+const LANG_CHOICE_KEY = 'sermon-lang-choice'
+
+function readLangChoice(): SermonLangChoice {
+  try {
+    const stored = localStorage.getItem(LANG_CHOICE_KEY)
+    return stored === 'en' || stored === 'es' || stored === 'pt' ? stored : 'all'
+  } catch {
+    return 'all'
+  }
+}
+
+function storeLangChoice(choice: SermonLangChoice) {
+  try {
+    localStorage.setItem(LANG_CHOICE_KEY, choice)
+  } catch {
+    // The picker still works for this visit when storage is blocked.
+  }
 }
 
 type LegacyDocument = Document & {
@@ -140,6 +161,7 @@ export function SermonMaker() {
   const [topic, setTopic] = useState('')
   const [audience, setAudience] = useState('')
   const [depth, setDepth] = useState<SermonDepth>('short')
+  const [langChoice, setLangChoice] = useState<SermonLangChoice>(readLangChoice)
   const [handout, setHandout] = useState<SermonHandout | null>(null)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -147,6 +169,12 @@ export function SermonMaker() {
   const [fullscreenOn, setFullscreenOn] = useState(false)
   const [fallback, setFallback] = useState(false)
   const presenting = fullscreenOn || fallback
+  const shownLanguages: readonly SermonLang[] = langChoice === 'all' ? ORDER : [langChoice]
+
+  function chooseLanguage(choice: SermonLangChoice) {
+    setLangChoice(choice)
+    storeLangChoice(choice)
+  }
 
   const sectionLabels = {
     title: t('sermonSectionTitle'),
@@ -182,13 +210,13 @@ export function SermonMaker() {
 
   async function copyHandout() {
     if (!handout) return
-    const ok = await copyText(handoutText(handout))
+    const ok = await copyText(handoutText(handout, langChoice))
     setNotice(ok ? t('sermonCopied') : t('sermonCopyFailed'))
   }
 
   async function shareHandout() {
     if (!handout) return
-    const text = handoutText(handout)
+    const text = handoutText(handout, langChoice)
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ title: t('sermonShareTitle'), text })
@@ -268,10 +296,10 @@ export function SermonMaker() {
 
   function downloadHandout() {
     if (!handout) return
-    const url = URL.createObjectURL(handoutDocx(handout))
+    const url = URL.createObjectURL(handoutDocx(handout, langChoice))
     const link = document.createElement('a')
     link.href = url
-    link.download = handoutFileName(handout.topic)
+    link.download = handoutFileName(handout.topic, langChoice)
     link.click()
     window.setTimeout(() => URL.revokeObjectURL(url), 1500)
   }
@@ -341,6 +369,39 @@ export function SermonMaker() {
           ) : null}
         </button>
       </div>
+      <div className="sermon-depth-options sermon-lang-options" role="radiogroup" aria-label={t('sermonLanguages')}>
+        {LANG_CHOICES.map((choice) => {
+          const selected = langChoice === choice
+          return (
+            <button
+              key={choice}
+              type="button"
+              role="radio"
+              className={
+                selected
+                  ? 'button button-ghost sermon-depth-toggle is-selected'
+                  : 'button button-ghost sermon-depth-toggle'
+              }
+              lang={choice === 'all' ? undefined : choice}
+              aria-checked={selected}
+              aria-pressed={selected}
+              aria-label={
+                choice === 'all'
+                  ? t('sermonLangAllAria')
+                  : t('sermonLangOnlyAria', { language: COLUMN_NAME[choice] })
+              }
+              onClick={() => chooseLanguage(choice)}
+            >
+              {choice === 'all' ? t('sermonLangAll') : COLUMN_NAME[choice]}
+              {selected ? (
+                <span className="sermon-depth-check" aria-hidden="true">
+                  ✓
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
       <button type="button" className="button" disabled={working} onClick={() => void generate()}>
         {working ? t('sermonWorking') : t('sermonGenerate')}
       </button>
@@ -368,7 +429,9 @@ export function SermonMaker() {
           </div>
           <div
             ref={boardRef}
-            className={fallback ? 'sermon-board is-fallback' : 'sermon-board'}
+            className={['sermon-board', fallback ? 'is-fallback' : '', langChoice === 'all' ? '' : 'is-single']
+              .filter(Boolean)
+              .join(' ')}
             role="region"
             aria-label={t('sermonBoard')}
           >
@@ -377,8 +440,8 @@ export function SermonMaker() {
                 {t('sermonClose')}
               </button>
             </div>
-            <p className="sermon-rotate">{t('sermonRotate')}</p>
-            {ORDER.map((language) =>
+            {langChoice === 'all' ? <p className="sermon-rotate">{t('sermonRotate')}</p> : null}
+            {shownLanguages.map((language) =>
               handout.depth === 'full' ? (
                 <FullColumn
                   key={language}

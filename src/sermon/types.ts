@@ -2,6 +2,9 @@ export type SermonLang = 'en' | 'es' | 'pt'
 
 export type SermonDepth = 'short' | 'full'
 
+/** Which languages a handout shows: all three side by side, or one alone. */
+export type SermonLangChoice = 'all' | SermonLang
+
 export type SermonCopy = {
   punch: string
   context: string
