@@ -3861,6 +3861,17 @@ main {
   margin-top: 0.4rem;
 }
 
+/* One language: a single centered column at a comfortable reading width. */
+.sermon-board.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sermon-board.is-single .sermon-block {
+  width: 100%;
+  max-width: 70ch;
+  margin-inline: auto;
+}
+
 .sermon-board.is-fallback,
 .sermon-board:fullscreen,
 .sermon-board:-webkit-full-screen {
@@ -3927,6 +3938,13 @@ main {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
     gap: clamp(0.7rem, 1vw, 1.15rem);
+  }
+
+  .sermon-board.is-single,
+  .sermon-board.is-single.is-fallback,
+  .sermon-board.is-single:fullscreen,
+  .sermon-board.is-single:-webkit-full-screen {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

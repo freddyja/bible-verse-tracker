@@ -1,4 +1,4 @@
-import type { SermonBlock, SermonHandout, SermonLang } from './types'
+import type { SermonBlock, SermonHandout, SermonLang, SermonLangChoice } from './types'
 import { zipStore } from './zip'
 
 const SECTION: Record<
@@ -139,10 +139,11 @@ function blockXml(block: SermonBlock, language: SermonLang): string {
   return block.depth === 'full' ? fullBlockXml(block, language) : shortBlockXml(block, language)
 }
 
-function documentXml(handout: SermonHandout): string {
-  const body = ORDER.map((language, index) => {
+function documentXml(handout: SermonHandout, choice: SermonLangChoice): string {
+  const languages: readonly SermonLang[] = choice === 'all' ? ORDER : [choice]
+  const body = languages.map((language, index) => {
     const block = blockXml(handout.blocks[language], language)
-    return index < ORDER.length - 1 ? `${block}${spacer()}` : block
+    return index < languages.length - 1 ? `${block}${spacer()}` : block
   }).join('')
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -191,12 +192,13 @@ const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
 </w:styles>`
 
-export function handoutDocx(handout: SermonHandout): Blob {
+/** Word handout. `choice` defaults to all three languages; a single language keeps only that block. */
+export function handoutDocx(handout: SermonHandout, choice: SermonLangChoice = 'all'): Blob {
   const encoder = new TextEncoder()
   return zipStore([
     { name: '[Content_Types].xml', data: encoder.encode(CONTENT_TYPES) },
     { name: '_rels/.rels', data: encoder.encode(ROOT_RELS) },
-    { name: 'word/document.xml', data: encoder.encode(documentXml(handout)) },
+    { name: 'word/document.xml', data: encoder.encode(documentXml(handout, choice)) },
     { name: 'word/_rels/document.xml.rels', data: encoder.encode(DOCUMENT_RELS) },
     { name: 'word/styles.xml', data: encoder.encode(STYLES) },
     { name: 'word/numbering.xml', data: encoder.encode(numberingXml()) },
