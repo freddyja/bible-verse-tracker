@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '../i18n/useLanguage'
 
 /** Public app address people can pass on. */
-const APP_SHARE_URL = 'https://freddyja.github.io/bible-verse-tracker/'
+const APP_SHARE_URL = 'https://computingmadeeasy.org/bible-verse-tracker/'
 
 function ShareIcon() {
   return (

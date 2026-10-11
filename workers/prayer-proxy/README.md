@@ -12,7 +12,7 @@ Thin Cloudflare Worker so the GitHub Pages app never sees `ANTHROPIC_API_KEY`.
 
 Success: prayer card JSON (`titleHow`, `titleFor`, `tagline`, `items[6]`, `footer`).
 
-CORS: `https://freddyja.github.io` and localhost Vite/preview ports.
+CORS: `https://computingmadeeasy.org` (live host), `https://freddyja.github.io` and localhost Vite/preview ports.
 
 Guards: JSON content-type, non-empty topic (max 80 chars), language enum, ~10 requests / IP / minute (per isolate).
 
